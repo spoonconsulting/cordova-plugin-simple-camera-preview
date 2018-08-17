@@ -1,0 +1,34 @@
+{
+  "name": "cordova-plugin-simple-camera-preview",
+  "version": "1.0.0",
+  "description": "Cordova plugin that allows camera interaction from HTML code for showing camera preview below or on top of the HTML.",
+  "keywords": [
+    "cordova",
+    "phonegap",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios",
+    "android",
+    "ios",
+    "ionic",
+    "camera",
+    "cam",
+    "camera-preview",
+    "preview"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview"
+  },
+  "author": {
+    "name": "Weston Ganger",
+    "email": "westonganger@gmail.com",
+    "url": "solidfoundationwebdev.com"
+  },
+  "license": "Apache 2.0",
+  "homepage": "https://github.com/spoonconsultingw/cordova-plugin-simple-camera-preview",
+  "dependencies": {
+    "cordova": "*"
+  },
+  "devDependencies": {}
+}

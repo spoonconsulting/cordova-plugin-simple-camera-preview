@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin id="cordova-plugin-simple-camera-preview" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+
+   <name>cordova-plugin-simple-camera-preview</name>
+  <description>Cordova plugin that allows camera interaction from HTML code. Show camera preview popup on top of the HTML.</description>
+  <license>Apache 2.0</license>
+  <keywords>cordova,phonegap,ecosystem:cordova,cordova-android,cordova-ios,android,ios,ionic,camera,cam,camera-preview,preview</keywords>
+  <repo>https://github.com/cordova-plugin-simple-camera-preview/cordova-plugin-simple-camera-preview.git</repo>
+  <issue>https://github.com/cordova-plugin-simple-camera-preview/cordova-plugin-simple-camera-preview/issues</issue>
+
+  <js-module src="www/SimpleCameraPreview.js" name="SimpleCameraPreview">
+    <clobbers target="SimpleCameraPreview" />
+  </js-module>
+
+  <platform name="android">
+    <source-file src="src/android/AutoFitTextureView.java" target-dir="src/com/cordovapluginsimplecamerapreview" />
+    <source-file src="src/android/Camera2BasicFragment.java" target-dir="src/com/cordovapluginsimplecamerapreview" />
+    <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/cordovapluginsimplecamerapreview" />
+    <source-file src="src/android/fragment_camera2_basic.xml" target-dir="res/layout" />
+    <source-file src="src/android/layout-land/fragment_camera2_basic.xml" target-dir="res/layout/layout-land" />
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="SimpleCameraPreview">
+        <param name="android-package" value="com.cordovapluginsimplecamerapreview.SimpleCameraPreview" />
+        <param name="onload" value="true" />
+      </feature>
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+      <uses-feature android:name="android.hardware.camera" android:required="true"/>
+      <uses-feature android:name="android.hardware.camera.autofocus" />
+      <uses-permission android:name="android.permission.CAMERA" />
+    </config-file>
+
+    <config-file target="res/values/strings.xml" parent="/*">
+        <string name="camera_error">This device does not support Camera2 API</string>
+    </config-file>
+      
+  </platform>
+
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="SimpleCameraPreview">
+        <param name="ios-package" value="SimpleCameraPreview" onload="true" />
+      </feature>
+    </config-file>
+    
+       <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
+          <string>This App requires camera access to let you take the pictures that you would like to upload.</string>
+        </config-file>
+
+    <header-file src="src/ios/SimpleCameraPreview.h" />
+    <source-file src="src/ios/SimpleCameraPreview.m" />
+
+     <header-file src="src/ios/TemperatureAndTint.h" />
+    <source-file src="src/ios/TemperatureAndTint.m" />
+
+    <header-file src="src/ios/CameraSessionManager.h" />
+    <source-file src="src/ios/CameraSessionManager.m" />
+
+    <header-file src="src/ios/CameraRenderController.h" />
+    <source-file src="src/ios/CameraRenderController.m" />
+
+    <framework src="ImageIO.framework" weak="true" />
+    <framework src="MobileCoreServices.framework" />
+    <framework src="CoreLocation.framework" />
+    <framework src="CoreGraphics.framework" />
+    <framework src="AssetsLibrary.framework" />
+    <framework src="CoreGraphics.framework" />
+    <framework src="CoreImage.framework" />
+    <framework src="OpenGLES.framework" />
+    <framework src="GLKit.framework" />
+    <framework src="CoreVideo.framework" />
+    <framework src="QuartzCore.framework"/>
+  </platform>
+
+</plugin>
