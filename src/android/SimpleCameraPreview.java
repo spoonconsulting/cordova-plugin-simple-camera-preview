@@ -1,4 +1,4 @@
-package com.cordovapluginsimplecamerapreview;
+package com.spoon.simplecamerapreview;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -69,7 +69,7 @@ public class SimpleCameraPreview extends CordovaPlugin  {
 
     if (START_CAMERA_ACTION.equals(action)) {
       if (cordova.hasPermission(permissions[0])) {
-        return startCamera(this.execArgs.getString(0),  this.execArgs.getBoolean(1), callbackContext);
+        return startCamera(args.getString(0),  args.getBoolean(1), callbackContext);
       } else {
         this.execCallback = callbackContext;
         this.execArgs = args;

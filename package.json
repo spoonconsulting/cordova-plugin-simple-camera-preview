@@ -21,12 +21,12 @@
     "url": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview"
   },
   "author": {
-    "name": "Weston Ganger",
-    "email": "westonganger@gmail.com",
-    "url": "solidfoundationwebdev.com"
+    "name": "Mevin Dhunnooa",
+    "email": "mevin.dhunnooa@sc-mauritius.com",
+    "url": "spoonconsulting.com"
   },
   "license": "Apache 2.0",
-  "homepage": "https://github.com/spoonconsultingw/cordova-plugin-simple-camera-preview",
+  "homepage": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview",
   "dependencies": {
     "cordova": "*"
   },

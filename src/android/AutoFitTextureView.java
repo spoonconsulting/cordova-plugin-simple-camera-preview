@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cordovapluginsimplecamerapreview;
+package com.spoon.simplecamerapreview;
 
 import android.content.Context;
 import android.util.AttributeSet;
