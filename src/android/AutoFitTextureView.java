@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.spoon.simplecamerapreview;
+package com.spoonconsulting.simplecamerapreview;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.TextureView;
+import android.view.WindowManager;
 
 /**
  * A {@link TextureView} that can be adjusted to a specified aspect ratio.
@@ -27,6 +29,7 @@ public class AutoFitTextureView extends TextureView {
 
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
+    public DisplayMetrics mMetrics = new DisplayMetrics();
 
     public AutoFitTextureView(Context context) {
         this(context, null);
@@ -59,6 +62,18 @@ public class AutoFitTextureView extends TextureView {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+//        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+//        int width = MeasureSpec.getSize(widthMeasureSpec);
+//        int height = MeasureSpec.getSize(heightMeasureSpec);
+//        if (0 == mRatioWidth || 0 == mRatioHeight) {
+//            setMeasuredDimension(width, height);
+//        } else {
+//            if (width < height * mRatioWidth / mRatioHeight) {
+//                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+//            } else {
+//                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+//            }
+//        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
@@ -66,9 +81,11 @@ public class AutoFitTextureView extends TextureView {
             setMeasuredDimension(width, height);
         } else {
             if (width < height * mRatioWidth / mRatioHeight) {
-                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
-            } else {
+                // setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+            } else {
+                //setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
             }
         }
     }

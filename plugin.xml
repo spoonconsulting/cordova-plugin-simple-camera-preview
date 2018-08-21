@@ -17,7 +17,6 @@
     <source-file src="src/android/AutoFitTextureView.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/Camera2BasicFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
-    <source-file src="src/android/fragment_camera2_basic.xml" target-dir="res/layout" />
     <!-- <source-file src="src/android/layout-land/fragment_camera2_basic.xml" target-dir="res/layout/layout-land" /> -->
 
     <config-file target="res/xml/config.xml" parent="/*">
