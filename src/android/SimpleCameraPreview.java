@@ -2,45 +2,33 @@ package com.spoonconsulting.simplecamerapreview;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.graphics.Color;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
-import com.sharinpix.SharinPix.R;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
-import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
-
-import java.util.List;
-import java.util.Arrays;
 
 public class SimpleCameraPreview extends CordovaPlugin {
 
     private static final String TAG = "SimpleCameraPreview";
-    private static final String START_CAMERA_ACTION = "startCamera";
-    private static final String STOP_CAMERA_ACTION = "stopCamera";
-    private static final String TAKE_PICTURE_ACTION = "takePicture";
-    private static final String SHOW_CAMERA_ACTION = "showCamera";
-    private static final String HIDE_CAMERA_ACTION = "hideCamera";
+    private static final String START_CAMERA_ACTION = "enable";
+    private static final String STOP_CAMERA_ACTION = "disable";
+    private static final String TAKE_PICTURE_ACTION = "capture";
 
 
     private static final int CAM_REQ_CODE = 0;
@@ -52,7 +40,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private Camera2BasicFragment fragment;
     private CallbackContext startCameraCallbackContext;
     private CallbackContext execCallback;
-    private JSONArray execArgs;
     private ViewParent webViewParent;
 
     public SimpleCameraPreview() {
@@ -61,31 +48,26 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 
         if (START_CAMERA_ACTION.equals(action)) {
             if (cordova.hasPermission(permissions[0])) {
-                return startCamera(callbackContext);
+                return enable(callbackContext);
             } else {
                 this.execCallback = callbackContext;
-                this.execArgs = args;
                 cordova.requestPermissions(this, CAM_REQ_CODE, permissions);
                 return true;
             }
         } else if (TAKE_PICTURE_ACTION.equals(action)) {
-            return takePicture(callbackContext);
+            return capture(callbackContext);
         } else if (STOP_CAMERA_ACTION.equals(action)) {
-            return stopCamera(callbackContext);
-        } else if (SHOW_CAMERA_ACTION.equals(action)) {
-            return showCamera(callbackContext);
-        } else if (HIDE_CAMERA_ACTION.equals(action)) {
-            return hideCamera(callbackContext);
+            return disable(callbackContext);
         }
         return false;
     }
 
     @Override
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
         for (int r : grantResults) {
             if (r == PackageManager.PERMISSION_DENIED) {
                 execCallback.sendPluginResult(new PluginResult(PluginResult.Status.ILLEGAL_ACCESS_EXCEPTION));
@@ -93,17 +75,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
         }
         if (requestCode == CAM_REQ_CODE) {
-            startCamera(this.execCallback);
+            enable(this.execCallback);
         }
-    }
-
-    private boolean hasView(CallbackContext callbackContext) {
-        if (fragment == null) {
-            callbackContext.error("No preview");
-            return false;
-        }
-
-        return true;
     }
 
 
@@ -160,7 +133,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
 
-    private boolean startCamera(CallbackContext callbackContext) {
+    private boolean enable(CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
             callbackContext.error("Camera already started");
@@ -195,7 +168,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
 
-    private boolean takePicture(CallbackContext callbackContext) {
+    private boolean capture(CallbackContext callbackContext) {
         fragment.takePicture((Exception err, String fileName) -> {
             if (err == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
@@ -209,7 +182,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
 
-    private boolean stopCamera(CallbackContext callbackContext) {
+    private boolean disable(CallbackContext callbackContext) {
 
         if (webViewParent != null) {
             cordova.getActivity().runOnUiThread(new Runnable() {
@@ -221,43 +194,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
             });
         }
 
-        if (this.hasView(callbackContext) == false) {
-            return true;
-        }
-
         FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.remove(fragment);
         fragmentTransaction.commit();
         fragment = null;
-
-        callbackContext.success();
-        return true;
-    }
-
-    private boolean showCamera(CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
-            return true;
-        }
-
-        FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.show(fragment);
-        fragmentTransaction.commit();
-
-        callbackContext.success();
-        return true;
-    }
-
-    private boolean hideCamera(CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
-            return true;
-        }
-
-        FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.hide(fragment);
-        fragmentTransaction.commit();
 
         callbackContext.success();
         return true;
