@@ -1,4 +1,4 @@
-package com.spoonconsulting.simplecamerapreview;
+package com.spoon.simplecamerapreview;
 
 import android.Manifest;
 import android.annotation.TargetApi;

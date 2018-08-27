@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.spoonconsulting.simplecamerapreview;
+package com.spoon.simplecamerapreview;
 
 import android.Manifest;
 import android.app.Activity;
