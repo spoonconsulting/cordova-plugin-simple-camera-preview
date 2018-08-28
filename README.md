@@ -36,13 +36,13 @@ Uses camera2 api
 
 # Methods
 
-### startCamera(options, [successCallback, errorCallback])
+### enable(options, [successCallback, errorCallback])
 
 Starts the camera preview instance.
 <br>
 
 ```javascript
-CameraPreview.startCamera(options);
+CameraPreview.enable(options);
 ```
 
 When setting the toBack to true, remember to add the style below on your app's HTML or body element:
@@ -53,12 +53,12 @@ html, body, .ion-app, .ion-content {
 }
 ```
 
-### stopCamera([successCallback, errorCallback])
+### disable([successCallback, errorCallback])
 
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.stopCamera();
+SimpleCameraPreview.disable();
 ```
 
 ### switchCamera([successCallback, errorCallback])

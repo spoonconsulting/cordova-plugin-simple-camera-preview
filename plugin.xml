@@ -51,13 +51,8 @@
 
     <header-file src="src/ios/SimpleCameraPreview.h" />
     <source-file src="src/ios/SimpleCameraPreview.m" />
-
-     <header-file src="src/ios/TemperatureAndTint.h" />
-    <source-file src="src/ios/TemperatureAndTint.m" />
-
     <header-file src="src/ios/CameraSessionManager.h" />
     <source-file src="src/ios/CameraSessionManager.m" />
-
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
 

@@ -119,7 +119,7 @@
   NSLog(@"handleFocusAndTakePictureTap");
 
   // let the delegate take an image, the next time the image is in focus.
-  [self.delegate invokeTakePictureOnFocus];
+  [self.delegate captureOnFocus];
 
   // let the delegate focus on the tapped point.
   [self handleFocusTap:recognizer];
@@ -127,7 +127,7 @@
 
 - (void) handleTakePictureTap:(UITapGestureRecognizer*)recognizer {
   NSLog(@"handleTakePictureTap");
-  [self.delegate invokeTakePicture];
+  [self.delegate capture];
 }
 
 - (void) handleFocusTap:(UITapGestureRecognizer*)recognizer {
@@ -140,7 +140,7 @@
 }
 
 - (void) onFocus{
-  [self.delegate invokeTakePicture];
+  [self.delegate capture];
 }
 
 - (IBAction)handlePan:(UIPanGestureRecognizer *)recognizer {

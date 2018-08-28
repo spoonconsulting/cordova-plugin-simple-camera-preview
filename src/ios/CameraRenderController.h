@@ -10,8 +10,8 @@
 #import "CameraSessionManager.h"
 
 @protocol TakePictureDelegate
-- (void) invokeTakePicture;
-- (void) invokeTakePictureOnFocus;
+- (void) capture;
+- (void) captureOnFocus;
 @end;
 
 @protocol FocusDelegate
