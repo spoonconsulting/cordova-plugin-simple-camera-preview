@@ -39,7 +39,6 @@
 
 - (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion{
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
-    //[self checkDeviceAuthorizationStatus];
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
         if (granted) {
@@ -155,26 +154,6 @@
         NSLog(@"Camera has no flash or flash mode not supported");
     }
 }
-
-
-- (void)checkDeviceAuthorizationStatus {
-    NSString *mediaType = AVMediaTypeVideo;
-    NSLog(@"requesting permission");
-    [AVCaptureDevice requestAccessForMediaType:mediaType completionHandler:^(BOOL granted) {
-        NSLog(@"permission callback");
-        if (!granted) {
-            //Not granted access to mediaType
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [[[UIAlertView alloc] initWithTitle:@"Error"
-                                            message:@"Camera permission not found. Please, check your privacy settings."
-                                           delegate:self
-                                  cancelButtonTitle:@"OK"
-                                  otherButtonTitles:nil] show];
-            });
-        }
-    }];
-}
-
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
 - (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
