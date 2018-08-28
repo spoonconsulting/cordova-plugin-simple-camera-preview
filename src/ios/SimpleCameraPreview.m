@@ -14,15 +14,12 @@
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
-    
     CDVPluginResult *pluginResult;
-    
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
     
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
@@ -32,15 +29,8 @@
     self.cameraRenderController.sessionManager = self.sessionManager;
     self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
     [self.viewController addChildViewController:self.cameraRenderController];
-    
-    // display the camera below the webview
-    // make transparent
-    self.webView.opaque = NO;
-    self.webView.backgroundColor = [UIColor clearColor];
-    
     [self.webView.superview addSubview:self.cameraRenderController.view];
     [self.webView.superview bringSubviewToFront:self.webView];
-    
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
@@ -53,16 +43,13 @@
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
     NSLog(@"disable");
-    
     [self.cameraRenderController.view removeFromSuperview];
     [self.cameraRenderController removeFromParentViewController];
     self.cameraRenderController = nil;
     
     [self.commandDelegate runInBackground:^{
-        
         CDVPluginResult *pluginResult;
         if(self.sessionManager != nil) {
-            
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
             }
@@ -105,7 +92,6 @@
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     }
-    
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -148,7 +134,6 @@
             radians = M_PI;
             break;
     }
-    
     return radians;
 }
 
@@ -185,16 +170,13 @@
     CGContextDrawImage(rotatedContext, drawingRect, originalCGImage);
     CGImageRef rotatedCGImage = CGBitmapContextCreateImage(rotatedContext);
     UIGraphicsEndImageContext();
-    
     return rotatedCGImage;
 }
 
 - (void) capture{
     AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
-        
         NSLog(@"Done creating still image");
-        
         if (error) {
             NSLog(@"%@", error);
         } else {
@@ -240,7 +222,6 @@
             NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
             NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
             [pictureData writeToFile:dataPath atomically:YES];
-            
             
             CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
             

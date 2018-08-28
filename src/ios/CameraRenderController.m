@@ -7,9 +7,8 @@
 @synthesize context = _context;
 
 - (CameraRenderController *)init {
-    if (self = [super init]) {
+    if (self = [super init])
         self.renderLock = [[NSLock alloc] init];
-    }
     return self;
 }
 
@@ -22,12 +21,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
     self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    
-    if (!self.context) {
+    if (!self.context)
         NSLog(@"Failed to create ES context");
-    }
     
     CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL, self.context, NULL, &_videoTextureCache);
     if (err) {
@@ -43,45 +39,27 @@
     glGenRenderbuffers(1, &_renderBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, _renderBuffer);
     self.ciContext = [CIContext contextWithEAGLContext:self.context];
-
-    
 }
 
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(appplicationIsActive:)
-                                                 name:UIApplicationDidBecomeActiveNotification
-                                               object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(applicationEnteredForeground:)
-                                                 name:UIApplicationWillEnterForegroundNotification
-                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     
     UIInterfaceOrientation orientation= [UIApplication sharedApplication].statusBarOrientation;
     dispatch_async(self.sessionManager.sessionQueue, ^{
-        
         if (!self.sessionManager.session.running){
             NSLog(@"Starting session from viewWillAppear");
             [self.sessionManager.session startRunning];
         }
-        
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation: orientation]];
     });
 }
 
 - (void) viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:UIApplicationDidBecomeActiveNotification
-                                                  object:nil];
-    
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:UIApplicationWillEnterForegroundNotification
-                                                  object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
     
     dispatch_async(self.sessionManager.sessionQueue, ^{
         NSLog(@"Stopping session");
@@ -91,12 +69,10 @@
 
 - (void) appplicationIsActive:(NSNotification *)notification {
     dispatch_async(self.sessionManager.sessionQueue, ^{
-        
         if (!self.sessionManager.session.running){
             NSLog(@"Starting session");
             [self.sessionManager.session startRunning];
         }
-        
     });
 }
 
@@ -181,11 +157,6 @@
         [EAGLContext setCurrentContext:nil];
     }
     self.context = nil;
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Release any cached data, images, etc. that aren't in use.
 }
 
 - (BOOL)shouldAutorotate {

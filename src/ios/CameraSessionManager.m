@@ -1,5 +1,4 @@
 #include "CameraSessionManager.h"
-
 @implementation CameraSessionManager
 
 - (CameraSessionManager *)init {
@@ -11,7 +10,6 @@
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
         self.filterLock = [[NSLock alloc] init];
-        
     }
     return self;
 }
@@ -110,8 +108,6 @@
             completion(false);
         }
     }];
-    
-    
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
@@ -140,7 +136,6 @@
 
 - (void)setFlashMode:(NSInteger)flashMode {
     NSError *error = nil;
-    
     // Let's save the setting even if we can't set it up on this camera.
     self.defaultFlashMode = flashMode;
     
@@ -161,17 +156,6 @@
     }
 }
 
-
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-    // removes the observer, when the camera is done focussing.
-    if( [keyPath isEqualToString:@"adjustingFocus"] ){
-        BOOL adjustingFocus = [[change objectForKey:NSKeyValueChangeNewKey] isEqualToNumber:[NSNumber numberWithInt:1]];
-        if(!adjustingFocus){
-            [self.device removeObserver:self forKeyPath:@"adjustingFocus"];
-            [self.delegate onFocus];
-        }
-    }
-}
 
 - (void)checkDeviceAuthorizationStatus {
     NSString *mediaType = AVMediaTypeVideo;

@@ -2,15 +2,10 @@
 #import <AVFoundation/AVFoundation.h>
 
 
-@protocol OnFocusDelegate
-- (void) onFocus;
-@end;
-
 @interface CameraSessionManager : NSObject
 
 - (CameraSessionManager *)init;
 - (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion;
-- (void) switchCamera:(void(^)(BOOL switched))completion;
 - (void) setFlashMode:(NSInteger)flashMode;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
@@ -26,6 +21,4 @@
 @property (nonatomic) AVCaptureStillImageOutput *stillImageOutput;
 @property (nonatomic) AVCaptureVideoDataOutput *dataOutput;
 @property (nonatomic, assign) id delegate;
-
-
 @end
