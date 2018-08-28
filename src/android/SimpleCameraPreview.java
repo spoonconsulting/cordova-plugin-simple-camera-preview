@@ -29,27 +29,20 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final String START_CAMERA_ACTION = "enable";
     private static final String STOP_CAMERA_ACTION = "disable";
     private static final String TAKE_PICTURE_ACTION = "capture";
-
-
     private static final int CAM_REQ_CODE = 0;
-
     private static final String[] permissions = {
             Manifest.permission.CAMERA
     };
-
     private Camera2BasicFragment fragment;
-    private CallbackContext startCameraCallbackContext;
     private CallbackContext execCallback;
     private ViewParent webViewParent;
 
     public SimpleCameraPreview() {
         super();
-        Log.d(TAG, "Constructing");
     }
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-
         if (START_CAMERA_ACTION.equals(action)) {
             if (cordova.hasPermission(permissions[0])) {
                 return enable(callbackContext);
@@ -79,60 +72,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public boolean allowCamera2Support(int cameraId) {
-        CameraManager manager = (CameraManager) cordova.getActivity().getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String cameraIdS = manager.getCameraIdList()[cameraId];
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraIdS);
-            int support = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
-
-            if (support == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY)
-                Log.d(TAG, "Camera " + cameraId + " has LEGACY Camera2 support");
-            else if (support == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
-                Log.d(TAG, "Camera " + cameraId + " has LIMITED Camera2 support");
-            else if (support == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
-                Log.d(TAG, "Camera " + cameraId + " has FULL Camera2 support");
-            else
-                Log.d(TAG, "Camera " + cameraId + " has unknown Camera2 support?!");
-
-            return support == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED || support == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL;
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void checkCamera2Support() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            int numberOfCameras = 0;
-            CameraManager manager = (CameraManager) cordova.getActivity().getSystemService(Context.CAMERA_SERVICE);
-
-            try {
-                numberOfCameras = manager.getCameraIdList().length;
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            } catch (AssertionError e) {
-                e.printStackTrace();
-            }
-
-            if (numberOfCameras == 0) {
-                Log.d(TAG, "0 cameras");
-            } else {
-                for (int i = 0; i < numberOfCameras; i++) {
-                    if (!allowCamera2Support(i)) {
-                        Log.d(TAG, "camera " + i + " doesn't have limited or full support for Camera2 API");
-                    } else {
-                        // here you can get ids of cameras that have limited or full support for Camera2 API
-                    }
-                }
-            }
-        }
-    }
-
-
     private boolean enable(CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
@@ -149,7 +88,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 if (containerView == null) {
                     containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
                     containerView.setId(containerViewId);
-                    containerView.setBackgroundColor(Color.BLUE);
                     FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
                     cordova.getActivity().addContentView(containerView, containerLayoutParams);
                 }
@@ -183,7 +121,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     private boolean disable(CallbackContext callbackContext) {
-
         if (webViewParent != null) {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -193,7 +130,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 }
             });
         }
-
+        fragment.disableCamera();
         FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.remove(fragment);
@@ -203,5 +140,4 @@ public class SimpleCameraPreview extends CordovaPlugin {
         callbackContext.success();
         return true;
     }
-
 }

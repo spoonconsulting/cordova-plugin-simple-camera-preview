@@ -97,7 +97,6 @@ public class Camera2BasicFragment extends Fragment implements ActivityCompat.OnR
      * Conversion from screen rotation to JPEG orientation.
      */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
 
     static {
@@ -452,8 +451,11 @@ public class Camera2BasicFragment extends Fragment implements ActivityCompat.OnR
         mTextureView =  new AutoFitTextureView(getActivity());
         containerView.addView( mTextureView , containerLayoutParams);
         return containerView;
+    }
 
-
+    public void disableCamera(){
+        closeCamera();
+        stopBackgroundThread();
     }
 
     @Override
@@ -602,8 +604,7 @@ public class Camera2BasicFragment extends Fragment implements ActivityCompat.OnR
         } catch (NullPointerException e) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
-            ErrorDialog.newInstance(getString(R.string.camera_error))
-                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+            e.printStackTrace();
         }
     }
 
@@ -1025,38 +1026,6 @@ public class Camera2BasicFragment extends Fragment implements ActivityCompat.OnR
             // We cast here to ensure the multiplications won't overflow
             return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
                     (long) rhs.getWidth() * rhs.getHeight());
-        }
-
-    }
-
-    /**
-     * Shows an error message dialog.
-     */
-    public static class ErrorDialog extends DialogFragment {
-
-        private static final String ARG_MESSAGE = "message";
-
-        public static ErrorDialog newInstance(String message) {
-            ErrorDialog dialog = new ErrorDialog();
-            Bundle args = new Bundle();
-            args.putString(ARG_MESSAGE, message);
-            dialog.setArguments(args);
-            return dialog;
-        }
-
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Activity activity = getActivity();
-            return new AlertDialog.Builder(activity)
-                    .setMessage(getArguments().getString(ARG_MESSAGE))
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            activity.finish();
-                        }
-                    })
-                    .create();
         }
 
     }
