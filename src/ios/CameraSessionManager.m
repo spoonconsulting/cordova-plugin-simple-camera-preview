@@ -3,51 +3,45 @@
 @implementation CameraSessionManager
 
 - (CameraSessionManager *)init {
-  if (self = [super init]) {
-    // Create the AVCaptureSession
-    self.session = [[AVCaptureSession alloc] init];
-    self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
-    if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
-      [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
+    if (self = [super init]) {
+        // Create the AVCaptureSession
+        self.session = [[AVCaptureSession alloc] init];
+        self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
+        if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
+            [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
+        }
+        self.filterLock = [[NSLock alloc] init];
+        
     }
-    self.filterLock = [[NSLock alloc] init];
-
-  }
-  return self;
-}
-
-- (NSArray *) getDeviceFormats {
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-
-  return videoDevice.formats;
+    return self;
 }
 
 - (AVCaptureVideoOrientation) getCurrentOrientation {
-  return [self getCurrentOrientation: [[UIApplication sharedApplication] statusBarOrientation]];
+    return [self getCurrentOrientation: [[UIApplication sharedApplication] statusBarOrientation]];
 }
 
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
-  AVCaptureVideoOrientation orientation;
-  switch (toInterfaceOrientation) {
-    case UIInterfaceOrientationPortraitUpsideDown:
-      orientation = AVCaptureVideoOrientationPortraitUpsideDown;
-      break;
-    case UIInterfaceOrientationLandscapeRight:
-      orientation = AVCaptureVideoOrientationLandscapeRight;
-      break;
-    case UIInterfaceOrientationLandscapeLeft:
-      orientation = AVCaptureVideoOrientationLandscapeLeft;
-      break;
-    default:
+    AVCaptureVideoOrientation orientation;
+    switch (toInterfaceOrientation) {
+        case UIInterfaceOrientationPortraitUpsideDown:
+            orientation = AVCaptureVideoOrientationPortraitUpsideDown;
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            orientation = AVCaptureVideoOrientationLandscapeRight;
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            orientation = AVCaptureVideoOrientationLandscapeLeft;
+            break;
+        default:
         case UIInterfaceOrientationPortrait:
-      orientation = AVCaptureVideoOrientationPortrait;
-  }
-  return orientation;
+            orientation = AVCaptureVideoOrientationPortrait;
+    }
+    return orientation;
 }
 
 - (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion{
-  // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
-  //[self checkDeviceAuthorizationStatus];
+    // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
+    //[self checkDeviceAuthorizationStatus];
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
         if (granted) {
@@ -116,383 +110,57 @@
             completion(false);
         }
     }];
-
-  
+    
+    
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
-  AVCaptureConnection *captureConnection;
-  if (self.stillImageOutput != nil) {
-    captureConnection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-    if ([captureConnection isVideoOrientationSupported]) {
-      [captureConnection setVideoOrientation:orientation];
-    }
-  }
-  if (self.dataOutput != nil) {
-    captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
-    if ([captureConnection isVideoOrientationSupported]) {
-      [captureConnection setVideoOrientation:orientation];
-    }
-  }
-}
-
-- (void) switchCamera:(void(^)(BOOL switched))completion {
-  if (self.defaultCamera == AVCaptureDevicePositionFront) {
-    self.defaultCamera = AVCaptureDevicePositionBack;
-  } else {
-    self.defaultCamera = AVCaptureDevicePositionFront;
-  }
-
-  dispatch_async([self sessionQueue], ^{
-      NSError *error = nil;
-      BOOL success = TRUE;
-
-      [self.session beginConfiguration];
-
-      if (self.videoDeviceInput != nil) {
-        [self.session removeInput:[self videoDeviceInput]];
-        [self setVideoDeviceInput:nil];
-      }
-
-      AVCaptureDevice *videoDevice = nil;
-
-      videoDevice = [self cameraWithPosition:self.defaultCamera];
-
-      if ([videoDevice hasFlash] && [videoDevice isFlashModeSupported:self.defaultFlashMode]) {
-        if ([videoDevice lockForConfiguration:&error]) {
-          [videoDevice setFlashMode:self.defaultFlashMode];
-          [videoDevice unlockForConfiguration];
-        } else {
-          NSLog(@"%@", error);
-          success = FALSE;
+    AVCaptureConnection *captureConnection;
+    if (self.stillImageOutput != nil) {
+        captureConnection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
         }
-      }
-
-      AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-
-      if (error) {
-        NSLog(@"%@", error);
-        success = FALSE;
-      }
-
-      if ([self.session canAddInput:videoDeviceInput]) {
-        [self.session addInput:videoDeviceInput];
-        [self setVideoDeviceInput:videoDeviceInput];
-      }
-
-      [self updateOrientation:[self getCurrentOrientation]];
-      [self.session commitConfiguration];
-      self.device = videoDevice;
-
-      completion(success);
-  });
+    }
+    if (self.dataOutput != nil) {
+        captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
+        }
+    }
 }
-
-- (NSArray *)getFocusModes {
-
-  NSMutableArray * focusModes = [[NSMutableArray alloc] init];
-
-  if ([self.device isFocusModeSupported:0]) {
-    [focusModes addObject:@"fixed"];
-  };
-  if ([self.device isFocusModeSupported:1]) {
-    [focusModes addObject:@"auto"];
-  };
-  if ([self.device isFocusModeSupported:2]) {
-    [focusModes addObject:@"continuous"];
-  };
-
-  return (NSArray *) focusModes;
-}
-
-- (NSString *) getFocusMode {
-
-  NSString *focusMode;
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  switch (videoDevice.focusMode) {
-    case 0:
-        focusMode = @"fixed";
-      break;
-    case 1:
-      focusMode = @"auto";
-      break;
-    case 2:
-      focusMode = @"continuous";
-      break;
-    default:
-      focusMode = @"unsupported";
-      NSLog(@"Mode not supported");
-  }
-
-  return focusMode;
-}
-
-- (NSString *) setFocusMode:(NSString *)focusMode {
-
-  NSString *errMsg;
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  [self.device lockForConfiguration:nil];
-
-  if ([focusMode isEqual:@"fixed"]) {
-    if ([videoDevice isFocusModeSupported:0]) {
-      videoDevice.focusMode = 0;
-    } else {
-      errMsg = @"Focus mode not supported";
-    };
-  } else if ([focusMode isEqual:@"auto"]) {
-    if ([videoDevice isFocusModeSupported:1]) {
-      videoDevice.focusMode = 1;
-    } else {
-      errMsg = @"Focus mode not supported";
-    };
-  } else if ([focusMode isEqual:@"continuous"]) {
-    if ([videoDevice isFocusModeSupported:2]) {
-      videoDevice.focusMode = 2;
-    } else {
-      errMsg = @"Focus mode not supported";
-    };
-  } else {
-    errMsg = @"Exposure mode not supported";
-  }
-
-  [self.device unlockForConfiguration];
-
-  if (errMsg) {
-    NSLog(@"%@", errMsg);
-    return @"ERR01";
-  }
-
-  return focusMode;
-}
-
-- (NSArray *)getFlashModes {
-  NSMutableArray * flashModes = [[NSMutableArray alloc] init];
-
-  if ([self.device hasFlash]) {
-    if ([self.device isFlashModeSupported:0]) {
-      [flashModes addObject:@"off"];
-    };
-    if ([self.device isFlashModeSupported:1]) {
-      [flashModes addObject:@"on"];
-    };
-    if ([self.device isFlashModeSupported:2]) {
-      [flashModes addObject:@"auto"];
-    };
-    if ([self.device hasTorch]) {
-      [flashModes addObject:@"torch"];
-    };
-  }
-
-  return (NSArray *) flashModes;
-}
-
 - (NSInteger)getFlashMode {
-
-  if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
-    return self.device.flashMode;
-  }
-
-  return -1;
+    
+    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
+        return self.device.flashMode;
+    }
+    
+    return -1;
 }
 
 - (void)setFlashMode:(NSInteger)flashMode {
-  NSError *error = nil;
-
-  // Let's save the setting even if we can't set it up on this camera.
-  self.defaultFlashMode = flashMode;
-
-  if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
-
-    if ([self.device lockForConfiguration:&error]) {
-      if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        self.device.torchMode=0;
-      }
-      [self.device setFlashMode:self.defaultFlashMode];
-      [self.device unlockForConfiguration];
-
+    NSError *error = nil;
+    
+    // Let's save the setting even if we can't set it up on this camera.
+    self.defaultFlashMode = flashMode;
+    
+    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
+        
+        if ([self.device lockForConfiguration:&error]) {
+            if ([self.device hasTorch] && [self.device isTorchAvailable]) {
+                self.device.torchMode=0;
+            }
+            [self.device setFlashMode:self.defaultFlashMode];
+            [self.device unlockForConfiguration];
+            
+        } else {
+            NSLog(@"%@", error);
+        }
     } else {
-        NSLog(@"%@", error);
+        NSLog(@"Camera has no flash or flash mode not supported");
     }
-  } else {
-    NSLog(@"Camera has no flash or flash mode not supported");
-  }
 }
 
-- (void)setTorchMode {
-  NSError *error = nil;
-
-  // Let's save the setting even if we can't set it up on this camera.
-  //self.defaultFlashMode = flashMode;
-
-  if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-
-    if ([self.device lockForConfiguration:&error]) {
-
-      if ([self.device isTorchModeSupported:1]) {
-        self.device.torchMode=1;
-      } else if ([self.device isTorchModeSupported:2]) {
-        self.device.torchMode=2;
-      } else {
-        self.device.torchMode=0;
-      }
-      [self.device unlockForConfiguration];
-    } else {
-        NSLog(@"%@", error);
-    }
-  } else {
-    NSLog(@"Camera has no flash or flash mode not supported");
-  }
-}
-
-- (void)setZoom:(CGFloat)desiredZoomFactor {
-
-  [self.device lockForConfiguration:nil];
-  self.videoZoomFactor = MAX(1.0, MIN(desiredZoomFactor, self.device.activeFormat.videoMaxZoomFactor));
-
-  [self.device setVideoZoomFactor:self.videoZoomFactor];
-  [self.device unlockForConfiguration];
-  NSLog(@"%zd zoom factor set", self.videoZoomFactor);
-}
-
-- (CGFloat)getZoom {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  return videoDevice.videoZoomFactor;
-}
-
-- (float)getHorizontalFOV {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  return videoDevice.activeFormat.videoFieldOfView;
-}
-
-- (CGFloat)getMaxZoom {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  return videoDevice.activeFormat.videoMaxZoomFactor;
-}
-
-- (NSArray *)getExposureModes {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  NSMutableArray *exposureModes = [[NSMutableArray alloc] init];
-  if ([videoDevice isExposureModeSupported:0]) {
-    [exposureModes addObject:@"lock"];
-  };
-  if ([videoDevice isExposureModeSupported:1]) {
-    [exposureModes addObject:@"auto"];
-  };
-  if ([videoDevice isExposureModeSupported:2]) {
-    [exposureModes addObject:@"cotinuous"];
-  };
-  if ([videoDevice isExposureModeSupported:3]) {
-    [exposureModes addObject:@"custom"];
-  };
-  NSLog(@"%@", exposureModes);
-  return (NSArray *) exposureModes;
-}
-
-- (NSString *) getExposureMode {
-
-  NSString *exposureMode;
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  switch (videoDevice.exposureMode) {
-    case 0:
-        exposureMode = @"lock";
-      break;
-    case 1:
-      exposureMode = @"auto";
-      break;
-    case 2:
-      exposureMode = @"continuous";
-      break;
-    case 3:
-      exposureMode = @"custom";
-      break;
-    default:
-      exposureMode = @"unsupported";
-      NSLog(@"Mode not supported");
-  }
-
-  return exposureMode;
-}
-
-- (NSString *) setExposureMode:(NSString *)exposureMode {
-
-  NSString *errMsg;
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  [self.device lockForConfiguration:nil];
-
-  if ([exposureMode isEqual:@"lock"]) {
-    if ([videoDevice isExposureModeSupported:0]) {
-      videoDevice.exposureMode = 0;
-    } else {
-      errMsg = @"Exposure mode not supported";
-    };
-  } else if ([exposureMode isEqual:@"auto"]) {
-    if ([videoDevice isExposureModeSupported:1]) {
-      videoDevice.exposureMode = 1;
-    } else {
-      errMsg = @"Exposure mode not supported";
-    };
-  } else if ([exposureMode isEqual:@"continuous"]) {
-    if ([videoDevice isExposureModeSupported:2]) {
-      videoDevice.exposureMode = 2;
-    } else {
-      errMsg = @"Exposure mode not supported";
-    };
-  } else if ([exposureMode isEqual:@"custom"]) {
-    if ([videoDevice isExposureModeSupported:3]) {
-      videoDevice.exposureMode = 3;
-    } else {
-      errMsg = @"Exposure mode not supported";
-    };
-  } else {
-    errMsg = @"Exposure mode not supported";
-  }
-
-  [self.device unlockForConfiguration];
-
-  if (errMsg) {
-    NSLog(@"%@", errMsg);
-    return @"ERR01";
-  }
-
-  return exposureMode;
-}
-
-- (NSArray *)getExposureCompensationRange {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  CGFloat maxExposureCompensation = videoDevice.maxExposureTargetBias;
-  CGFloat minExposureCompensation = videoDevice.minExposureTargetBias;
-  NSArray * exposureCompensationRange = [[NSArray alloc] initWithObjects: [NSNumber numberWithFloat:minExposureCompensation], [NSNumber numberWithFloat:maxExposureCompensation], nil];
-  return exposureCompensationRange;
-}
-
-- (CGFloat)getExposureCompensation {
-
-  AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-  NSLog(@"getExposureCompensation: %zd", videoDevice.exposureTargetBias);
-  return videoDevice.exposureTargetBias;
-}
-
-- (void)setExposureCompensation:(CGFloat)exposureCompensation {
-  NSError *error = nil;
-
-  if ([self.device lockForConfiguration:&error]) {
-    CGFloat exposureTargetBias = MAX(self.device.minExposureTargetBias, MIN(exposureCompensation, self.device.maxExposureTargetBias));
-    [self.device setExposureTargetBias:exposureTargetBias completionHandler:nil];
-    [self.device unlockForConfiguration];
-  } else {
-    NSLog(@"%@", error);
-  }
-
-}
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     // removes the observer, when the camera is done focussing.
@@ -505,60 +173,32 @@
     }
 }
 
-- (void) takePictureOnFocus{
-    // add an observer, when takePictureOnFocus is requested.
-    int flag = NSKeyValueObservingOptionNew;
-    [self.device addObserver:self forKeyPath:@"adjustingFocus" options:flag context:nil];
-}
-
-- (void) tapToFocus:(CGFloat)xPoint yPoint:(CGFloat)yPoint {
-
-  [self.device lockForConfiguration:nil];
-
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-  CGFloat screenWidth = screenRect.size.width;
-  CGFloat screenHeight = screenRect.size.height;
-  CGFloat focus_x = xPoint/screenWidth;
-  CGFloat focus_y = yPoint/screenHeight;
-
-  if ([self.device isFocusModeSupported:AVCaptureFocusModeAutoFocus]){
-    [self.device setFocusPointOfInterest:CGPointMake(focus_x,focus_y)];
-    [self.device setFocusMode:AVCaptureFocusModeAutoFocus];
-  }
-  if ([self.device isExposureModeSupported:AVCaptureExposureModeAutoExpose]){
-    [self.device setExposurePointOfInterest:CGPointMake(focus_x,focus_y)];
-    [self.device setExposureMode:AVCaptureExposureModeAutoExpose];
-  }
-
-  [self.device unlockForConfiguration];
-}
-
 - (void)checkDeviceAuthorizationStatus {
-  NSString *mediaType = AVMediaTypeVideo;
+    NSString *mediaType = AVMediaTypeVideo;
     NSLog(@"requesting permission");
-  [AVCaptureDevice requestAccessForMediaType:mediaType completionHandler:^(BOOL granted) {
-      NSLog(@"permission callback");
-    if (!granted) {
-      //Not granted access to mediaType
-      dispatch_async(dispatch_get_main_queue(), ^{
-          [[[UIAlertView alloc] initWithTitle:@"Error"
-                                      message:@"Camera permission not found. Please, check your privacy settings."
-                                     delegate:self
-                            cancelButtonTitle:@"OK"
-                            otherButtonTitles:nil] show];
-      });
-    }
-  }];
+    [AVCaptureDevice requestAccessForMediaType:mediaType completionHandler:^(BOOL granted) {
+        NSLog(@"permission callback");
+        if (!granted) {
+            //Not granted access to mediaType
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[[UIAlertView alloc] initWithTitle:@"Error"
+                                            message:@"Camera permission not found. Please, check your privacy settings."
+                                           delegate:self
+                                  cancelButtonTitle:@"OK"
+                                  otherButtonTitles:nil] show];
+            });
+        }
+    }];
 }
 
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
 - (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
-  NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-  for (AVCaptureDevice *device in devices){
-    if ([device position] == position)
-      return device;
-  }
-  return nil;
+    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    for (AVCaptureDevice *device in devices){
+        if ([device position] == position)
+            return device;
+    }
+    return nil;
 }
 
 @end

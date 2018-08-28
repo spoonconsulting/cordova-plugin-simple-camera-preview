@@ -5,14 +5,12 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 
-@interface SimpleCameraPreview : CDVPlugin <TakePictureDelegate, FocusDelegate>
+@interface SimpleCameraPreview : CDVPlugin <TakePictureDelegate>
 
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;
 - (void) setFlashMode:(CDVInvokedUrlCommand*)command;
-- (void) capture:(CGFloat) width withHeight:(CGFloat) height withQuality:(CGFloat) quality;
-- (void) capture;
-
+- (void) capture:(CDVInvokedUrlCommand*)command;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
