@@ -1,6 +1,6 @@
 #import <CoreImage/CoreImage.h>
 #import <AVFoundation/AVFoundation.h>
-#import "TemperatureAndTint.h"
+
 
 @protocol OnFocusDelegate
 - (void) onFocus;

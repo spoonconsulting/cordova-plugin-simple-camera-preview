@@ -23,34 +23,20 @@
     return;
   }
 
-  if (command.arguments.count > 3) {
-    CGFloat x = (CGFloat)[command.arguments[0] floatValue] + self.webView.frame.origin.x;
-    CGFloat y = (CGFloat)[command.arguments[1] floatValue] + self.webView.frame.origin.y;
-    CGFloat width = (CGFloat)[command.arguments[2] floatValue];
-    CGFloat height = (CGFloat)[command.arguments[3] floatValue];
-    NSString *defaultCamera = command.arguments[4];
-    BOOL tapToTakePicture = (BOOL)[command.arguments[5] boolValue];
-    BOOL dragEnabled = (BOOL)[command.arguments[6] boolValue];
-    BOOL toBack = (BOOL)[command.arguments[7] boolValue];
-    CGFloat alpha = (CGFloat)[command.arguments[8] floatValue];
-    BOOL tapToFocus = (BOOL) [command.arguments[9] boolValue];
-    BOOL disableExifHeaderStripping = (BOOL) [command.arguments[10] boolValue]; // ignore Android only
 
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
 
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
-    self.cameraRenderController.dragEnabled = dragEnabled;
-    self.cameraRenderController.tapToTakePicture = tapToTakePicture;
-    self.cameraRenderController.tapToFocus = tapToFocus;
+    self.cameraRenderController.tapToTakePicture = NO;
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
+    self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
     self.cameraRenderController.delegate = self;
 
     [self.viewController addChildViewController:self.cameraRenderController];
 
-    if (toBack) {
+   
       // display the camera below the webview
 
       // make transparent
@@ -59,24 +45,17 @@
 
       [self.webView.superview addSubview:self.cameraRenderController.view];
       [self.webView.superview bringSubviewToFront:self.webView];
-    } else {
-      self.cameraRenderController.view.alpha = alpha;
-      [self.webView.superview insertSubview:self.cameraRenderController.view aboveSubview:self.webView];
-    }
+    
 
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
 
-    [self.sessionManager setupSession:defaultCamera completion:^(BOOL started) {
-
+    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
       [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 
     }];
 
-  } else {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid number of parameters"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
+
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
