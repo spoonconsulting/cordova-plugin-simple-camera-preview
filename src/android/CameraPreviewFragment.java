@@ -30,9 +30,9 @@ interface CameraCallBack {
     void onCompleted(Exception err, String fileName);
 }
 
-public class Camera2BasicFragment extends Fragment {
+public class CameraPreviewFragment extends Fragment {
     private Camera3 cameraManager;
-    private static final String TAG = "Camera2BasicFragment";
+    private static final String TAG = "CameraPreviewFragment";
     private  CameraCallBack takePictureCallback;
     private StillCaptureHandler captureSession;
 
@@ -62,12 +62,6 @@ public class Camera2BasicFragment extends Fragment {
         }
 
         previewTexture.setFill(AutoFitTextureView.STYLE_FILL);
-        CaptureRequestConfiguration config = new CaptureRequestConfiguration() {
-            @Override
-            public void configure(CaptureRequest.Builder request) {
-                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
-            }
-        };
 
         // Handler to control everything about the preview
         PreviewHandler previewHandler = new PreviewHandler(
@@ -145,7 +139,6 @@ public class Camera2BasicFragment extends Fragment {
         CaptureRequestConfiguration config = new CaptureRequestConfiguration() {
             @Override
             public void configure(CaptureRequest.Builder request) {
-//                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                 request.set(CaptureRequest.FLASH_MODE, flashMode.toLowerCase().equals("on")? CaptureRequest.FLASH_MODE_SINGLE: CaptureRequest.FLASH_MODE_OFF);
             }
         };

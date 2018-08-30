@@ -15,7 +15,7 @@
 
   <platform name="android">
    <framework src="com.avalancheevantage.android:camera3:0.4.0" />
-    <source-file src="src/android/Camera2BasicFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
+    <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/camera_preview.xml" target-dir="res/layout/" />
 
