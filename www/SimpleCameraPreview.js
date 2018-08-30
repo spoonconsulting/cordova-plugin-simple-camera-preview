@@ -10,18 +10,8 @@ SimpleCameraPreview.disable = function(onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
 };
 
-SimpleCameraPreview.capture = function(onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "capture");
+SimpleCameraPreview.capture = function(flashMode,onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "capture",[flashMode]);
 };
 
-SimpleCameraPreview.setFlashMode = function(flashMode, onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "setFlashMode", [flashMode]);
-};
-
-SimpleCameraPreview.FLASH_MODE = {
-    OFF: 'off',
-    ON: 'on',
-    AUTO: 'auto',
-    TORCH: 'torch'
-};
 module.exports = SimpleCameraPreview;

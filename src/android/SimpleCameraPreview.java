@@ -43,18 +43,22 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-        if (START_CAMERA_ACTION.equals(action)) {
-            if (cordova.hasPermission(permissions[0])) {
-                return enable(callbackContext);
-            } else {
-                this.execCallback = callbackContext;
-                cordova.requestPermissions(this, CAM_REQ_CODE, permissions);
-                return true;
+        try {
+            if (START_CAMERA_ACTION.equals(action)) {
+                if (cordova.hasPermission(permissions[0])) {
+                    return enable(callbackContext);
+                } else {
+                    this.execCallback = callbackContext;
+                    cordova.requestPermissions(this, CAM_REQ_CODE, permissions);
+                    return true;
+                }
+            } else if (TAKE_PICTURE_ACTION.equals(action)) {
+                return capture(args.getString(0), callbackContext);
+            } else if (STOP_CAMERA_ACTION.equals(action)) {
+                return disable(callbackContext);
             }
-        } else if (TAKE_PICTURE_ACTION.equals(action)) {
-            return capture(callbackContext);
-        } else if (STOP_CAMERA_ACTION.equals(action)) {
-            return disable(callbackContext);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return false;
     }
@@ -78,7 +82,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error("Camera already started");
             return true;
         }
-        fragment = Camera2BasicFragment.newInstance();
+        fragment = new Camera2BasicFragment();
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -106,8 +110,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
 
-    private boolean capture(CallbackContext callbackContext) {
-        fragment.takePicture((Exception err, String fileName) -> {
+    private boolean capture(String flashMode, CallbackContext callbackContext) {
+        fragment.takePicture(flashMode, (Exception err, String fileName) -> {
             if (err == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
                 pluginResult.setKeepCallback(true);
@@ -131,8 +135,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             });
         }
         fragment.disableCamera();
-        FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
         fragmentTransaction.remove(fragment);
         fragmentTransaction.commit();
         fragment = null;

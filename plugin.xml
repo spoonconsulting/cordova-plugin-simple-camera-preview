@@ -6,18 +6,18 @@
   <description>Cordova plugin that allows camera interaction from HTML code. Show camera preview popup on top of the HTML.</description>
   <license>Apache 2.0</license>
   <keywords>cordova,phonegap,ecosystem:cordova,cordova-android,cordova-ios,android,ios,ionic,camera,cam,camera-preview,preview</keywords>
-  <repo>https://github.com/cordova-plugin-simple-camera-preview/cordova-plugin-simple-camera-preview.git</repo>
-  <issue>https://github.com/cordova-plugin-simple-camera-preview/cordova-plugin-simple-camera-preview/issues</issue>
+  <repo>https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview.git</repo>
+  <issue>https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/issues</issue>
 
   <js-module src="www/SimpleCameraPreview.js" name="SimpleCameraPreview">
     <clobbers target="SimpleCameraPreview" />
   </js-module>
 
   <platform name="android">
-    <source-file src="src/android/AutoFitTextureView.java" target-dir="src/com/spoon/simplecamerapreview" />
+   <framework src="com.avalancheevantage.android:camera3:0.4.0" />
     <source-file src="src/android/Camera2BasicFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
-    <!-- <source-file src="src/android/layout-land/fragment_camera2_basic.xml" target-dir="res/layout/layout-land" /> -->
+    <source-file src="src/android/camera_preview.xml" target-dir="res/layout/" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="SimpleCameraPreview">

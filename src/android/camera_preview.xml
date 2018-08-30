@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context="com.sharinpix.SharinPix.MainActivity"
+    android:id="@+id/frame_container"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal|top"
+        android:id="@+id/frame_camera_cont"
+        android:layout_gravity="center_horizontal|top">
+
+
+        <com.avalancheevantage.android.camera3.AutoFitTextureView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/holo_blue_bright" />
+
+
+    </RelativeLayout>
+</FrameLayout>
