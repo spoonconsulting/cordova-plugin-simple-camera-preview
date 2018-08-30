@@ -2,7 +2,6 @@ package com.spoon.simplecamerapreview;
 
 import android.app.FragmentTransaction;
 import android.util.Log;
-import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import org.apache.cordova.CallbackContext;
@@ -16,7 +15,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final String START_CAMERA_ACTION = "enable";
     private static final String STOP_CAMERA_ACTION = "disable";
     private static final String TAKE_PICTURE_ACTION = "capture";
-    private Camera2BasicFragment fragment;
+    private CameraPreviewFragment fragment;
     private ViewParent webViewParent;
 
     public SimpleCameraPreview() {
@@ -45,7 +44,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error("Camera already started");
             return true;
         }
-        fragment = new Camera2BasicFragment();
+        fragment = new CameraPreviewFragment();
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

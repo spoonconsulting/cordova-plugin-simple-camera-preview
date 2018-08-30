@@ -14,6 +14,8 @@ import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+
 import com.avalancheevantage.android.camera3.AutoFitTextureView;
 import com.avalancheevantage.android.camera3.Camera3;
 import com.avalancheevantage.android.camera3.CaptureRequestConfiguration;
@@ -32,29 +34,23 @@ interface CameraCallBack {
 
 public class CameraPreviewFragment extends Fragment {
     private Camera3 cameraManager;
-    private static final String TAG = "CameraPreviewFragment";
+    private static final String TAG = "Camera2BasicFragment";
     private  CameraCallBack takePictureCallback;
     private StillCaptureHandler captureSession;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        //return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
-        View containerView = inflater.inflate(R.layout.camera_preview, container, false);
-        final AutoFitTextureView previewTexture = containerView.findViewById(R.id.preview);
-
-
-//        RelativeLayout containerView = new RelativeLayout(getActivity());
-//        RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-//        containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-//        containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_START);
-//        AutoFitTextureView previewTexture =  new AutoFitTextureView(getActivity());
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        RelativeLayout containerView = new RelativeLayout(getActivity());
+        RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+        AutoFitTextureView previewTexture =  new AutoFitTextureView(getActivity());
         previewTexture.setFill(AutoFitTextureView.STYLE_FILL);
         previewTexture.setBackgroundColor(Color.BLUE);
+        containerView.addView(previewTexture);
         cameraManager =  new Camera3(this.getActivity(), Camera3.ERROR_HANDLER_DEFAULT);
         String cameraId = null;
         try {
-            // Get the front-facing camera
             cameraId = cameraManager.getAvailableCameras().get(0);
         } catch (CameraAccessException e) {
             e.printStackTrace();
