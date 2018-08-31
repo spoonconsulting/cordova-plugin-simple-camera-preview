@@ -1,12 +1,10 @@
 Cordova Plugin Simple Camera Preview
 ====================
 
-Cordova plugin that allows camera interaction from Javascript and HTML
+Cordova plugin that allows simple camera preview and taking pictures from Javascript and HTML
 
 
 # Installation
-
-To install the master version with latest fixes and features
 
 ```
 cordova plugin add https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview.git
@@ -15,20 +13,13 @@ ionic cordova plugin add https://github.com/spoonconsulting/cordova-plugin-simpl
 
 ```
 
-#### iOS Quirks
-If you are developing for iOS 10+ you must also add the following to your config.xml
-
-```xml
-<config-file platform="ios" target="*-Info.plist" parent="NSCameraUsageDescription" overwrite="true">
-  <string>Allow the app to use your camera</string>
-</config-file>
-
-<!-- or for Phonegap -->
-
-<gap:config-file platform="ios" target="*-Info.plist" parent="NSCameraUsageDescription" overwrite="true">
-  <string>Allow the app to use your camera</string>
-</gap:config-file>
+Make the webview html background color transparent
+```css
+html, body, .ion-app, .ion-content {
+  background-color: transparent;
+}
 ```
+
 
 ### Android
 Uses camera2 api
@@ -36,21 +27,13 @@ Uses camera2 api
 
 # Methods
 
-### enable(options, [successCallback, errorCallback])
+### enable([successCallback])
 
 Starts the camera preview instance.
 <br>
 
 ```javascript
-CameraPreview.enable(options);
-```
-
-When setting the toBack to true, remember to add the style below on your app's HTML or body element:
-
-```css
-html, body, .ion-app, .ion-content {
-  background-color: transparent;
-}
+CameraPreview.enable(()=>console.log('camera started'));
 ```
 
 ### disable([successCallback, errorCallback])
@@ -61,37 +44,16 @@ html, body, .ion-app, .ion-content {
 SimpleCameraPreview.disable();
 ```
 
-### switchCamera([successCallback, errorCallback])
-
-<info>Switch between the rear camera and front camera, if available.</info><br/>
-
-```javascript
-SimpleCameraPreview.switchCamera();
-```
-
-### show([successCallback, errorCallback])
-
-<info>Show the camera preview box.</info><br/>
-
-```javascript
-SimpleCameraPreview.show();
-```
-
-### hide([successCallback, errorCallback])
-
-<info>Hide the camera preview box.</info><br/>
-
-```javascript
-SimpleCameraPreview.hide();
-```
-
-### takePicture(options, successCallback, [errorCallback])
+### capture(options, successCallback, [errorCallback])
 
 <info>Take the picture</info>
 
 ```javascript
-SimpleCameraPreview.takePicture( function(base64PictureData){
-  
+let options  = {
+  useFlash: true
+}
+SimpleCameraPreview.takePicture(options, (imageName)=>{
+  //image will be in cordova data directory
 });
 
 ```
