@@ -36,8 +36,9 @@
     self.sessionManager.delegate = self.cameraRenderController;
     
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
-        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+        });
     }];
 }
 
@@ -71,7 +72,7 @@
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
-    BOOL *useFlash = [command.arguments objectAtIndex:0];
+    BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (self.sessionManager != nil) 
         [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
     
