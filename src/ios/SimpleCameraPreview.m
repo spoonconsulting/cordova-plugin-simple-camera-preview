@@ -70,34 +70,11 @@
     }];
 }
 
-- (void) setFlashMode:(CDVInvokedUrlCommand*)command {
-    NSLog(@"Flash Mode");
-    NSString *errMsg;
-    CDVPluginResult *pluginResult;
-    
-    NSString *flashMode = [command.arguments objectAtIndex:0];
-    
-    if (self.sessionManager != nil) {
-        if ([flashMode isEqual: @"off"]) {
-            [self.sessionManager setFlashMode:AVCaptureFlashModeOff];
-        } else if ([flashMode isEqual: @"on"]) {
-            [self.sessionManager setFlashMode:AVCaptureFlashModeOn];
-        }
-    } else {
-        errMsg = @"Session not started";
-    }
-    
-    if (errMsg) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errMsg];
-    } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    }
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-
 - (void) capture:(CDVInvokedUrlCommand*)command {
-    NSLog(@"capture");
+    BOOL *useFlash = [command.arguments objectAtIndex:0];
+    if (self.sessionManager != nil) 
+        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+    
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
         self.onPictureTakenHandlerId = command.callbackId;

@@ -9,7 +9,6 @@
 
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;
-- (void) setFlashMode:(CDVInvokedUrlCommand*)command;
 - (void) capture:(CDVInvokedUrlCommand*)command;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;

@@ -28,7 +28,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (START_CAMERA_ACTION.equals(action)) {
                 return enable(callbackContext);
             } else if (TAKE_PICTURE_ACTION.equals(action)) {
-                return capture(args.getString(0), callbackContext);
+                return capture(args.getBoolean(0), callbackContext);
             } else if (STOP_CAMERA_ACTION.equals(action)) {
                 return disable(callbackContext);
             }
@@ -72,8 +72,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
 
-    private boolean capture(String flashMode, CallbackContext callbackContext) {
-        fragment.takePicture(flashMode, (Exception err, String fileName) -> {
+    private boolean capture(Boolean useFlash, CallbackContext callbackContext) {
+        fragment.takePicture(useFlash, (Exception err, String fileName) -> {
             if (err == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
                 pluginResult.setKeepCallback(true);

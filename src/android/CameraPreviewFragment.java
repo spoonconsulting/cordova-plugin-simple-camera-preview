@@ -15,14 +15,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
-
 import com.avalancheevantage.android.camera3.AutoFitTextureView;
 import com.avalancheevantage.android.camera3.Camera3;
 import com.avalancheevantage.android.camera3.CaptureRequestConfiguration;
 import com.avalancheevantage.android.camera3.OnImageAvailableListener;
 import com.avalancheevantage.android.camera3.PreviewHandler;
 import com.avalancheevantage.android.camera3.StillCaptureHandler;
-import com.sharinpix.SharinPix.R;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -34,7 +32,7 @@ interface CameraCallBack {
 
 public class CameraPreviewFragment extends Fragment {
     private Camera3 cameraManager;
-    private static final String TAG = "Camera2BasicFragment";
+    private static final String TAG = "CameraPreviewFragment";
     private  CameraCallBack takePictureCallback;
     private StillCaptureHandler captureSession;
 
@@ -130,12 +128,12 @@ public class CameraPreviewFragment extends Fragment {
         cameraManager.pause();
     }
 
-    public void takePicture(String flashMode, CameraCallBack callback) {
+    public void takePicture(Boolean useFlash, CameraCallBack callback) {
         takePictureCallback = callback;
         CaptureRequestConfiguration config = new CaptureRequestConfiguration() {
             @Override
             public void configure(CaptureRequest.Builder request) {
-                request.set(CaptureRequest.FLASH_MODE, flashMode.toLowerCase().equals("on")? CaptureRequest.FLASH_MODE_SINGLE: CaptureRequest.FLASH_MODE_OFF);
+                request.set(CaptureRequest.FLASH_MODE, useFlash ? CaptureRequest.FLASH_MODE_SINGLE: CaptureRequest.FLASH_MODE_OFF);
             }
         };
         cameraManager.captureImage(captureSession, Camera3.PRECAPTURE_CONFIG_NONE, config);
