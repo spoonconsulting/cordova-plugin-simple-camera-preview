@@ -60,11 +60,6 @@
     [super viewWillDisappear:animated];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-    
-    dispatch_async(self.sessionManager.sessionQueue, ^{
-        NSLog(@"Stopping session");
-        [self.sessionManager.session stopRunning];
-    });
 }
 
 - (void) appplicationIsActive:(NSNotification *)notification {
