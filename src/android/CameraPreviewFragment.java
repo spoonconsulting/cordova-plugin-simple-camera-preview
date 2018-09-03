@@ -1,9 +1,12 @@
 package com.spoon.simplecamerapreview;
 
+
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
@@ -11,9 +14,13 @@ import android.os.Bundle;
 import android.app.Fragment;
 import android.util.Log;
 import android.util.Size;
+import android.view.Display;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import com.avalancheevantage.android.camera3.AutoFitTextureView;
 import com.avalancheevantage.android.camera3.Camera3;
@@ -35,9 +42,37 @@ public class CameraPreviewFragment extends Fragment {
     private static final String TAG = "CameraPreviewFragment";
     private  CameraCallBack takePictureCallback;
     private StillCaptureHandler captureSession;
+    private int mLastRotation;
+    private AutoFitTextureView previewTexture;
+    private Size cameraSize;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        WindowManager mWindowManager = (WindowManager) getActivity().getSystemService(Context.WINDOW_SERVICE);
+        OrientationEventListener orientationEventListener = new OrientationEventListener(getActivity(), SensorManager.SENSOR_DELAY_NORMAL) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                Display display = mWindowManager.getDefaultDisplay();
+                int rotation = display.getRotation();
+                if (rotation != mLastRotation) {
+                    //rotation changed
+                    if (cameraSize == null)
+                        return;
+                    if (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+                        //landscape
+                        previewTexture.setAspectRatio(cameraSize.getWidth(), cameraSize.getHeight());
+                    } else {
+                       //portrait
+                        previewTexture.setAspectRatio(cameraSize.getHeight(), cameraSize.getWidth());
+                    }
+                }
+                mLastRotation = rotation;
+            }
+        };
+
+        if (orientationEventListener.canDetectOrientation())
+            orientationEventListener.enable();
+
         RelativeLayout containerView = new RelativeLayout(getActivity());
         RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -71,6 +106,7 @@ public class CameraPreviewFragment extends Fragment {
                     public void previewSizeSelected(int orientation, Size size) {
                         // Once the preview size has been determined, scale the preview TextureView accordingly
                         Log.d(TAG, "preview size == " + size);
+                        cameraSize = size;
                         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                             previewTexture.setAspectRatio(size.getWidth(), size.getHeight());
                         } else {
