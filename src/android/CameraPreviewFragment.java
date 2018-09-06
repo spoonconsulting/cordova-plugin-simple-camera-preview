@@ -77,7 +77,7 @@ public class CameraPreviewFragment extends Fragment {
         RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_START);
-        AutoFitTextureView previewTexture =  new AutoFitTextureView(getActivity());
+        previewTexture =  new AutoFitTextureView(getActivity());
         previewTexture.setFill(AutoFitTextureView.STYLE_FILL);
         previewTexture.setBackgroundColor(Color.BLUE);
         containerView.addView(previewTexture);
