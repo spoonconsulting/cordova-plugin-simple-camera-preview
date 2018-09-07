@@ -79,7 +79,6 @@ public class CameraPreviewFragment extends Fragment {
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_START);
         previewTexture =  new AutoFitTextureView(getActivity());
         previewTexture.setFill(AutoFitTextureView.STYLE_FILL);
-        previewTexture.setBackgroundColor(Color.BLUE);
         containerView.addView(previewTexture);
         cameraManager =  new Camera3(this.getActivity(), Camera3.ERROR_HANDLER_DEFAULT);
         String cameraId = null;
