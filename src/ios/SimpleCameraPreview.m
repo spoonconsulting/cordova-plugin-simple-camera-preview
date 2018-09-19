@@ -27,7 +27,7 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
+    self.cameraRenderController.view.frame = CGRectMake(0, [UIApplication sharedApplication].statusBarFrame.size.height, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview addSubview:self.cameraRenderController.view];
     [self.webView.superview bringSubviewToFront:self.webView];
