@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
 import android.os.Bundle;
@@ -168,7 +169,16 @@ public class CameraPreviewFragment extends Fragment {
         CaptureRequestConfiguration config = new CaptureRequestConfiguration() {
             @Override
             public void configure(CaptureRequest.Builder request) {
-                request.set(CaptureRequest.FLASH_MODE, useFlash ? CaptureRequest.FLASH_MODE_SINGLE: CaptureRequest.FLASH_MODE_OFF);
+                if (useFlash) {
+                    request.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
+                    request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+                    request.set(CaptureRequest.SENSOR_SENSITIVITY, 100);
+                    //5000000L => 1/200, 7000000L => 1/143
+                    request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, 7000000L);
+                } else {
+                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                }
             }
         };
         cameraManager.captureImage(captureSession, Camera3.PRECAPTURE_CONFIG_NONE, config);
