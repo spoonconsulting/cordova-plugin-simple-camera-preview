@@ -27,21 +27,21 @@ Uses camera2 api
 
 # Methods
 
-### enable([successCallback])
+### enable()
 
 Starts the camera preview instance.
 <br>
 
 ```javascript
-CameraPreview.enable(()=>console.log('camera started'));
+CameraPreview.enable(()=>console.log('camera enabled'));
 ```
 
-### disable([successCallback, errorCallback])
+### disable()
 
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.disable();
+SimpleCameraPreview.disable(()=>console.log('camera disabled'));
 ```
 
 ### capture(options, successCallback, [errorCallback])
@@ -50,9 +50,9 @@ SimpleCameraPreview.disable();
 
 ```javascript
 let options  = {
-  useFlash: true
+  flash: true
 }
-SimpleCameraPreview.takePicture(options, (imageName)=>{
+SimpleCameraPreview.capture(options, (imageName)=>{
   //image will be in cordova data directory
 });
 
