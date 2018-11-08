@@ -45,6 +45,7 @@ public class CameraPreviewFragment extends Fragment {
     private int mLastRotation;
     private AutoFitTextureView previewTexture;
     private Size cameraSize;
+    PreviewHandler previewHandler;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -92,7 +93,7 @@ public class CameraPreviewFragment extends Fragment {
         previewTexture.setFill(AutoFitTextureView.STYLE_FILL);
 
         // Handler to control everything about the preview
-        PreviewHandler previewHandler = new PreviewHandler(
+        previewHandler = new PreviewHandler(
                 // The preview will automatically be rendered to this texture
                 previewTexture,
                 // No preferred size
@@ -165,10 +166,17 @@ public class CameraPreviewFragment extends Fragment {
 
     public void takePicture(Boolean useFlash, CameraCallBack callback) {
         takePictureCallback = callback;
+
+        previewHandler.updateRequestConfig(new CaptureRequestConfiguration() {
+            @Override
+            public void configure(CaptureRequest.Builder request) {
+                request.set(CaptureRequest.FLASH_MODE,  useFlash ? CaptureRequest.FLASH_MODE_SINGLE : CaptureRequest.FLASH_MODE_OFF);
+            }
+        });
         CaptureRequestConfiguration config = new CaptureRequestConfiguration() {
             @Override
             public void configure(CaptureRequest.Builder request) {
-                request.set(CaptureRequest.FLASH_MODE, useFlash ? CaptureRequest.FLASH_MODE_SINGLE: CaptureRequest.FLASH_MODE_OFF);
+                request.set(CaptureRequest.FLASH_MODE, useFlash ? CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH: CaptureRequest.FLASH_MODE_OFF);
             }
         };
         cameraManager.captureImage(captureSession, Camera3.PRECAPTURE_CONFIG_NONE, config);
