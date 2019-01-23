@@ -13,7 +13,7 @@ import com.wonderkiln.camerakit.CameraView;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.UUID;
-
+import android.content.res.Configuration;
 interface CameraCallBack {
     void onCompleted(Exception err, String fileName);
 }
@@ -33,6 +33,13 @@ public class CameraPreviewFragment extends Fragment {
         camera.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(camera);
         return containerView;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        camera.stop();
+        camera.start();
     }
 
     @Override
