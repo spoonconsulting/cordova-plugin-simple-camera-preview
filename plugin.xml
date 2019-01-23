@@ -14,7 +14,8 @@
   </js-module>
 
   <platform name="android">
-   <framework src="com.avalancheevantage.android:camera3:0.4.3" />
+   <framework src="com.wonderkiln:camerakit:0.13.4" />
+   <framework src="com.android.support:exifinterface:27.+" />
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
 
