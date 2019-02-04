@@ -2,6 +2,7 @@
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
+@import CoreLocation; 
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
@@ -47,6 +48,7 @@
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         });
     }];
+    
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
@@ -93,70 +95,6 @@
     }
 }
 
-- (double)radiansFromUIImageOrientation:(UIImageOrientation)orientation {
-    double radians;
-    
-    switch (UIDevice.currentDevice.orientation) {
-        case UIDeviceOrientationPortrait:
-            radians = M_PI_2;
-            break;
-        case UIDeviceOrientationFaceUp:
-            radians = M_PI_2;
-            break;
-        case UIDeviceOrientationFaceDown:
-            radians = M_PI_2;
-            break;
-        case UIDeviceOrientationLandscapeLeft:
-            radians = 0.f;
-            break;
-        case UIDeviceOrientationLandscapeRight:
-            radians = M_PI;
-            break;
-        case UIDeviceOrientationPortraitUpsideDown:
-            radians = -M_PI_2;
-            break;
-        default:
-            radians = M_PI;
-            break;
-    }
-    return radians;
-}
-
--(CGImageRef) CGImageRotated:(CGImageRef) originalCGImage withRadians:(double) radians {
-    CGSize imageSize = CGSizeMake(CGImageGetWidth(originalCGImage), CGImageGetHeight(originalCGImage));
-    CGSize rotatedSize;
-    if (radians == M_PI_2 || radians == -M_PI_2) {
-        rotatedSize = CGSizeMake(imageSize.height, imageSize.width);
-    } else {
-        rotatedSize = imageSize;
-    }
-    
-    double rotatedCenterX = rotatedSize.width / 2.f;
-    double rotatedCenterY = rotatedSize.height / 2.f;
-    
-    UIGraphicsBeginImageContextWithOptions(rotatedSize, NO, 1.f);
-    CGContextRef rotatedContext = UIGraphicsGetCurrentContext();
-    if (radians == 0.f || radians == M_PI) { // 0 or 180 degrees
-        CGContextTranslateCTM(rotatedContext, rotatedCenterX, rotatedCenterY);
-        if (radians == 0.0f) {
-            CGContextScaleCTM(rotatedContext, 1.f, -1.f);
-        } else {
-            CGContextScaleCTM(rotatedContext, -1.f, 1.f);
-        }
-        CGContextTranslateCTM(rotatedContext, -rotatedCenterX, -rotatedCenterY);
-    } else if (radians == M_PI_2 || radians == -M_PI_2) { // +/- 90 degrees
-        CGContextTranslateCTM(rotatedContext, rotatedCenterX, rotatedCenterY);
-        CGContextRotateCTM(rotatedContext, radians);
-        CGContextScaleCTM(rotatedContext, 1.f, -1.f);
-        CGContextTranslateCTM(rotatedContext, -rotatedCenterY, -rotatedCenterX);
-    }
-    
-    CGRect drawingRect = CGRectMake(0.f, 0.f, imageSize.width, imageSize.height);
-    CGContextDrawImage(rotatedContext, drawingRect, originalCGImage);
-    CGImageRef rotatedCGImage = CGBitmapContextCreateImage(rotatedContext);
-    UIGraphicsEndImageContext();
-    return rotatedCGImage;
-}
 
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)
