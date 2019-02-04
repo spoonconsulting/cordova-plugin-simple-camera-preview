@@ -28,7 +28,6 @@
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     [locationManager requestWhenInUseAuthorization];
-    [locationManager startUpdatingLocation];
     
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
@@ -190,6 +189,15 @@
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         }
     }];
+}
+
+- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
+    if (status == kCLAuthorizationStatusDenied) {
+        // The user denied authorization
+    }
+    else if (status == kCLAuthorizationStatusAuthorized) {
+        [locationManager startUpdatingLocation];
+    }
 }
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
