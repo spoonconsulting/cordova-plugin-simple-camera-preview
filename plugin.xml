@@ -44,9 +44,13 @@
       </feature>
     </config-file>
     
-       <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
-          <string>This App requires camera access to let you take the pictures that you would like to upload.</string>
-        </config-file>
+    <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
+      <string>This App requires camera access to let you take the pictures that you would like to upload.</string>
+    </config-file>
+
+    <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
+      <string>This App requires access to your location to add GPS exif to captured images.</string>
+    </config-file>
 
     <header-file src="src/ios/SimpleCameraPreview.h" />
     <source-file src="src/ios/SimpleCameraPreview.m" />

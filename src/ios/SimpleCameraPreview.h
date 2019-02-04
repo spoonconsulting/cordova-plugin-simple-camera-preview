@@ -4,8 +4,11 @@
 
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
-
-@interface SimpleCameraPreview : CDVPlugin <TakePictureDelegate>
+#import <CoreLocation/CoreLocation.h>
+@interface SimpleCameraPreview : CDVPlugin <TakePictureDelegate,CLLocationManagerDelegate>{
+    CLLocationManager *locationManager;
+    CLLocation* currentLocation;
+}
 
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;

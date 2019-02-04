@@ -2,6 +2,7 @@
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
+@import ImageIO;
 
 #import "SimpleCameraPreview.h"
 
@@ -20,6 +21,13 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
+    
+    //required to get gps exif
+    locationManager = [[CLLocationManager alloc] init];
+    locationManager.delegate = self;
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    [locationManager requestWhenInUseAuthorization];
+    [locationManager startUpdatingLocation];
     
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
@@ -150,62 +158,108 @@
     return rotatedCGImage;
 }
 
+- (NSDictionary *)getGPSDictionaryForLocation {
+    if (!currentLocation)
+        return nil;
+    CLLocation *location = currentLocation;
+    NSMutableDictionary *gps = [NSMutableDictionary dictionary];
+    
+    // GPS tag version
+    [gps setObject:@"2.2.0.0" forKey:(NSString *)kCGImagePropertyGPSVersion];
+    
+    // Time and date must be provided as strings, not as an NSDate object
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"HH:mm:ss.SSSSSS"];
+    [formatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC"]];
+    [gps setObject:[formatter stringFromDate:location.timestamp] forKey:(NSString *)kCGImagePropertyGPSTimeStamp];
+    [formatter setDateFormat:@"yyyy:MM:dd"];
+    [gps setObject:[formatter stringFromDate:location.timestamp] forKey:(NSString *)kCGImagePropertyGPSDateStamp];
+    
+    // Latitude
+    CGFloat latitude = location.coordinate.latitude;
+    if (latitude < 0) {
+        latitude = -latitude;
+        [gps setObject:@"S" forKey:(NSString *)kCGImagePropertyGPSLatitudeRef];
+    } else {
+        [gps setObject:@"N" forKey:(NSString *)kCGImagePropertyGPSLatitudeRef];
+    }
+    [gps setObject:[NSNumber numberWithFloat:latitude] forKey:(NSString *)kCGImagePropertyGPSLatitude];
+    
+    // Longitude
+    CGFloat longitude = location.coordinate.longitude;
+    if (longitude < 0) {
+        longitude = -longitude;
+        [gps setObject:@"W" forKey:(NSString *)kCGImagePropertyGPSLongitudeRef];
+    } else {
+        [gps setObject:@"E" forKey:(NSString *)kCGImagePropertyGPSLongitudeRef];
+    }
+    [gps setObject:[NSNumber numberWithFloat:longitude] forKey:(NSString *)kCGImagePropertyGPSLongitude];
+    
+    // Altitude
+    CGFloat altitude = location.altitude;
+    if (!isnan(altitude)){
+        if (altitude < 0) {
+            altitude = -altitude;
+            [gps setObject:@"1" forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
+        } else {
+            [gps setObject:@"0" forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
+        }
+        [gps setObject:[NSNumber numberWithFloat:altitude] forKey:(NSString *)kCGImagePropertyGPSAltitude];
+    }
+    
+    // Speed, must be converted from m/s to km/h
+    if (location.speed >= 0){
+        [gps setObject:@"K" forKey:(NSString *)kCGImagePropertyGPSSpeedRef];
+        [gps setObject:[NSNumber numberWithFloat:location.speed*3.6] forKey:(NSString *)kCGImagePropertyGPSSpeed];
+    }
+    
+    // Heading
+    if (location.course >= 0){
+        [gps setObject:@"T" forKey:(NSString *)kCGImagePropertyGPSTrackRef];
+        [gps setObject:[NSNumber numberWithFloat:location.course] forKey:(NSString *)kCGImagePropertyGPSTrack];
+    }
+    
+    return gps;
+}
+
 - (void) capture{
     AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
-        NSLog(@"Done creating still image");
         if (error) {
             NSLog(@"%@", error);
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Error taking picture"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         } else {
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
-            UIImage *capturedImage  = [[UIImage alloc] initWithData:imageData];
-            
-            CIImage *capturedCImage;
-            capturedCImage = [[CIImage alloc] initWithCGImage:[capturedImage CGImage]];
-            
-            CIImage *imageToFilter;
-            CIImage *finalCImage;
-            
-            //fix front mirroring
-            if (self.sessionManager.defaultCamera == AVCaptureDevicePositionFront) {
-                CGAffineTransform matrix = CGAffineTransformTranslate(CGAffineTransformMakeScale(1, -1), 0, capturedCImage.extent.size.height);
-                imageToFilter = [capturedCImage imageByApplyingTransform:matrix];
-            } else {
-                imageToFilter = capturedCImage;
-            }
-            
-            CIFilter *filter = [self.sessionManager ciFilter];
-            if (filter != nil) {
-                [self.sessionManager.filterLock lock];
-                [filter setValue:imageToFilter forKey:kCIInputImageKey];
-                finalCImage = [filter outputImage];
-                [self.sessionManager.filterLock unlock];
-            } else {
-                finalCImage = imageToFilter;
-            }
-            
-            CGImageRef finalImage = [self.cameraRenderController.ciContext createCGImage:finalCImage fromRect:finalCImage.extent];
-            UIImage *resultImage = [UIImage imageWithCGImage:finalImage];
-            
-            double radians = [self radiansFromUIImageOrientation:resultImage.imageOrientation];
-            CGImageRef resultFinalImage = [self CGImageRotated:finalImage withRadians:radians];
-            
-            CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
-            //write image to disk
-            UIImage *image = [UIImage imageWithCGImage:resultFinalImage];
-            NSData *pictureData = UIImageJPEGRepresentation(image, 1);
+            CFDictionaryRef metaDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
+            CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
+            NSDictionary * gpsData = [self getGPSDictionaryForLocation];
+            if (gpsData)
+                CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
+            CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) imageData, NULL);
             NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
             NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
             NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
-            NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
-            [pictureData writeToFile:dataPath atomically:YES];
-            
-            CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
-            
+            NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
+            CFStringRef UTI = CGImageSourceGetType(source);
+            CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)  [NSURL URLWithString:dataPath], UTI, 1, NULL);
+            CGImageDestinationAddImageFromSource(destination, source, 0, mutableDict);
+            CGImageDestinationFinalize(destination);
+            CFRelease(source);
+            CFRelease(destination);
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:uniqueFileName];
             [pluginResult setKeepCallbackAsBool:true];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         }
     }];
 }
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
+    currentLocation = [locations lastObject];
+}
+
+- (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
+    NSLog(@"failed to fetch current location : %@", error);
+}
+
 @end
