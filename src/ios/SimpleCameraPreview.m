@@ -195,7 +195,7 @@
     if (status == kCLAuthorizationStatusDenied) {
         // The user denied authorization
     }
-    else if (status == kCLAuthorizationStatusAuthorized) {
+    else if (status == kCLAuthorizationStatusAuthorizedWhenInUse) {
         [locationManager startUpdatingLocation];
     }
 }
