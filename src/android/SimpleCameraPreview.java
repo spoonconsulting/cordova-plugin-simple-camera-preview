@@ -1,6 +1,14 @@
 package com.spoon.simplecamerapreview;
 
+import android.Manifest;
 import android.app.FragmentTransaction;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
@@ -9,14 +17,18 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 
+
 public class SimpleCameraPreview extends CordovaPlugin {
 
     private static final String TAG = "SimpleCameraPreview";
     private static final String START_CAMERA_ACTION = "enable";
     private static final String STOP_CAMERA_ACTION = "disable";
     private static final String TAKE_PICTURE_ACTION = "capture";
+    private static final int GEO_REQ_CODE = 23;
     private CameraPreviewFragment fragment;
     private ViewParent webViewParent;
+    LocationManager locationManager;
+
 
     public SimpleCameraPreview() {
         super();
@@ -67,10 +79,45 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 callbackContext.sendPluginResult(pluginResult);
             }
         });
-
+        cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
         return true;
     }
 
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults){
+        if (grantResults[0]== PackageManager.PERMISSION_DENIED)
+            return;
+
+        if (requestCode == GEO_REQ_CODE)
+            fetchLocation();
+    }
+
+    public void fetchLocation(){
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (!locationManager)
+                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    fragment.setLocation(location);
+                }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+
+                }
+            });
+        }
+    }
 
     private boolean capture(Boolean useFlash, CallbackContext callbackContext) {
         fragment.takePicture(useFlash, (Exception err, String fileName) -> {
