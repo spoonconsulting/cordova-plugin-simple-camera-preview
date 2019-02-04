@@ -1,6 +1,7 @@
 package com.spoon.simplecamerapreview;
 
 import android.content.ContextWrapper;
+import android.location.Location;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
@@ -75,6 +76,11 @@ public class CameraPreviewFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         camera.destroy();
+    }
+
+    public void setLocation(Location loc){
+        if (camera.isOpened() && loc != null)
+            camera.setLocation(loc);
     }
 
     public void disableCamera() {

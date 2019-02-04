@@ -28,6 +28,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private CameraPreviewFragment fragment;
     private ViewParent webViewParent;
     LocationManager locationManager;
+    private LocationListener mLocationCallback;
 
 
     public SimpleCameraPreview() {
@@ -79,7 +80,33 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 callbackContext.sendPluginResult(pluginResult);
             }
         });
-        cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
+
+        mLocationCallback = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (fragment!=null)
+                    fragment.setLocation(location);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+        if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))
+            fetchLocation();
+        else
+            cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
         return true;
     }
 
@@ -93,29 +120,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     public void fetchLocation(){
         if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            if (!locationManager)
+            if (locationManager == null)
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    fragment.setLocation(location);
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                }
-
-                @Override
-                public void onProviderEnabled(String provider) {
-
-                }
-
-                @Override
-                public void onProviderDisabled(String provider) {
-
-                }
-            });
+            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (cachedLocation !=null)
+                fragment.setLocation(cachedLocation);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, mLocationCallback);
         }
     }
 
@@ -151,5 +161,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         callbackContext.success();
         return true;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (locationManager != null)
+            locationManager.removeUpdates(mLocationCallback);
+        locationManager = null;
     }
 }
