@@ -27,7 +27,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int GEO_REQ_CODE = 23;
     private CameraPreviewFragment fragment;
     private ViewParent webViewParent;
-    LocationManager locationManager;
+    private LocationManager locationManager;
     private LocationListener mLocationCallback;
 
 
