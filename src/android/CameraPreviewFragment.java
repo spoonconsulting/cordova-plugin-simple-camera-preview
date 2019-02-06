@@ -79,7 +79,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void setLocation(Location loc){
-        if (camera.isOpened() && loc != null)
+        if (camera != null && loc != null)
             camera.setLocation(loc);
     }
 
