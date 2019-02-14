@@ -54,13 +54,6 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        camera.close();
-        camera.open();
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
         camera.open();
