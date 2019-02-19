@@ -14,7 +14,12 @@
   </js-module>
 
   <platform name="android">
-   <framework src="com.avalancheevantage.android:camera3:0.4.3" />
+   <framework src="androidx.lifecycle:lifecycle-common:2.0.0" />
+   <framework src="androidx.exifinterface:exifinterface:1.0.0" />
+   <!-- <framework src="com.otaliastudios:cameraview:2.0.0-beta02" /> -->
+    <framework src="src/android/plugin.gradle" custom="true" type="gradleReference" />
+    <source-file src="src/android/cameraview-2.0.0.aar" target-dir="app/libs" />
+
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
 
@@ -29,6 +34,7 @@
       <uses-feature android:name="android.hardware.camera" android:required="true"/>
       <uses-feature android:name="android.hardware.camera.autofocus" />
       <uses-permission android:name="android.permission.CAMERA" />
+      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     </config-file>
 
     <config-file target="res/values/strings.xml" parent="/*">
