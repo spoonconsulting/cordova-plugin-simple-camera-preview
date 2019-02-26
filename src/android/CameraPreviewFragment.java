@@ -12,10 +12,15 @@ import com.otaliastudios.cameraview.Audio;
 import com.otaliastudios.cameraview.Flash;
 import java.io.File;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import com.otaliastudios.cameraview.CameraListener;
 import com.otaliastudios.cameraview.CameraView;
 import com.otaliastudios.cameraview.PictureResult;
 import android.content.res.Configuration;
+
+import rx.functions.Action1;
+import rx.subjects.PublishSubject;
 
 interface CameraCallBack {
     void onCompleted(Exception err, String fileName);
@@ -24,6 +29,8 @@ interface CameraCallBack {
 public class CameraPreviewFragment extends Fragment {
     CameraView camera;
     CameraCallBack capturePictureCallback;
+    PublishSubject<Configuration> subject;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -39,8 +46,8 @@ public class CameraPreviewFragment extends Fragment {
             public void onPictureTaken(PictureResult result) {
                 UUID uuid = UUID.randomUUID();
                 File file = new File(new ContextWrapper(getActivity().getBaseContext()).getFilesDir(), uuid.toString() + ".jpg");
-                result.toFile(file, (File mfile)->{
-                    if (mfile == null){
+                result.toFile(file, (File mfile) -> {
+                    if (mfile == null) {
                         capturePictureCallback.onCompleted(new Exception("unable to save image"), null);
                     }
                     capturePictureCallback.onCompleted(null, mfile.getName());
@@ -50,7 +57,23 @@ public class CameraPreviewFragment extends Fragment {
         });
         camera.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(camera);
+
+        subject = PublishSubject.create();
+        subject.debounce(1, TimeUnit.SECONDS)
+                .subscribe(new Action1<Configuration>() {
+                    public void call(Configuration number) {
+                        camera.close();
+                        camera.open();
+                    }
+                });
+
         return containerView;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        subject.onNext(newConfig);
     }
 
     @Override
@@ -69,9 +92,10 @@ public class CameraPreviewFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         camera.destroy();
+        subject.onCompleted();
     }
 
-    public void setLocation(Location loc){
+    public void setLocation(Location loc) {
         if (camera != null && loc != null)
             camera.setLocation(loc);
     }
