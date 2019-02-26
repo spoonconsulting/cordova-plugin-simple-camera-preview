@@ -62,8 +62,12 @@ public class CameraPreviewFragment extends Fragment {
         subject.debounce(1, TimeUnit.SECONDS)
                 .subscribe(new Action1<Configuration>() {
                     public void call(Configuration number) {
-                        camera.close();
-                        camera.open();
+                        if (camera !=null){
+                            if (camera.isOpened()){
+                                camera.close();
+                                camera.open();
+                            }
+                        }
                     }
                 });
 
