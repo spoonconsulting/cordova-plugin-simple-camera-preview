@@ -57,7 +57,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error("Camera already started");
             return true;
         }
-        fragment = new CameraPreviewFragment();
+        fragment = new CameraPreviewFragment(new CameraStartedCallBack() {
+            @Override
+            public void onCameraStarted() {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
+            }
+        });
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -75,9 +82,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 webViewParent = webView.getView().getParent();
                 webView.getView().bringToFront();
                 cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
-                pluginResult.setKeepCallback(true);
-                callbackContext.sendPluginResult(pluginResult);
+
             }
         });
 

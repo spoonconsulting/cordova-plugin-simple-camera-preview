@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import com.otaliastudios.cameraview.Audio;
+import com.otaliastudios.cameraview.CameraOptions;
 import com.otaliastudios.cameraview.Flash;
 import java.io.File;
 import java.util.UUID;
@@ -21,9 +22,23 @@ interface CameraCallBack {
     void onCompleted(Exception err, String fileName);
 }
 
+interface CameraStartedCallBack {
+    void onCameraStarted();
+}
+
 public class CameraPreviewFragment extends Fragment {
     CameraView camera;
     CameraCallBack capturePictureCallback;
+    CameraStartedCallBack startCameraCallback;
+
+    public CameraPreviewFragment(){
+
+    }
+
+
+    public CameraPreviewFragment(CameraStartedCallBack cb){
+        this.startCameraCallback = cb;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -35,6 +50,11 @@ public class CameraPreviewFragment extends Fragment {
         camera = new CameraView(getActivity());
         camera.setAudio(Audio.OFF);
         camera.addCameraListener(new CameraListener() {
+            @Override
+            public void onCameraOpened(CameraOptions options) {
+                if (startCameraCallback != null)
+                    startCameraCallback.onCameraStarted();
+            }
             @Override
             public void onPictureTaken(PictureResult result) {
                 UUID uuid = UUID.randomUUID();
