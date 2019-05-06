@@ -116,6 +116,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults){
+        if (grantResults.length < 1)
+            return;
         if (grantResults[0]== PackageManager.PERMISSION_DENIED)
             return;
 
