@@ -16,7 +16,7 @@
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.0.0" />
    <framework src="androidx.exifinterface:exifinterface:1.0.0" />
-   <framework src="com.otaliastudios:cameraview:2.0.0-beta02" />
+   <framework src="com.otaliastudios:cameraview:2.0.0-beta04" />
    <framework src="io.reactivex:rxjava:1.1.6" />
    
     <!-- <framework src="src/android/plugin.gradle" custom="true" type="gradleReference" /> -->
