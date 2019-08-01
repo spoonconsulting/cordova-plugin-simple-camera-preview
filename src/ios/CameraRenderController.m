@@ -72,10 +72,10 @@
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {
-    dispatch_async(self.sessionManager.sessionQueue, ^{
-        NSLog(@"Stopping session");
-        [self.sessionManager.session stopRunning];
-    });
+    // dispatch_async(self.sessionManager.sessionQueue, ^{
+    //     NSLog(@"Stopping session");
+    //     [self.sessionManager.session stopRunning];
+    // });
 }
 
 -(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
