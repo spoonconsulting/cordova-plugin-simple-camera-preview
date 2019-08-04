@@ -140,7 +140,9 @@
         [self.ciContext drawImage:croppedImage inRect:dest fromRect:[croppedImage extent]];
         //[self.ciContext drawImage:image inRect:dest fromRect:[image extent]];
         [self.context presentRenderbuffer:GL_RENDERBUFFER];
-        [(GLKView *)(self.view)display];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [(GLKView *)(self.view)display];
+        });
         [self.renderLock unlock];
     }
 }
