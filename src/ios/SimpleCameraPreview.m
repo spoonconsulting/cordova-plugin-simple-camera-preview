@@ -184,6 +184,8 @@
             CGImageDestinationFinalize(destination);
             CFRelease(source);
             CFRelease(destination);
+            CFRelease(metaDict);
+            CFRelease(mutableDict);
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:uniqueFileName];
             [pluginResult setKeepCallbackAsBool:true];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
