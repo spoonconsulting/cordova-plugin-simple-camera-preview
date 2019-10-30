@@ -38,6 +38,8 @@
     self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
+    self.viewController.view.backgroundColor = [UIColor blackColor];
+    [self.cameraRenderController realignView];
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
@@ -74,7 +76,7 @@
         else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         }
-        
+        self.viewController.view.backgroundColor = [UIColor clearColor];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }

@@ -4,12 +4,15 @@ import android.Manifest;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import org.apache.cordova.CallbackContext;
@@ -71,12 +74,22 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 int containerViewId = 20;
                 //create or update the layout params for the container view
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                if (containerView == null) {
-                    containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                    containerView.setId(containerViewId);
-                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-                    cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                if (containerView != null) {
+                    ((ViewGroup) containerView.getParent()).removeView(containerView);
                 }
+                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                containerView.setId(containerViewId);
+                int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+                int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+                int minWidth = Math.min(width, height);
+                int cameraScaledHeight = minWidth * 4/3;
+                boolean isLandscape = width > height;
+                //LOG.d("scam", "width:" + width + " height:" + height + " minWidth:" + minWidth + " cameraScaledHeight:" + cameraScaledHeight);
+                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(isLandscape ? cameraScaledHeight : minWidth, isLandscape ? height : cameraScaledHeight);
+                containerLayoutParams.setMargins(isLandscape ? (width-cameraScaledHeight)/2 : 0, isLandscape ? 0 : (height-cameraScaledHeight)/2, 0, 0);
+                cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+
 
                 webView.getView().setBackgroundColor(0x00000000);
                 webViewParent = webView.getView().getParent();
