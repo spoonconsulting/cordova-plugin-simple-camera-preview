@@ -76,7 +76,6 @@
         else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         }
-        self.viewController.view.backgroundColor = [UIColor clearColor];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
