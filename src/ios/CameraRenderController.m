@@ -166,7 +166,7 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
             [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:orientation]];
-            [self realignView:[[UIApplication sharedApplication] statusBarOrientation]];
+            [self realignView];
         });
     } completion:^(id<UIViewControllerTransitionCoordinatorContext> context){
     }];
