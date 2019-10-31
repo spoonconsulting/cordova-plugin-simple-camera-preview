@@ -87,12 +87,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(isLandscape ? cameraScaledHeight : minWidth, isLandscape ? height : cameraScaledHeight);
                     containerLayoutParams.setMargins(isLandscape ? (width - cameraScaledHeight) / 2 : 0, isLandscape ? 0 : (height - cameraScaledHeight) / 2, 0, 0);
                     cordova.getActivity().addContentView(containerView, containerLayoutParams);
-                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                    webView.getView().setBackgroundColor(0x00000000);
-                    webViewParent = webView.getView().getParent();
-                    webView.getView().bringToFront();
-                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
                 }
+                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                webView.getView().setBackgroundColor(0x00000000);
+                webViewParent = webView.getView().getParent();
+                webView.getView().bringToFront();
+                cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
             }
         });
 
