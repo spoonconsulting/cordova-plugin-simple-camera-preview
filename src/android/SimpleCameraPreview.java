@@ -10,7 +10,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
+
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -28,6 +30,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final String STOP_CAMERA_ACTION = "disable";
     private static final String TAKE_PICTURE_ACTION = "capture";
     private static final int GEO_REQ_CODE = 23;
+    private static final int containerViewId = 20;
     private CameraPreviewFragment fragment;
     private ViewParent webViewParent;
     private LocationManager locationManager;
@@ -71,38 +74,32 @@ public class SimpleCameraPreview extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                int containerViewId = 20;
                 //create or update the layout params for the container view
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                if (containerView != null) {
-                    ((ViewGroup) containerView.getParent()).removeView(containerView);
+                if (containerView == null) {
+                    containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                    containerView.setId(containerViewId);
+                    int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+                    int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+                    int minWidth = Math.min(width, height);
+                    int cameraScaledHeight = minWidth * 4 / 3;
+                    boolean isLandscape = width > height;
+                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(isLandscape ? cameraScaledHeight : minWidth, isLandscape ? height : cameraScaledHeight);
+                    containerLayoutParams.setMargins(isLandscape ? (width - cameraScaledHeight) / 2 : 0, isLandscape ? 0 : (height - cameraScaledHeight) / 2, 0, 0);
+                    cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                    webView.getView().setBackgroundColor(0x00000000);
+                    webViewParent = webView.getView().getParent();
+                    webView.getView().bringToFront();
+                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
                 }
-                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                containerView.setId(containerViewId);
-                int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-                int height = Resources.getSystem().getDisplayMetrics().heightPixels;
-                int minWidth = Math.min(width, height);
-                int cameraScaledHeight = minWidth * 4/3;
-                boolean isLandscape = width > height;
-                //LOG.d("scam", "width:" + width + " height:" + height + " minWidth:" + minWidth + " cameraScaledHeight:" + cameraScaledHeight);
-                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(isLandscape ? cameraScaledHeight : minWidth, isLandscape ? height : cameraScaledHeight);
-                containerLayoutParams.setMargins(isLandscape ? (width-cameraScaledHeight)/2 : 0, isLandscape ? 0 : (height-cameraScaledHeight)/2, 0, 0);
-                cordova.getActivity().addContentView(containerView, containerLayoutParams);
-                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-
-
-                webView.getView().setBackgroundColor(0x00000000);
-                webViewParent = webView.getView().getParent();
-                webView.getView().bringToFront();
-                cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
-
             }
         });
 
         mLocationCallback = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                if (fragment!=null)
+                if (fragment != null)
                     fragment.setLocation(location);
             }
 
@@ -128,22 +125,22 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults){
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
         if (grantResults.length < 1)
             return;
-        if (grantResults[0]== PackageManager.PERMISSION_DENIED)
+        if (grantResults[0] == PackageManager.PERMISSION_DENIED)
             return;
 
         if (requestCode == GEO_REQ_CODE)
             fetchLocation();
     }
 
-    public void fetchLocation(){
+    public void fetchLocation() {
         if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (locationManager == null)
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
             Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if (cachedLocation !=null)
+            if (cachedLocation != null)
                 fragment.setLocation(cachedLocation);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
         }
@@ -170,6 +167,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 public void run() {
                     webView.getView().bringToFront();
                     webViewParent = null;
+                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                    ((ViewGroup) containerView.getParent()).removeView(containerView);
                 }
             });
         }
