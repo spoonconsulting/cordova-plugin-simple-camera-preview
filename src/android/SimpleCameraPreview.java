@@ -84,10 +84,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 int width = 0;
                 int height = 0;
                 try {
-                    x = options.getInt("x") * metrics.density;
-                    y = options.getInt("y") * metrics.density;
-                    width = options.getInt("width") * metrics.density;
-                    height = options.getInt("height") * metrics.density;
+                    x = Math.round(options.getInt("x") * metrics.density);
+                    y = Math.round(options.getInt("y") * metrics.density);
+                    width = Math.round(options.getInt("width") * metrics.density);
+                    height = Math.round(options.getInt("height") * metrics.density);
                 } catch (JSONException error) {
 
                 }
