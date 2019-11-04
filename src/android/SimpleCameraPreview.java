@@ -21,6 +21,8 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class SimpleCameraPreview extends CordovaPlugin {
@@ -45,7 +47,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             if (START_CAMERA_ACTION.equals(action)) {
-                return enable(callbackContext);
+                return enable((JSONObject) args.get(0), callbackContext);
             } else if (TAKE_PICTURE_ACTION.equals(action)) {
                 return capture(args.getBoolean(0), callbackContext);
             } else if (STOP_CAMERA_ACTION.equals(action)) {
@@ -57,7 +59,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return false;
     }
 
-    private boolean enable(CallbackContext callbackContext) {
+    private boolean enable(JSONObject options, CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
             callbackContext.error("Camera already started");
@@ -75,17 +77,24 @@ public class SimpleCameraPreview extends CordovaPlugin {
             @Override
             public void run() {
                 //create or update the layout params for the container view
+                int x = 0;
+                int y = 0;
+                int width = 0;
+                int height = 0;
+                try {
+                    x = options.getInt("x");
+                    y = options.getInt("y");
+                    width = options.getInt("width");
+                    height = options.getInt("height");
+                } catch (JSONException error) {
+
+                }
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                 if (containerView == null) {
                     containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
                     containerView.setId(containerViewId);
-                    int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-                    int height = Resources.getSystem().getDisplayMetrics().heightPixels;
-                    int minWidth = Math.min(width, height);
-                    int cameraScaledHeight = minWidth * 4 / 3;
-                    boolean isLandscape = width > height;
-                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(isLandscape ? cameraScaledHeight : minWidth, isLandscape ? height : cameraScaledHeight);
-                    containerLayoutParams.setMargins(isLandscape ? (width - cameraScaledHeight) / 2 : 0, isLandscape ? 0 : (height - cameraScaledHeight) / 2, 0, 0);
+                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                    containerLayoutParams.setMargins(x, y, 0, 0);
                     cordova.getActivity().addContentView(containerView, containerLayoutParams);
                 }
                 cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
