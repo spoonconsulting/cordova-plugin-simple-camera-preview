@@ -160,31 +160,8 @@
     return YES;
 }
 
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator{
-    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context){
-        dispatch_async(dispatch_get_main_queue(), ^{
-            UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
-            [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:orientation]];
-            // [self realignView];
-        });
-    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context){
-    }];
+-(void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
 }
 
--(void)realignView{
-    UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
-    BOOL isLandscape = orientation == UIInterfaceOrientationLandscapeRight || orientation == UIInterfaceOrientationLandscapeLeft;
-    float width = self.parentViewController.view.frame.size.width;
-    float height = self.parentViewController.view.frame.size.height;
-    float minWidth = MIN(width, height);
-    float cameraScaledHeight = minWidth*4/3;
-    CGRect rect;
-    if (isLandscape){
-        rect = CGRectMake((width-cameraScaledHeight)/2, 0, cameraScaledHeight, minWidth);
-    } else {
-        rect = CGRectMake(0, (height-cameraScaledHeight)/2, width, cameraScaledHeight);
-    }
-    self.view.frame = rect;
-}
 @end
