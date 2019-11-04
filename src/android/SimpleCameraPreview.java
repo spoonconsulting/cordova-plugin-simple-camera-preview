@@ -10,7 +10,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-
+import android.util.DisplayMetrics;
 import androidx.core.content.ContextCompat;
 
 import android.util.Log;
@@ -77,18 +77,21 @@ public class SimpleCameraPreview extends CordovaPlugin {
             @Override
             public void run() {
                 //create or update the layout params for the container view
+                DisplayMetrics metrics = new DisplayMetrics();
+                cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
                 int x = 0;
                 int y = 0;
                 int width = 0;
                 int height = 0;
                 try {
-                    x = options.getInt("x");
-                    y = options.getInt("y");
-                    width = options.getInt("width");
-                    height = options.getInt("height");
+                    x = options.getInt("x") * metrics.density;
+                    y = options.getInt("y") * metrics.density;
+                    width = options.getInt("width") * metrics.density;
+                    height = options.getInt("height") * metrics.density;
                 } catch (JSONException error) {
 
                 }
+
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                 if (containerView == null) {
                     containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
