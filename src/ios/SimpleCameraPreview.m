@@ -22,7 +22,7 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
+    NSDictionary* config = command.arguments[0];
     //required to get gps exif
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
@@ -35,11 +35,10 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
+    self.cameraRenderController.view.frame = CGRectMake(config[@"x"], config[@"y"], config[@"width"], config[@"height"]);
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     self.viewController.view.backgroundColor = [UIColor blackColor];
-    [self.cameraRenderController realignView];
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
