@@ -35,7 +35,11 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.view.frame = CGRectMake(config[@"x"], config[@"y"], config[@"width"], config[@"height"]);
+     float x = ((NSNumber*)config[@"x"]).floatValue;
+    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+    float width = ((NSNumber*)config[@"width"]).floatValue;
+    float height = ((NSNumber*)config[@"height"]).floatValue;
+    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     self.viewController.view.backgroundColor = [UIColor blackColor];
