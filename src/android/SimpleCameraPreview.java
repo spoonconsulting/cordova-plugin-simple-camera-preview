@@ -127,7 +127,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     
     private int getIntegerFromOptions(JSONObject options, String key){
         try {
-            return options.getInt(key));
+            return options.getInt(key);
         } catch (JSONException error) {
             return 0;
         }
