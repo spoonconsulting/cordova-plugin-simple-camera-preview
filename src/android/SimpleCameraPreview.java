@@ -28,9 +28,6 @@ import org.json.JSONObject;
 public class SimpleCameraPreview extends CordovaPlugin {
 
     private static final String TAG = "SimpleCameraPreview";
-    private static final String START_CAMERA_ACTION = "enable";
-    private static final String STOP_CAMERA_ACTION = "disable";
-    private static final String TAKE_PICTURE_ACTION = "capture";
     private static final int GEO_REQ_CODE = 23;
     private static final int containerViewId = 20;
     private CameraPreviewFragment fragment;
@@ -46,17 +43,29 @@ public class SimpleCameraPreview extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
-            if (START_CAMERA_ACTION.equals(action)) {
+            if (action.equals("enable")) {
                 return enable((JSONObject) args.get(0), callbackContext);
-            } else if (TAKE_PICTURE_ACTION.equals(action)) {
+            } else if (action.equals("capture")) {
                 return capture(args.getBoolean(0), callbackContext);
-            } else if (STOP_CAMERA_ACTION.equals(action)) {
+            } else if (action.equals("disable")) {
                 return disable(callbackContext);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private int getIntegerInPixel(JSONObject options, String key){
+        int result = 0;
+        try {
+            DisplayMetrics metrics = new DisplayMetrics();
+            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            result = Math.round(options.getInt(key) * metrics.density);
+        } catch (JSONException error) {
+
+        }
+        return  result;
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
@@ -76,21 +85,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                //create or update the layout params for the container view
-                DisplayMetrics metrics = new DisplayMetrics();
-                cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                int x = 0;
-                int y = 0;
-                int width = 0;
-                int height = 0;
-                try {
-                    x = Math.round(options.getInt("x") * metrics.density);
-                    y = Math.round(options.getInt("y") * metrics.density);
-                    width = Math.round(options.getInt("width") * metrics.density);
-                    height = Math.round(options.getInt("height") * metrics.density);
-                } catch (JSONException error) {
-
-                }
+                int x = getIntegerInPixel(options, "x");
+                int y = getIntegerInPixel(options, "y");
+                int width = getIntegerInPixel(options, "width");
+                int height = getIntegerInPixel(options, "height");
 
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                 if (containerView == null) {
