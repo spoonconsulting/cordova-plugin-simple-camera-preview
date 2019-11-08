@@ -35,7 +35,7 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-     float x = ((NSNumber*)config[@"x"]).floatValue;
+    float x = ((NSNumber*)config[@"x"]).floatValue;
     float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
