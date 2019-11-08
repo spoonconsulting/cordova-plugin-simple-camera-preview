@@ -8,15 +8,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
-import com.otaliastudios.cameraview.Audio;
 import com.otaliastudios.cameraview.CameraOptions;
-import com.otaliastudios.cameraview.Flash;
 import java.io.File;
 import java.util.UUID;
 import com.otaliastudios.cameraview.CameraListener;
 import com.otaliastudios.cameraview.CameraView;
 import com.otaliastudios.cameraview.PictureResult;
-import android.content.res.Configuration;
+import com.otaliastudios.cameraview.controls.Audio;
+import com.otaliastudios.cameraview.controls.Flash;
+
 
 interface CameraCallBack {
     void onCompleted(Exception err, String fileName);
