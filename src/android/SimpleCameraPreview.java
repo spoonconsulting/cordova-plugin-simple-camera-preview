@@ -56,18 +56,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return false;
     }
 
-    private int getIntegerInPixel(JSONObject options, String key){
-        int result = 0;
-        try {
-            DisplayMetrics metrics = new DisplayMetrics();
-            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            result = Math.round(options.getInt(key) * metrics.density);
-        } catch (JSONException error) {
-
-        }
-        return  result;
-    }
-
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
@@ -85,10 +73,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                int x = getIntegerInPixel(options, "x");
-                int y = getIntegerInPixel(options, "y");
-                int width = getIntegerInPixel(options, "width");
-                int height = getIntegerInPixel(options, "height");
+                DisplayMetrics metrics = new DisplayMetrics();
+                cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
                 FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                 if (containerView == null) {
@@ -133,6 +123,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         else
             cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
         return true;
+    }
+    
+    private int getIntegerFromOptions(JSONObject options, String key){
+        try {
+            return options.getInt(key);
+        } catch (JSONException error) {
+            return 0;
+        }
     }
 
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
