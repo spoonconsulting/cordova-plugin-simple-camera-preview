@@ -2,8 +2,8 @@ var exec = require('cordova/exec');
 var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function() {};
 
-SimpleCameraPreview.enable = function(onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "enable", []);
+SimpleCameraPreview.enable = function(options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
 SimpleCameraPreview.disable = function(onSuccess, onError) {

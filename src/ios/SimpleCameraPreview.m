@@ -22,7 +22,7 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
+    NSDictionary* config = command.arguments[0];
     //required to get gps exif
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
@@ -35,9 +35,14 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.view.frame = CGRectMake(0, 0, self.viewController.view.frame.size.width, self.viewController.view.frame.size.height);
+    float x = ((NSNumber*)config[@"x"]).floatValue;
+    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+    float width = ((NSNumber*)config[@"width"]).floatValue;
+    float height = ((NSNumber*)config[@"height"]).floatValue;
+    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
+    self.viewController.view.backgroundColor = [UIColor blackColor];
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
@@ -74,7 +79,6 @@
         else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         }
-        
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }

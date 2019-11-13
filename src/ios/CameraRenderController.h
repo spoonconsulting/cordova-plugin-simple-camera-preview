@@ -24,5 +24,4 @@
 @property (nonatomic) CIImage *latestFrame;
 @property (nonatomic) EAGLContext *context;
 @property (nonatomic) NSLock *renderLock;
-
 @end
