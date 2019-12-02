@@ -84,6 +84,8 @@
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
