@@ -16,4 +16,8 @@ SimpleCameraPreview.capture = function(options,onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "capture",[options.flash]);
 };
 
+SimpleCameraPreview.setSize = function(options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
+};
+
 module.exports = SimpleCameraPreview;
