@@ -13,7 +13,8 @@
     // start as transparent
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
-    abort();
+    //abort();
+    [NSString stringWithString:nil];
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
