@@ -14,10 +14,11 @@
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
     //abort();
-    [NSString stringWithString:nil];
+ 
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
+       [NSString stringWithString:nil];
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
