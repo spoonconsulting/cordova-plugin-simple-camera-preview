@@ -20,5 +20,5 @@
 @property (nonatomic) AVCaptureDeviceInput *videoDeviceInput;
 @property (nonatomic) AVCaptureStillImageOutput *stillImageOutput;
 @property (nonatomic) AVCaptureVideoDataOutput *dataOutput;
-@property (nonatomic, weak) id delegate;
+@property (nonatomic, assign) id delegate;
 @end
