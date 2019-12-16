@@ -51,10 +51,6 @@
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
     NSLog(@"disable");
-    [self.cameraRenderController.view removeFromSuperview];
-    [self.cameraRenderController removeFromParentViewController];
-    self.cameraRenderController = nil;
-    
     [self.commandDelegate runInBackground:^{
         CDVPluginResult *pluginResult;
         if(self.sessionManager != nil) {
@@ -68,6 +64,11 @@
             
             [self.sessionManager.session stopRunning];
             self.sessionManager = nil;
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [self.cameraRenderController.view removeFromSuperview];
+              [self.cameraRenderController removeFromParentViewController];
+              self.cameraRenderController = nil;
+            });
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         }
         else {
