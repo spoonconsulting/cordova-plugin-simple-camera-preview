@@ -52,7 +52,7 @@
 - (void) disable:(CDVInvokedUrlCommand*)command {
     NSLog(@"disable");
     [self.commandDelegate runInBackground:^{
-        CDVPluginResult *pluginResult;
+        __block CDVPluginResult *pluginResult;
         if(self.sessionManager != nil) {
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
