@@ -57,24 +57,24 @@
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
             }
-            
             for(AVCaptureOutput *output in self.sessionManager.session.outputs) {
                 [self.sessionManager.session removeOutput:output];
             }
-            
             [self.sessionManager.session stopRunning];
             self.sessionManager = nil;
             dispatch_async(dispatch_get_main_queue(), ^{
               [self.cameraRenderController.view removeFromSuperview];
               [self.cameraRenderController removeFromParentViewController];
               self.cameraRenderController = nil;
+              pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+              [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             });
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         }
         else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
     }];
 }
 
