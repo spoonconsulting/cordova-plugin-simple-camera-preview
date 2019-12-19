@@ -34,7 +34,7 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    [self setSize:command];
+    [self _setSize:command];
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     self.viewController.view.backgroundColor = [UIColor blackColor];
@@ -77,15 +77,19 @@
     }];
 }
 
--(void) setSize:(CDVInvokedUrlCommand*)command{
+-(void) setSize:(CDVInvokedUrlCommand*)command {
+    [self _setSize:command];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+-(void)_setSize:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     float x = ((NSNumber*)config[@"x"]).floatValue;
     float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
