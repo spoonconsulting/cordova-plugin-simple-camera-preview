@@ -52,7 +52,6 @@
 - (void) disable:(CDVInvokedUrlCommand*)command {
     NSLog(@"disable");
     [self.commandDelegate runInBackground:^{
-        __block CDVPluginResult *pluginResult;
         if(self.sessionManager != nil) {
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
@@ -66,13 +65,11 @@
               [self.cameraRenderController.view removeFromSuperview];
               [self.cameraRenderController removeFromParentViewController];
               self.cameraRenderController = nil;
-              pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-              [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+              [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
             });
         }
         else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
         
     }];

@@ -43,8 +43,6 @@
         NSLog(@"permission callback");
         if (granted) {
             dispatch_async(self.sessionQueue, ^{
-                if (!self.delegate)
-                    return completion(false);
                 NSError *error = nil;
                 BOOL success = TRUE;
                 
