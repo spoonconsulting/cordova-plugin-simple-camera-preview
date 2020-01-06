@@ -50,7 +50,6 @@
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
-    NSLog(@"disable");
     [self.commandDelegate runInBackground:^{
         if(self.sessionManager != nil) {
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
@@ -175,7 +174,9 @@
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
         if (error) {
             NSLog(@"%@", error);
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Error taking picture"];
+            NSString* errorDescription =  error.description ? error.description : @"";
+            errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         } else {
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
