@@ -13,7 +13,7 @@ ionic cordova plugin add https://github.com/spoonconsulting/cordova-plugin-simpl
 
 ```
 
-Make the webview html background color transparent
+Make the webview html background color transparent.
 ```css
 html, body, .ion-app, .ion-content {
   background-color: transparent;
