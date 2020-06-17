@@ -27,7 +27,7 @@ Uses cameraX api
 
 # Methods
 
-### enable()
+### open(options, successCallback, errorCallback)
 
 Starts the camera preview instance.
 <br>
@@ -38,17 +38,17 @@ SimpleCameraPreview.open(params, () => {
 });
 ```
 
-### disable()
+### close(successCallback, errorCallback)
 
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.open(params, () => {
+SimpleCameraPreview.close(params, () => {
   console.log("Camera closed");
 });
 ```
 
-### capture(options, successCallback, [errorCallback])
+### capture(options, successCallback, errorCallback)
 
 <info>Take the picture</info>
 
