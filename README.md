@@ -22,7 +22,7 @@ html, body, .ion-app, .ion-content {
 
 
 ### Android
-Uses camera2 api
+Uses cameraX api
 
 
 # Methods
@@ -33,7 +33,9 @@ Starts the camera preview instance.
 <br>
 
 ```javascript
-CameraPreview.enable(()=>console.log('camera enabled'));
+SimpleCameraPreview.open(params, () => {
+  console.log("Camera opened");
+});
 ```
 
 ### disable()
@@ -41,7 +43,9 @@ CameraPreview.enable(()=>console.log('camera enabled'));
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.disable(()=>console.log('camera disabled'));
+SimpleCameraPreview.open(params, () => {
+  console.log("Camera closed");
+});
 ```
 
 ### capture(options, successCallback, [errorCallback])
@@ -49,11 +53,11 @@ SimpleCameraPreview.disable(()=>console.log('camera disabled'));
 <info>Take the picture</info>
 
 ```javascript
-let options  = {
+let options = {
   flash: true
-}
-SimpleCameraPreview.capture(options, (imageName)=>{
-  //image will be in cordova data directory
-});
+};
 
+SimpleCameraPreview.capture(options, (imageName) => {
+  console.log(imageName);
+});
 ```

@@ -16,7 +16,9 @@
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.0.0" />
    <framework src="androidx.exifinterface:exifinterface:1.0.0" />
-   <framework src="com.otaliastudios:cameraview:2.3.1" />
+   <framework src="androidx.camera:camera-camera2:1.0.0-beta03" />
+   <framework src="androidx.camera:camera-lifecycle:1.0.0-beta03" />
+   <framework src="androidx.camera:camera-view:1.0.0-alpha10" />
 
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
@@ -32,7 +34,6 @@
       <uses-feature android:name="android.hardware.camera" android:required="true"/>
       <uses-feature android:name="android.hardware.camera.autofocus" />
       <uses-permission android:name="android.permission.CAMERA" />
-      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     </config-file>
 
     <config-file target="res/values/strings.xml" parent="/*">

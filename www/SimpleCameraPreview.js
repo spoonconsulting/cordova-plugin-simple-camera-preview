@@ -1,23 +1,21 @@
-var exec = require('cordova/exec');
-var PLUGIN_NAME = "SimpleCameraPreview";
-var SimpleCameraPreview = function() {};
+cordova.define("cordova-plugin-simple-camera-preview.SimpleCameraPreview", function(require, exports, module) {
+    var exec = require('cordova/exec');
+    var PLUGIN_NAME = "SimpleCameraPreview";
+    var SimpleCameraPreview = function() {};
 
-SimpleCameraPreview.enable = function(options, onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
-};
+    SimpleCameraPreview.open = function(options, onSucces, onError) {
+        exec(onSucces, onError, PLUGIN_NAME, "open", [options]);
+    }
 
-SimpleCameraPreview.disable = function(onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
-};
+    SimpleCameraPreview.close = function(onSuccess, onError) {
+        exec(onSuccess, onError, PLUGIN_NAME, "close", []);
+    }
 
-SimpleCameraPreview.capture = function(options,onSuccess, onError) {
-    options = options || {};
-    options.flash = options.flash || false;
-    exec(onSuccess, onError, PLUGIN_NAME, "capture",[options.flash]);
-};
+    SimpleCameraPreview.capture = function(options, onSucces, onError) {
+        options = options || {};
+        options.flash = options.flash || false;
+        exec(onSucces, onError, PLUGIN_NAME, "capture", [options.flash]);
+    }
 
-SimpleCameraPreview.setSize = function(options, onSuccess, onError) {
-    exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
-};
-
-module.exports = SimpleCameraPreview;
+    module.exports = SimpleCameraPreview;
+});
