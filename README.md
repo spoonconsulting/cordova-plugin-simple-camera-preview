@@ -33,6 +33,12 @@ Starts the camera preview instance.
 <br>
 
 ```javascript
+const params = {
+  // 0: lens facing front
+  // 1: lens facing back
+  camera: 0 
+}
+
 SimpleCameraPreview.enable(params, () => {
   console.log("Camera opened");
 });

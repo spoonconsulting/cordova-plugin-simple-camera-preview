@@ -2,6 +2,7 @@ package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +20,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
+import androidx.exifinterface.media.ExifInterface;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -26,6 +28,7 @@ import androidx.lifecycle.LifecycleRegistry;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -35,19 +38,21 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     private Preview preview;
     private ImageCapture imageCapture;
     private Camera camera;
-
-    private static final String TAG = "TAG";
-
     private LifecycleRegistry lifecycleRegistry;
     private CameraCallback capturePictureCallback;
     private CameraStartedCallback startCameraCallback;
+    private Location location;
+    private int lensFacing;
+
+    private static final String TAG = "TAG";
 
     public CameraPreviewFragment() {
 
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(CameraStartedCallback cameraStartedCallback) {
+    public CameraPreviewFragment(int lens, CameraStartedCallback cameraStartedCallback) {
+        this.lensFacing = lens;
         this.startCameraCallback = cameraStartedCallback;
     }
 
@@ -66,7 +71,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         viewFinder = new PreviewView(getActivity());
         viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(viewFinder);
-        startCamera();
+        startCamera(lensFacing);
 
         return containerView;
     }
@@ -77,7 +82,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
     }
 
-    private void startCamera() {
+    public void startCamera(int lensFacing) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
 
@@ -90,7 +95,10 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder().build();
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+
+
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacing).build();
+
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
                 this::getLifecycle,
@@ -137,6 +145,18 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
                         if (imgFile == null) {
                             capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
+                        } else {
+                            try {
+                                ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
+
+                                if (exif != null && location != null) {
+                                    exif.setGpsInfo(location);
+                                    exif.saveAttributes();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Log.e(TAG, "onImageSaved: " + e.getMessage());
+                            }
                         }
 
                         capturePictureCallback.onCompleted(null, imgFile.getName());
@@ -144,10 +164,16 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
-                        Log.e(TAG, "capturePhoto: " + exception.getMessage());
+                        Log.e(TAG, "takePicture: " + exception.getMessage());
                     }
                 }
         );
+    }
+
+    public void setLocation(Location loc) {
+        if (loc != null) {
+            this.location = loc;
+        }
     }
 
     @NonNull

@@ -1,7 +1,12 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -20,9 +25,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private CameraPreviewFragment fragment;
     private JSONObject options;
     private CallbackContext callbackContext;
+    private LocationManager locationManager;
+    private LocationListener mLocationCallback;
+
     private static final int containerViewId = 20;
     private static final int REQUEST_CODE_PERMISSIONS = 10;
-    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA};
+    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
 
     public SimpleCameraPreview() {
         super();
@@ -56,11 +64,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean allPermissionsGranted() {
-        for (String permission : REQUIRED_PERMISSIONS) {
-            return ContextCompat.checkSelfPermission(cordova.getContext(), permission) == PackageManager.PERMISSION_GRANTED;
+        for (int i = 0; i < REQUIRED_PERMISSIONS.length; i++) {
+            boolean isGranted = ContextCompat.checkSelfPermission(cordova.getContext(), REQUIRED_PERMISSIONS[i]) == PackageManager.PERMISSION_GRANTED;
+
+            if (!isGranted) {
+                return false;
+            }
         }
 
-        return false;
+        return true;
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
@@ -69,7 +81,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        fragment = new CameraPreviewFragment(() -> {
+        int lens;
+
+        try {
+            lens = options.getInt("camera");
+        } catch (JSONException e) {
+            lens = 1;
+        }
+
+        fragment = new CameraPreviewFragment(lens, () -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
             pluginResult.setKeepCallback(true);
             callbackContext.sendPluginResult(pluginResult);
@@ -94,6 +114,32 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
         });
+
+        mLocationCallback = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (fragment != null) {
+                    fragment.setLocation(location);
+                }
+            }
+
+            @Override
+            public void onStatusChanged(String s, int i, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String s) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String s) {
+
+            }
+        };
+
+        fetchLocation();
 
         return true;
     }
@@ -147,11 +193,39 @@ public class SimpleCameraPreview extends CordovaPlugin {
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
                 cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
             } else {
                 enable(this.options, this.callbackContext);
+                fetchLocation();
             }
         }
+    }
+
+    public void fetchLocation() {
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
+            if (locationManager == null) {
+                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+            }
+
+            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+            if (cachedLocation != null) {
+                fragment.setLocation(cachedLocation);
+            }
+
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        if (locationManager != null) {
+            locationManager.removeUpdates(mLocationCallback);
+        }
+
+        locationManager = null;
     }
 }

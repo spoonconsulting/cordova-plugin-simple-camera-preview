@@ -15,7 +15,7 @@
 
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.0.0" />
-   <framework src="androidx.exifinterface:exifinterface:1.0.0" />
+   <framework src="androidx.exifinterface:exifinterface:1.2.0" />
    <framework src="androidx.camera:camera-camera2:1.0.0-beta03" />
    <framework src="androidx.camera:camera-lifecycle:1.0.0-beta03" />
    <framework src="androidx.camera:camera-view:1.0.0-alpha10" />
