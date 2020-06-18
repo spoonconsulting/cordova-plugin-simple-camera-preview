@@ -29,31 +29,27 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-        try {
-            if (!allPermissionsGranted()) {
-                this.options = (JSONObject) args.get(0);
-                this.callbackContext = callbackContext;
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        if (!allPermissionsGranted()) {
+            this.options = (JSONObject) args.get(0);
+            this.callbackContext = callbackContext;
 
-                cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-                return false;
-            }
+            cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+            return false;
+        }
 
-            switch (action) {
-                case "open":
-                    return openCamera((JSONObject) args.get(0), callbackContext);
+        switch (action) {
+            case "enable":
+                return enable((JSONObject) args.get(0), callbackContext);
 
-                case "close":
-                    return closeCamera(callbackContext);
+            case "disable":
+                return disable(callbackContext);
 
-                case "capture":
-                    return capturePhoto(args.getBoolean(0), callbackContext);
+            case "capture":
+                return capture(args.getBoolean(0), callbackContext);
 
-                default:
-                    break;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            default:
+                break;
         }
 
         return false;
@@ -67,7 +63,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return false;
     }
 
-    private boolean openCamera(JSONObject options, CallbackContext callbackContext) {
+    private boolean enable(JSONObject options, CallbackContext callbackContext) {
         if (fragment != null) {
             callbackContext.error("Camera already started");
             return true;
@@ -110,7 +106,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean closeCamera(CallbackContext callbackContext) {
+    private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera already closed");
             return true;
@@ -129,13 +125,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean capturePhoto(boolean useFlash, CallbackContext callbackContext) {
+    private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
         }
 
-        fragment.capturePhoto(useFlash, (Exception e, String fileName) -> {
+        fragment.takePicture(useFlash, (Exception e, String fileName) -> {
             if (e == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
                 pluginResult.setKeepCallback(true);
@@ -154,7 +150,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
             } else {
-                openCamera(this.options, this.callbackContext);
+                enable(this.options, this.callbackContext);
             }
         }
     }

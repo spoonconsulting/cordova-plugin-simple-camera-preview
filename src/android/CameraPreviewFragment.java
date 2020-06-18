@@ -26,8 +26,8 @@ import androidx.lifecycle.LifecycleRegistry;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
@@ -35,15 +35,12 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     private Preview preview;
     private ImageCapture imageCapture;
     private Camera camera;
-    private File outputDirectory;
 
     private static final String TAG = "TAG";
-    private static final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
     private LifecycleRegistry lifecycleRegistry;
-
-    private CameraCallback mCameraCallback;
-    private CameraStartedCallback cameraStartedCallback;
+    private CameraCallback capturePictureCallback;
+    private CameraStartedCallback startCameraCallback;
 
     public CameraPreviewFragment() {
 
@@ -51,7 +48,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
     @SuppressLint("ValidFragment")
     public CameraPreviewFragment(CameraStartedCallback cameraStartedCallback) {
-        this.cameraStartedCallback = cameraStartedCallback;
+        this.startCameraCallback = cameraStartedCallback;
     }
 
     @Nullable
@@ -71,8 +68,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         containerView.addView(viewFinder);
         startCamera();
 
-        outputDirectory = getOutputDirectory();
-
         return containerView;
     }
 
@@ -84,45 +79,42 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        ProcessCameraProvider cameraProvider = null;
 
         try {
-            ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-            preview = new Preview.Builder().build();
-            imageCapture = new ImageCapture.Builder().build();
-            CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
-            cameraProvider.unbindAll();
-            camera = cameraProvider.bindToLifecycle(
-                    this::getLifecycle,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-
-            preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera.getCameraInfo()));
-
-            if (cameraStartedCallback != null) {
-                cameraStartedCallback.onCameraStarted();
-            }
-        } catch (Exception e) {
+            cameraProvider = cameraProviderFuture.get();
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
             Log.e(TAG, "startCamera: " + e.getMessage());
+        }
+
+        preview = new Preview.Builder().build();
+        imageCapture = new ImageCapture.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        cameraProvider.unbindAll();
+        camera = cameraProvider.bindToLifecycle(
+                this::getLifecycle,
+                cameraSelector,
+                preview,
+                imageCapture
+        );
+
+        preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera.getCameraInfo()));
+
+        if (startCameraCallback != null) {
+            startCameraCallback.onCameraStarted();
         }
     }
 
-    private File getOutputDirectory() {
-        File filesDir = getActivity().getExternalFilesDir("Camerax");
-        File cacheDir = getActivity().getExternalCacheDir();
-
-        return (filesDir != null && filesDir.exists()) ? filesDir : cacheDir;
-    }
-
-    public void capturePhoto(boolean useFlash, CameraCallback callback) {
-        this.mCameraCallback = callback;
+    public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
+        this.capturePictureCallback = takePictureCallback;
         camera.getCameraControl().enableTorch(useFlash);
 
+        UUID uuid = UUID.randomUUID();
+
         File imgFile = new File(
-                outputDirectory,
-                new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-                        .format(System.currentTimeMillis()) + ".jpg"
+                getActivity().getBaseContext().getFilesDir(),
+                uuid.toString() + ".jpg"
         );
 
         if (imageCapture == null) {
@@ -144,10 +136,10 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                         }
 
                         if (imgFile == null) {
-                            mCameraCallback.onCompleted(new Exception("Unable to save image"), null);
+                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
                         }
 
-                        mCameraCallback.onCompleted(null, imgFile.getName());
+                        capturePictureCallback.onCompleted(null, imgFile.getName());
                     }
 
                     @Override

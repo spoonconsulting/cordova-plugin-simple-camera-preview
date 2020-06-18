@@ -33,7 +33,7 @@ Starts the camera preview instance.
 <br>
 
 ```javascript
-SimpleCameraPreview.open(params, () => {
+SimpleCameraPreview.enable(params, () => {
   console.log("Camera opened");
 });
 ```
@@ -43,7 +43,7 @@ SimpleCameraPreview.open(params, () => {
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.close(params, () => {
+SimpleCameraPreview.disable(params, () => {
   console.log("Camera closed");
 });
 ```
