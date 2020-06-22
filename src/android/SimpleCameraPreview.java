@@ -3,12 +3,14 @@ package com.spoon.simplecamerapreview;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.FrameLayout;
 
 import androidx.core.content.ContextCompat;
@@ -27,6 +29,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private CallbackContext callbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
+    private ViewParent webViewParent;
 
     private static final int containerViewId = 20;
     private static final int REQUEST_CODE_PERMISSIONS = 10;
@@ -112,6 +115,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 cordova.getActivity().addContentView(containerView, containerLayoutParams);
             }
 
+            cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+            webView.getView().setBackgroundColor(Color.BLACK);
+            webViewParent = webView.getView().getParent();
+            webView.getView().bringToFront();
             cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
         });
 
@@ -161,11 +168,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commit();
         fragment = null;
 
-        cordova.getActivity().runOnUiThread(() -> {
-            webView.getView().bringToFront();
-            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-            ((ViewGroup) containerView.getParent()).removeView(containerView);
-        });
+        if (webViewParent != null) {
+            cordova.getActivity().runOnUiThread(() -> {
+                webView.getView().bringToFront();
+                webViewParent = null;
+                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                ((ViewGroup) containerView.getParent()).removeView(containerView);
+            });
+        }
 
         callbackContext.success();
         return true;
