@@ -166,6 +166,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         Log.e(TAG, "takePicture: " + exception.getMessage());
+                        capturePictureCallback.onCompleted(exception, null);
                     }
                 }
         );
