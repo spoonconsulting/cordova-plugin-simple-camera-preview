@@ -81,15 +81,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        int lens;
+        int cameraDirection;
 
         try {
-            lens = options.getInt("camera");
+            cameraDirection = options.getString("direction").equals("front") ? 0 : 1;
         } catch (JSONException e) {
-            lens = 1;
+            cameraDirection = 1;
         }
 
-        fragment = new CameraPreviewFragment(lens, () -> {
+        fragment = new CameraPreviewFragment(cameraDirection, () -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
             pluginResult.setKeepCallback(true);
             callbackContext.sendPluginResult(pluginResult);

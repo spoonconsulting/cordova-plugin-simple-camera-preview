@@ -42,7 +42,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     private CameraCallback capturePictureCallback;
     private CameraStartedCallback startCameraCallback;
     private Location location;
-    private int lensFacing;
+    private int direction;
 
     private static final String TAG = "TAG";
 
@@ -51,8 +51,8 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(int lens, CameraStartedCallback cameraStartedCallback) {
-        this.lensFacing = lens;
+    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback) {
+        this.direction = cameraDirection;
         this.startCameraCallback = cameraStartedCallback;
     }
 
@@ -71,7 +71,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         viewFinder = new PreviewView(getActivity());
         viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(viewFinder);
-        startCamera(lensFacing);
+        startCamera();
 
         return containerView;
     }
@@ -82,7 +82,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
     }
 
-    public void startCamera(int lensFacing) {
+    public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
 
@@ -96,8 +96,9 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder().build();
 
-
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacing).build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(direction)
+                .build();
 
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(

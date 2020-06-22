@@ -34,9 +34,10 @@ Starts the camera preview instance.
 
 ```javascript
 const params = {
-  // 0: lens facing front
-  // 1: lens facing back
-  camera: 0 
+  // front: camera lens facing front
+  // back: camera lens facing back
+  // default is back
+  direction: 'front' 
 }
 
 SimpleCameraPreview.enable(params, () => {
