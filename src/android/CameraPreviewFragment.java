@@ -79,7 +79,10 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     @Override
     public void onStart() {
         super.onStart();
-        lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+
+        if (lifecycleRegistry.getCurrentState() == Lifecycle.State.CREATED) {
+            lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+        }
     }
 
     public void startCamera() {
@@ -176,6 +179,17 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         if (loc != null) {
             this.location = loc;
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startCamera();
     }
 
     @NonNull
