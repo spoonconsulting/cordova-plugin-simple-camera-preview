@@ -22,36 +22,33 @@ html, body, .ion-app, .ion-content {
 
 
 ### Android
-Uses cameraX api
+Uses Google's CameraX API
 
 
 # Methods
 
-### open(options, successCallback, errorCallback)
+### enable(options, successCallback, errorCallback)
 
 Starts the camera preview instance.
 <br>
 
 ```javascript
 const params = {
-  // front: camera lens facing front
-  // back: camera lens facing back
-  // default is back
-  direction: 'front' 
+  direction: 'back' // Camera direction (front or back). Default is back.
 }
 
 SimpleCameraPreview.enable(params, () => {
-  console.log("Camera opened");
+  console.log("Camera enabled");
 });
 ```
 
-### close(successCallback, errorCallback)
+### disable(successCallback, errorCallback)
 
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
 SimpleCameraPreview.disable(params, () => {
-  console.log("Camera closed");
+  console.log("Camera disabled");
 });
 ```
 

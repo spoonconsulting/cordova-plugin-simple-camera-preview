@@ -32,7 +32,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private ViewParent webViewParent;
 
     private static final int containerViewId = 20;
-    private static final int REQUEST_CODE_PERMISSIONS = 10;
+    private static final int DIRECTION_FRONT = 0;
+    private static final int DIRECTION_BACK = 1;
+    private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
 
     public SimpleCameraPreview() {
@@ -87,9 +89,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
         int cameraDirection;
 
         try {
-            cameraDirection = options.getString("direction").equals("front") ? 0 : 1;
+            cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
         } catch (JSONException e) {
-            cameraDirection = 1;
+            cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
         }
 
         fragment = new CameraPreviewFragment(cameraDirection, () -> {
@@ -131,17 +133,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
 
             @Override
-            public void onStatusChanged(String s, int i, Bundle bundle) {
+            public void onStatusChanged(String provider, int status, Bundle extras) {
 
             }
 
             @Override
-            public void onProviderEnabled(String s) {
+            public void onProviderEnabled(String provider) {
 
             }
 
             @Override
-            public void onProviderDisabled(String s) {
+            public void onProviderDisabled(String provider) {
 
             }
         };

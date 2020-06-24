@@ -44,7 +44,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     private Location location;
     private int direction;
 
-    private static final String TAG = "TAG";
+    private static final String TAG = "SimpleCameraPreview";
 
     public CameraPreviewFragment() {
 
@@ -96,12 +96,11 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
             Log.e(TAG, "startCamera: " + e.getMessage());
         }
 
-        preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder().build();
-
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(direction)
                 .build();
+        preview = new Preview.Builder().build();
+        imageCapture = new ImageCapture.Builder().build();
 
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
