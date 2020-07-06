@@ -32,7 +32,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private CameraPreviewFragment fragment;
     private JSONObject options;
     private CallbackContext callbackContext;
-    private CallbackContext tmpCallbackContext;
+    private CallbackContext prevCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
@@ -231,13 +231,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
         fragment.takePicture(useFlash, cdvFilePath, (Exception e, String filePath, boolean convertState) -> {
             if (e == null) {
                 if (convertState == false) {
-                    tmpCallbackContext = callbackContext;
+                    prevCallbackContext = callbackContext;
                     cdvWebView.evaluateJavascript(String.format("javascript: convertPath('%s');", filePath), null);
                 } else {
                     PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, filePath);
                     pluginResult.setKeepCallback(true);
-                    tmpCallbackContext.sendPluginResult(pluginResult);
-                    tmpCallbackContext = null;
+                    prevCallbackContext.sendPluginResult(pluginResult);
+                    prevCallbackContext = null;
                 }
             } else {
                 callbackContext.error(e.getMessage());
