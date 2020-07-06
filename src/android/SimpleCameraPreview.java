@@ -1,17 +1,13 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
@@ -19,7 +15,6 @@ import android.view.ViewParent;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import org.apache.cordova.CallbackContext;
@@ -37,7 +32,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private CameraPreviewFragment fragment;
     private JSONObject options;
     private CallbackContext callbackContext;
-    private CallbackContext prevCallbackContext;
+    private CallbackContext tmpCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
@@ -236,13 +231,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
         fragment.takePicture(useFlash, cdvFilePath, (Exception e, String filePath, boolean convertState) -> {
             if (e == null) {
                 if (convertState == false) {
-                    prevCallbackContext = callbackContext;
+                    tmpCallbackContext = callbackContext;
                     cdvWebView.evaluateJavascript(String.format("javascript: convertPath('%s');", filePath), null);
                 } else {
                     PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, filePath);
                     pluginResult.setKeepCallback(true);
-                    prevCallbackContext.sendPluginResult(pluginResult);
-                    prevCallbackContext = null;
+                    tmpCallbackContext.sendPluginResult(pluginResult);
+                    tmpCallbackContext = null;
                 }
             } else {
                 callbackContext.error(e.getMessage());
@@ -255,49 +250,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            boolean permissionsGranted = true;
-            if (grantResults.length > 0) {
-                for (int result : grantResults) {
-                    if (result != PackageManager.PERMISSION_GRANTED) {
-                        permissionsGranted = false;
-                        break;
-                    }
-                }
-            }
-
-            if (!permissionsGranted) {
-                boolean permissionAlwaysDenied = false;
-
-                for (String permission : permissions) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), permission)) {
-                        cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-                    } else {
-                        if (ActivityCompat.checkSelfPermission(cordova.getContext(), permission) == PackageManager.PERMISSION_DENIED) {
-                            permissionAlwaysDenied = true;
-                        }
-                    }
-                }
-
-                if (permissionAlwaysDenied) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
-                    builder.setTitle("Permissions required")
-                            .setMessage("Go to app info > permissions and allow them")
-                            .setCancelable(false)
-                            .setPositiveButton("App info", ((dialogInterface, i) -> {
-                                Intent intent = new Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", cordova.getActivity().getPackageName(), null)
-                                );
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                cordova.getActivity().startActivity(intent);
-                                cordova.getActivity().finish();
-                            }))
-                            .setNegativeButton("Cancel", ((dialogInterface, i) -> {
-                                cordova.getActivity().finish();
-                            }))
-                            .create()
-                            .show();
-                }
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+                cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
             } else {
                 enable(this.options, this.callbackContext);
                 fetchLocation();
