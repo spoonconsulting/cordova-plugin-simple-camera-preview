@@ -22,6 +22,7 @@
 
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
+    <source-file src="src/android/assets/cdvfile.js" target-dir="assets/cdvfile" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="SimpleCameraPreview">

@@ -3,6 +3,7 @@ package com.spoon.simplecamerapreview;
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -117,7 +118,12 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         }
     }
 
-    public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
+    public void takePicture(boolean useFlash, String cdvFilePath, CameraCallback takePictureCallback) {
+        if (cdvFilePath != null) {
+            takePictureCallback.onCompleted(null, cdvFilePath, true);
+            return;
+        }
+
         this.capturePictureCallback = takePictureCallback;
         camera.getCameraControl().enableTorch(useFlash);
 
@@ -147,7 +153,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                         }
 
                         if (imgFile == null) {
-                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
+                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null, false);
                         } else {
                             try {
                                 ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
@@ -162,13 +168,13 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                             }
                         }
 
-                        capturePictureCallback.onCompleted(null, imgFile.getName());
+                        capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString(), false);
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         Log.e(TAG, "takePicture: " + exception.getMessage());
-                        capturePictureCallback.onCompleted(exception, null);
+                        capturePictureCallback.onCompleted(exception, null, false);
                     }
                 }
         );
@@ -198,7 +204,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     }
 
     interface CameraCallback {
-        void onCompleted(Exception e, String filename);
+        void onCompleted(Exception e, String filename, boolean convertState);
     }
 
     interface CameraStartedCallback {
