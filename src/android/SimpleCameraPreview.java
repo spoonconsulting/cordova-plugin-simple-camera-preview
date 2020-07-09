@@ -8,11 +8,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.webkit.WebView;
 import android.widget.FrameLayout;
 
 import androidx.core.content.ContextCompat;
@@ -24,19 +22,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 public class SimpleCameraPreview extends CordovaPlugin {
 
     private CameraPreviewFragment fragment;
     private JSONObject options;
     private CallbackContext callbackContext;
-    private CallbackContext prevCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
-    private WebView cdvWebView;
 
     private static final int containerViewId = 20;
     private static final int DIRECTION_FRONT = 0;
@@ -67,7 +60,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 return disable(callbackContext);
 
             case "capture":
-                return capture((JSONObject) args.get(0), callbackContext);
+                return capture(args.getBoolean(0), callbackContext);
 
             default:
                 break;
@@ -93,27 +86,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error("Camera already started");
             return true;
         }
-
-        cdvWebView = (WebView) webView.getView();
-        cordova.getActivity().runOnUiThread(() -> {
-            try {
-                InputStream inputStream = cordova.getContext().getAssets().open("cdvfile.js");
-                byte[] buffer = new byte[inputStream.available()];
-                inputStream.read(buffer);
-                inputStream.close();
-
-                String encoded = Base64.encodeToString(buffer, Base64.NO_WRAP);
-                cdvWebView.loadUrl("javascript:(function() {" +
-                        "var parent = document.getElementsByTagName('head').item(0);" +
-                        "var script = document.createElement('script');" +
-                        "script.type = 'text/javascript';" +
-                        "script.innerHTML = window.atob('" + encoded + "');" +
-                        "parent.appendChild(script)" +
-                        "})()");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
 
         int cameraDirection;
 
@@ -212,33 +184,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean capture(JSONObject options, CallbackContext callbackContext) {
+    private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
         }
 
-        boolean useFlash = false;
-        String cdvFilePath = null;
-
-        try {
-            useFlash = options.getBoolean("flash");
-            cdvFilePath = options.getString("cdvFilePath");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        fragment.takePicture(useFlash, cdvFilePath, (Exception e, String filePath, boolean convertState) -> {
+        fragment.takePicture(useFlash, (Exception e, String nativePath) -> {
             if (e == null) {
-                if (convertState == false) {
-                    prevCallbackContext = callbackContext;
-                    cdvWebView.evaluateJavascript(String.format("javascript: convertPath('%s');", filePath), null);
-                } else {
-                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, filePath);
-                    pluginResult.setKeepCallback(true);
-                    prevCallbackContext.sendPluginResult(pluginResult);
-                    prevCallbackContext = null;
-                }
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, nativePath);
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
             } else {
                 callbackContext.error(e.getMessage());
             }

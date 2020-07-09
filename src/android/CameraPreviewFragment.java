@@ -118,12 +118,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         }
     }
 
-    public void takePicture(boolean useFlash, String cdvFilePath, CameraCallback takePictureCallback) {
-        if (cdvFilePath != null) {
-            takePictureCallback.onCompleted(null, cdvFilePath, true);
-            return;
-        }
-
+    public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         this.capturePictureCallback = takePictureCallback;
         camera.getCameraControl().enableTorch(useFlash);
 
@@ -153,7 +148,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                         }
 
                         if (imgFile == null) {
-                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null, false);
+                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
                         } else {
                             try {
                                 ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
@@ -168,13 +163,13 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                             }
                         }
 
-                        capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString(), false);
+                        capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         Log.e(TAG, "takePicture: " + exception.getMessage());
-                        capturePictureCallback.onCompleted(exception, null, false);
+                        capturePictureCallback.onCompleted(exception, null);
                     }
                 }
         );
@@ -204,7 +199,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     }
 
     interface CameraCallback {
-        void onCompleted(Exception e, String filename, boolean convertState);
+        void onCompleted(Exception e, String nativePath);
     }
 
     interface CameraStartedCallback {
