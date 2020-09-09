@@ -2,7 +2,7 @@ var exec = require('cordova/exec');
 var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function() {};
 
-SimpleCameraPreview.init = function(options, onSuccess, onError) {
+SimpleCameraPreview.init = function(onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "pluginInitialize", []);
 };
 
