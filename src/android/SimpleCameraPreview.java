@@ -56,6 +56,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return false;
     }
 
+    private void pluginInitialize() {
+    }
+
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
