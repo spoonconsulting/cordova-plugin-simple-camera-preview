@@ -58,7 +58,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
          try {
-            if (true) { throw new Error("test"); }
+            if (true) { throw new Exception("test"); }
         } catch(Exception e) {
             callbackContext.error(e.getMessage());
         }
