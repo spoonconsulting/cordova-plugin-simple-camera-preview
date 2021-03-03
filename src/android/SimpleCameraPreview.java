@@ -57,6 +57,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
+         try {
+            if (true) { throw new Error("test"); }
+        } catch(Exception e) {
+            callbackContext.error(e);
+        }
         Log.d(TAG, "start camera action");
         if (fragment != null) {
             callbackContext.error("Camera already started");
