@@ -60,7 +60,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
          try {
             if (true) { throw new Error("test"); }
         } catch(Exception e) {
-            callbackContext.error(e);
+            callbackContext.error(e.getMessage());
         }
         Log.d(TAG, "start camera action");
         if (fragment != null) {
