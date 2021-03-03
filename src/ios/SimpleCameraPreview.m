@@ -9,12 +9,6 @@
 
 @implementation SimpleCameraPreview
 
--(void) pluginInitialize{
-    // start as transparent
-    self.webView.opaque = NO;
-    self.webView.backgroundColor = [UIColor clearColor];
-}
-
 - (void) enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
@@ -22,6 +16,11 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
+
+    // start as transparent
+    self.webView.opaque = NO;
+    self.webView.backgroundColor = [UIColor clearColor];
+    
     //required to get gps exif
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
@@ -34,7 +33,7 @@
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    [self setSize:command];
+    [self _setSize:command];
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     self.viewController.view.backgroundColor = [UIColor blackColor];
@@ -50,42 +49,43 @@
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
-    NSLog(@"disable");
-    [self.cameraRenderController.view removeFromSuperview];
-    [self.cameraRenderController removeFromParentViewController];
-    self.cameraRenderController = nil;
-    
     [self.commandDelegate runInBackground:^{
-        CDVPluginResult *pluginResult;
         if(self.sessionManager != nil) {
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
             }
-            
             for(AVCaptureOutput *output in self.sessionManager.session.outputs) {
                 [self.sessionManager.session removeOutput:output];
             }
-            
             [self.sessionManager.session stopRunning];
             self.sessionManager = nil;
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [self.cameraRenderController.view removeFromSuperview];
+              [self.cameraRenderController removeFromParentViewController];
+              self.cameraRenderController = nil;
+              [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+            });
         }
         else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
     }];
 }
 
--(void) setSize:(CDVInvokedUrlCommand*)command{
+-(void) setSize:(CDVInvokedUrlCommand*)command {
+    [self _setSize:command];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+-(void)_setSize:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     float x = ((NSNumber*)config[@"x"]).floatValue;
     float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
@@ -173,7 +173,9 @@
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
         if (error) {
             NSLog(@"%@", error);
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Error taking picture"];
+            NSString* errorDescription =  error.description ? error.description : @"";
+            errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         } else {
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
