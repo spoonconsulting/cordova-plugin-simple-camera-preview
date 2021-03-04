@@ -74,6 +74,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    try {
+                        String a = null;
+                        a.toString();
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                        callbackContext.error(e.getMessage());
+                        return;
+                    }
                     DisplayMetrics metrics = new DisplayMetrics();
                     cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
                     int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
@@ -161,14 +169,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean capture(Boolean useFlash, CallbackContext callbackContext) {
-        try {
-            String a = null;
-            a.toString();
-        } catch(Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return true;
-        }
         fragment.takePicture(useFlash, (Exception err, String fileName) -> {
             if (err == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
