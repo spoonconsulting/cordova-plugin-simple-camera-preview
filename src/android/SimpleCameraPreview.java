@@ -57,74 +57,77 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
-        try {
-            Log.d(TAG, "start camera action");
-            if (fragment != null) {
-                callbackContext.error("Camera already started");
-                return true;
+        Log.d(TAG, "start camera action");
+        if (fragment != null) {
+            callbackContext.error("Camera already started");
+            return true;
+        }
+
+        fragment = new CameraPreviewFragment(new CameraStartedCallBack() {
+            @Override
+            public void onCameraStarted() {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
             }
-            fragment = new CameraPreviewFragment(new CameraStartedCallBack() {
-                @Override
-                public void onCameraStarted() {
-                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
-                    pluginResult.setKeepCallback(true);
-                    callbackContext.sendPluginResult(pluginResult);
-                }
-            });
-            cordova.getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        DisplayMetrics metrics = new DisplayMetrics();
-                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+        });
 
-                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                        if (containerView == null) {
-                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                            containerView.setId(containerViewId);
-                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                            containerLayoutParams.setMargins(x, y, 0, 0);
-                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
-                        }
-                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                        webView.getView().setBackgroundColor(0x00000000);
-                        webViewParent = webView.getView().getParent();
-                        webView.getView().bringToFront();
-                        cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
-                    } catch(Exception e) {
-                        e.printStackTrace();
-                        callbackContext.error(e.getMessage());
-                        return;
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    DisplayMetrics metrics = new DisplayMetrics();
+                    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                    int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                    int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                    int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                    int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+
+                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                    if (containerView == null) {
+                        containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                        containerView.setId(containerViewId);
+                        FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                        containerLayoutParams.setMargins(x, y, 0, 0);
+                        cordova.getActivity().addContentView(containerView, containerLayoutParams);
                     }
+                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                    webView.getView().setBackgroundColor(0x00000000);
+                    webViewParent = webView.getView().getParent();
+                    webView.getView().bringToFront();
+                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    callbackContext.error(e.getMessage());
+                    return;
                 }
-            });
+            }
+        });
 
-            mLocationCallback = new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    if (fragment != null)
-                        fragment.setLocation(location);
-                }
+        mLocationCallback = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (fragment != null)
+                    fragment.setLocation(location);
+            }
 
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
 
-                }
+            }
 
-                @Override
-                public void onProviderEnabled(String provider) {
+            @Override
+            public void onProviderEnabled(String provider) {
 
-                }
+            }
 
-                @Override
-                public void onProviderDisabled(String provider) {
+            @Override
+            public void onProviderDisabled(String provider) {
 
-                }
-            };
+            }
+        };
+
+        try {
             if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))
                 fetchLocation();
             else
@@ -156,13 +159,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     public void fetchLocation() {
-        if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            if (locationManager == null)
-                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
-            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if (cachedLocation != null)
-                fragment.setLocation(cachedLocation);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
+        try {
+            if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (locationManager == null)
+                    locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+                Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                if (cachedLocation != null)
+                    fragment.setLocation(cachedLocation);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
+            }
+        } catch(Exception e) {
+            throw e;
         }
     }
 
@@ -181,18 +188,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     private boolean disable(CallbackContext callbackContext) {
-        try {
-            if (webViewParent != null) {
-                cordova.getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+        if (webViewParent != null) {
+            cordova.getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
                         webView.getView().bringToFront();
                         webViewParent = null;
                         FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                         ((ViewGroup) containerView.getParent()).removeView(containerView);
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                        callbackContext.error(e.getMessage());
+                        return false;
                     }
-                });
-            }
+
+                }
+            });
+        }
+        try {
             fragment.disableCamera();
             FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
             fragmentTransaction.remove(fragment);
@@ -204,7 +218,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch(Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
-            return false;
         }
     }
 
