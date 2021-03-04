@@ -74,14 +74,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        String a = null;
-                        a.toString();
-                    } catch(Exception e) {
-                        e.printStackTrace();
-                        callbackContext.error(e.getMessage());
-                        return;
-                    }
+                    String a = null;
+                    a.toString();
                     DisplayMetrics metrics = new DisplayMetrics();
                     cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
                     int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
