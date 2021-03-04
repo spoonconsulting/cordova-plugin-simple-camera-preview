@@ -3,12 +3,6 @@ var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function() {};
 
 SimpleCameraPreview.enable = function(options, onSuccess, onError) {
-    console.log('IN ENABLE ###########################');
-    console.log('IN ENABLE ###########################');
-    console.log('IN ENABLE ###########################');
-    console.log(onError)
-    console.log('IN ENABLE ###########################');
-    console.log('IN ENABLE ###########################');
     exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
