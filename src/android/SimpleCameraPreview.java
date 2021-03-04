@@ -74,28 +74,32 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    String a = null;
-                    a.toString();
-                    DisplayMetrics metrics = new DisplayMetrics();
-                    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                    int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                    int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                    int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                    int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+                    try {
+                        DisplayMetrics metrics = new DisplayMetrics();
+                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
-                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                    if (containerView == null) {
-                        containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                        containerView.setId(containerViewId);
-                        FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                        containerLayoutParams.setMargins(x, y, 0, 0);
-                        cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                        if (containerView == null) {
+                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                            containerView.setId(containerViewId);
+                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                            containerLayoutParams.setMargins(x, y, 0, 0);
+                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        }
+                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                        webView.getView().setBackgroundColor(0x00000000);
+                        webViewParent = webView.getView().getParent();
+                        webView.getView().bringToFront();
+                        cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                        callbackContext.error(e.getMessage());
+                        return;
                     }
-                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                    webView.getView().setBackgroundColor(0x00000000);
-                    webViewParent = webView.getView().getParent();
-                    webView.getView().bringToFront();
-                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
                 }
             });
 
@@ -129,7 +133,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch(Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
-            return true;
+            return false;
         }
     }
     
@@ -177,25 +181,31 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     private boolean disable(CallbackContext callbackContext) {
-        if (webViewParent != null) {
-            cordova.getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    webView.getView().bringToFront();
-                    webViewParent = null;
-                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                    ((ViewGroup) containerView.getParent()).removeView(containerView);
-                }
-            });
-        }
-        fragment.disableCamera();
-        FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
-        fragmentTransaction.remove(fragment);
-        fragmentTransaction.commit();
-        fragment = null;
+        try {
+            if (webViewParent != null) {
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        webView.getView().bringToFront();
+                        webViewParent = null;
+                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                        ((ViewGroup) containerView.getParent()).removeView(containerView);
+                    }
+                });
+            }
+            fragment.disableCamera();
+            FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
+            fragmentTransaction.remove(fragment);
+            fragmentTransaction.commit();
+            fragment = null;
 
-        callbackContext.success();
-        return true;
+            callbackContext.success();
+            return true;
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
     }
 
     @Override
