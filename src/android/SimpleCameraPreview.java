@@ -95,7 +95,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     webView.getView().setBackgroundColor(0x00000000);
                     webViewParent = webView.getView().getParent();
                     webView.getView().bringToFront();
-                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
+                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                 } catch(Exception e) {
                     e.printStackTrace();
                     callbackContext.error(e.getMessage());
