@@ -99,7 +99,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 } catch(Exception e) {
                     e.printStackTrace();
                     callbackContext.error(e.getMessage());
-                    return;
                 }
             }
         });
@@ -200,7 +199,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     } catch(Exception e) {
                         e.printStackTrace();
                         callbackContext.error(e.getMessage());
-                        return false;
                     }
 
                 }
@@ -218,6 +216,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch(Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
+            return false;
         }
     }
 
