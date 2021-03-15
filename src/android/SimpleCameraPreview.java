@@ -62,6 +62,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error("Camera already started");
             return true;
         }
+
         fragment = new CameraPreviewFragment(new CameraStartedCallBack() {
             @Override
             public void onCameraStarted() {
@@ -70,29 +71,35 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 callbackContext.sendPluginResult(pluginResult);
             }
         });
+
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                DisplayMetrics metrics = new DisplayMetrics();
-                cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+                try {
+                    DisplayMetrics metrics = new DisplayMetrics();
+                    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                    int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                    int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                    int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                    int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
-                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                if (containerView == null) {
-                    containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                    containerView.setId(containerViewId);
-                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                    containerLayoutParams.setMargins(x, y, 0, 0);
-                    cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                    if (containerView == null) {
+                        containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                        containerView.setId(containerViewId);
+                        FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                        containerLayoutParams.setMargins(x, y, 0, 0);
+                        cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                    }
+                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                    webView.getView().setBackgroundColor(0x00000000);
+                    webViewParent = webView.getView().getParent();
+                    webView.getView().bringToFront();
+                    cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    callbackContext.error(e.getMessage());
                 }
-                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                webView.getView().setBackgroundColor(0x00000000);
-                webViewParent = webView.getView().getParent();
-                webView.getView().bringToFront();
-                cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
             }
         });
 
@@ -118,11 +125,18 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             }
         };
-        if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))
-            fetchLocation();
-        else
-            cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
-        return true;
+
+        try {
+            if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))
+                fetchLocation();
+            else
+                cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
+            return true;
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
     }
     
     private int getIntegerFromOptions(JSONObject options, String key){
@@ -173,21 +187,33 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    webView.getView().bringToFront();
-                    webViewParent = null;
-                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                    ((ViewGroup) containerView.getParent()).removeView(containerView);
+                    try {
+                        webView.getView().bringToFront();
+                        webViewParent = null;
+                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                        ((ViewGroup) containerView.getParent()).removeView(containerView);
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                        callbackContext.error(e.getMessage());
+                    }
+
                 }
             });
         }
-        fragment.disableCamera();
-        FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
-        fragmentTransaction.remove(fragment);
-        fragmentTransaction.commit();
-        fragment = null;
+        try {
+            fragment.disableCamera();
+            FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
+            fragmentTransaction.remove(fragment);
+            fragmentTransaction.commit();
+            fragment = null;
 
-        callbackContext.success();
-        return true;
+            callbackContext.success();
+            return true;
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
     }
 
     @Override
