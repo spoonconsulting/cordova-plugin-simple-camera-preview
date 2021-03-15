@@ -158,17 +158,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     public void fetchLocation() {
-        try {
-            if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                if (locationManager == null)
-                    locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
-                Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                if (cachedLocation != null)
-                    fragment.setLocation(cachedLocation);
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
-            }
-        } catch(Exception e) {
-            throw e;
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (locationManager == null)
+                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if (cachedLocation != null)
+                fragment.setLocation(cachedLocation);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
         }
     }
 
