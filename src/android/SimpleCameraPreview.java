@@ -212,7 +212,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             fragment.disableCamera();
             FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
             fragmentTransaction.remove(fragment);
-            fragmentTransaction.commit();
+            fragmentTransaction.commitAllowingStateLoss();
             fragment = null;
 
             callbackContext.success();
