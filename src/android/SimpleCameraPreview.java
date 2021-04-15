@@ -200,7 +200,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             }
         };
-        RunnableFuture<Void> removeViewTask = new FutureTask<>(myRunnable, null);
+        RunnableFuture<Void> removeViewTask = new FutureTask<>(removeViewRunnable, null);
 
         if (webViewParent != null) {
             cordova.getActivity().runOnUiThread(removeViewTask);
