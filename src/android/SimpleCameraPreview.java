@@ -185,19 +185,20 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     private boolean disable(CallbackContext callbackContext) {
-        Runnable removeViewRunnable = new Runnable() {
-            @Override
-            public void run() {
-                webView.getView().bringToFront();
-                webViewParent = null;
-                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                ((ViewGroup) containerView.getParent()).removeView(containerView);
-            }
-        };
-        RunnableFuture<Void> removeViewTask = new FutureTask<>(removeViewRunnable, null);
-
         try {
             if (webViewParent != null) {
+                RunnableFuture<Void> removeViewTask = new FutureTask<>(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.getView().bringToFront();
+                            webViewParent = null;
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            ((ViewGroup) containerView.getParent()).removeView(containerView);
+                        }
+                    },
+                    null
+                );
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
             }
