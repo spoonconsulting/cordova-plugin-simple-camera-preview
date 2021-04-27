@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 
 public class SimpleCameraPreview extends CordovaPlugin {
 
@@ -183,28 +185,27 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     private boolean disable(CallbackContext callbackContext) {
-        if (webViewParent != null) {
-            cordova.getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        webView.getView().bringToFront();
-                        webViewParent = null;
-                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                        ((ViewGroup) containerView.getParent()).removeView(containerView);
-                    } catch(Exception e) {
-                        e.printStackTrace();
-                        callbackContext.error(e.getMessage());
-                    }
-
-                }
-            });
-        }
         try {
+            if (webViewParent != null) {
+                RunnableFuture<Void> removeViewTask = new FutureTask<>(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.getView().bringToFront();
+                            webViewParent = null;
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            ((ViewGroup) containerView.getParent()).removeView(containerView);
+                        }
+                    },
+                    null
+                );
+                cordova.getActivity().runOnUiThread(removeViewTask);
+                removeViewTask.get();
+            }
             fragment.disableCamera();
             FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
             fragmentTransaction.remove(fragment);
-            fragmentTransaction.commit();
+            fragmentTransaction.commitAllowingStateLoss();
             fragment = null;
 
             callbackContext.success();
