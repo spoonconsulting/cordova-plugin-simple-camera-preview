@@ -74,7 +74,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         });
 
         try {
-            RunnableFuture<Void> removeViewTask = new FutureTask<>(
+            RunnableFuture<Void> addViewTask = new FutureTask<>(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -102,8 +102,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 },
                 null
             );
-            cordova.getActivity().runOnUiThread(removeViewTask);
-            removeViewTask.get();
+            cordova.getActivity().runOnUiThread(addViewTask);
+            addViewTask.get();
 
             mLocationCallback = new LocationListener() {
                 @Override
