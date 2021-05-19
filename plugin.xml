@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin id="@spoonconsulting/cordova-plugin-simple-camera-preview" version="1.0.5" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="@spoonconsulting/cordova-plugin-simple-camera-preview" version="1.0.6" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
 
   <name>cordova-plugin-simple-camera-preview</name>
   <description>Cordova plugin that allows camera interaction from HTML code. Show camera preview popup on top of the HTML.</description>
@@ -38,7 +38,7 @@
     <config-file target="res/values/strings.xml" parent="/*">
         <string name="camera_error">This device does not support Camera2 API</string>
     </config-file>
-      
+
   </platform>
 
   <platform name="ios">
@@ -47,7 +47,7 @@
         <param name="ios-package" value="SimpleCameraPreview" onload="true" />
       </feature>
     </config-file>
-    
+
     <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
       <string>This App requires camera access to let you take the pictures that you would like to upload.</string>
     </config-file>
