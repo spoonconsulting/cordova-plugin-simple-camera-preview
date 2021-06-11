@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin 
+    xmlns="http://apache.org/cordova/ns/plugins/1.0" 
+    xmlns:android="http://schemas.android.com/apk/res/android" 
+	id="cordova-plugin-simple-camera-preview-tests"
+    version="0.0.1">
+    
+    <name>cordova-plugin-simple-camera-preview tests</name>
+    <description>Cordova plugin for simple camera preview</description>
+    <license>Apache 2.0</license>
+    <repo>https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview.git</repo>
+    <js-module src="tests.js" name="tests"></js-module>
+    <dependency id="cordova-plugin-file" version="6.0.2" />
+</plugin>

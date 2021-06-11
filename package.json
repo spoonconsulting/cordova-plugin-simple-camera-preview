@@ -2,6 +2,13 @@
   "name": "cordova-plugin-simple-camera-preview",
   "version": "1.0.0",
   "description": "Cordova plugin that allows camera interaction from HTML code for showing camera preview below or on top of the HTML.",
+  "cordova": {
+    "id": "cordova-plugin-simple-camera-preview",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
   "keywords": [
     "cordova",
     "phonegap",
@@ -16,6 +23,12 @@
     "camera-preview",
     "preview"
   ],
+  "scripts": {
+    "lint": "npx standard tests/tests.js && npx standard www/SimpleCameraPreview.js",
+    "cordova-paramedic": "cordova-paramedic",
+    "test:android": "cordova-paramedic --platform android@8.0 --plugin . --cleanUpAfterRun",
+    "test:ios": "cordova-paramedic --platform ios --plugin . --cleanUpAfterRun"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview"
@@ -27,5 +40,18 @@
   },
   "license": "Apache 2.0",
   "homepage": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview",
-  "devDependencies": {}
+  "engines": {
+    "cordova": ">=8.0.0"
+  },
+  "standard": {
+    "env": [
+      "mocha",
+      "commonjs",
+      "jasmine"
+    ]
+  },
+  "devDependencies": {
+    "cordova-paramedic": "git+https://github.com/apache/cordova-paramedic.git",
+    "standard": "^14.0.2"
+  }
 }

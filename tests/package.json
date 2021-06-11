@@ -1,0 +1,14 @@
+{
+    "name": "tests",
+    "version": "0.0.1",
+    "description": "tests for cordova-plugin-simple-camera-preview",
+    "cordova": {
+        "id": "cordova-plugin-simple-camera-preview-tests",
+        "platforms": []
+    },
+    "keywords": [
+        "ecosystem:cordova"
+    ],
+    "author": "Spoon Consulting Ltd",
+    "license": "Apache-2.0"
+}
