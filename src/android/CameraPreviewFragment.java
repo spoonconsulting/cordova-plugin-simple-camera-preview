@@ -130,7 +130,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
         if (imageCapture == null) {
             imageCapture = new ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                     .setTargetRotation(getActivity().getWindowManager().getDefaultDisplay().getRotation())
                     .build();
         }

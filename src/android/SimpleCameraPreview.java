@@ -181,6 +181,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    private boolean capture(boolean useFlash, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        fragment.takePicture(useFlash, (Exception e, String fileName) -> {
+            if (e == null) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
+            } else {
+                callbackContext.error(e.getMessage());
+            }
+        });
+
+        return true;
+    }
+
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera already closed");
@@ -219,25 +238,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean capture(boolean useFlash, CallbackContext callbackContext) {
-        if (fragment == null) {
-            callbackContext.error("Camera is closed");
-            return true;
-        }
-
-        fragment.takePicture(useFlash, (Exception e, String fileName) -> {
-            if (e == null) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
-                pluginResult.setKeepCallback(true);
-                callbackContext.sendPluginResult(pluginResult);
-            } else {
-                callbackContext.error(e.getMessage());
-            }
-        });
-
-        return true;
-    }
-
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
@@ -269,11 +269,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
     @Override
     public void onDestroy() {
         super.onDestroy();
-
         if (locationManager != null) {
             locationManager.removeUpdates(mLocationCallback);
         }
-
         locationManager = null;
     }
 }
