@@ -104,7 +104,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         });
 
         try {
-
             RunnableFuture<Void> addViewTask = new FutureTask<>(
                 new Runnable() {
                     @Override
@@ -124,7 +123,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                             containerLayoutParams.setMargins(x, y, 0, 0);
                             cordova.getActivity().addContentView(containerView, containerLayoutParams);
                         }
-
                         cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
                         webView.getView().setBackgroundColor(0x00000000);
                         webViewParent = webView.getView().getParent();
@@ -134,8 +132,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 },
                 null
             );
-
-
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
 
@@ -165,7 +161,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             fetchLocation();
             return true;
-
         } catch (Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
