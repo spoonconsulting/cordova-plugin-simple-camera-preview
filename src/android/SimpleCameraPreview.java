@@ -187,16 +187,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        fragment.takePicture(useFlash, (Exception e, String fileName) -> {
-            if (e == null) {
+        fragment.takePicture(useFlash, (Exception err, String fileName) -> {
+            if (err == null) {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
                 pluginResult.setKeepCallback(true);
                 callbackContext.sendPluginResult(pluginResult);
             } else {
-                callbackContext.error(e.getMessage());
+                callbackContext.error(err.getMessage());
             }
         });
-
         return true;
     }
 
