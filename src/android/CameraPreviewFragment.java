@@ -3,6 +3,7 @@ package com.spoon.simplecamerapreview;
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,7 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 interface CameraCallback {
-    void onCompleted(Exception err, String filename);
+    void onCompleted(Exception err, String nativePath);
 }
 
 interface CameraStartedCallback {
@@ -170,7 +171,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                             }
                         }
 
-                        capturePictureCallback.onCompleted(null, imgFile.getName());
+                        capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
                     }
 
                     @Override
