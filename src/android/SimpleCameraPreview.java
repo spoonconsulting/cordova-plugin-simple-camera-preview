@@ -181,6 +181,34 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+                cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+            } else {
+                enable(this.options, this.callbackContext);
+                fetchLocation();
+            }
+        }
+    }
+
+    public void fetchLocation() {
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
+            if (locationManager == null) {
+                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+            }
+
+            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+            if (cachedLocation != null) {
+                fragment.setLocation(cachedLocation);
+            }
+
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
+        }
+    }
+
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
@@ -231,34 +259,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
-                cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-            } else {
-                enable(this.options, this.callbackContext);
-                fetchLocation();
-            }
-        }
-    }
-
-    public void fetchLocation() {
-        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
-            if (locationManager == null) {
-                locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
-            }
-
-            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-            if (cachedLocation != null) {
-                fragment.setLocation(cachedLocation);
-            }
-
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
         }
     }
 
