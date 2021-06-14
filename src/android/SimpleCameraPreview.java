@@ -22,6 +22,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
+
 public class SimpleCameraPreview extends CordovaPlugin {
 
     private CameraPreviewFragment fragment;
@@ -100,57 +103,74 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.sendPluginResult(pluginResult);
         });
 
-        cordova.getActivity().runOnUiThread(() -> {
-            DisplayMetrics metrics = new DisplayMetrics();
-            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-            int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-            int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-            int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+        try {
 
-            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-            if (containerView == null) {
-                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                containerView.setId(containerViewId);
-                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                containerLayoutParams.setMargins(x, y, 0, 0);
-                cordova.getActivity().addContentView(containerView, containerLayoutParams);
-            }
+            RunnableFuture<Void> addViewTask = new FutureTask<>(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        DisplayMetrics metrics = new DisplayMetrics();
+                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
-            cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-            webView.getView().setBackgroundColor(0x00000000);
-            webViewParent = webView.getView().getParent();
-            webView.getView().bringToFront();
-            cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commit();
-        });
+                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                        if (containerView == null) {
+                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                            containerView.setId(containerViewId);
+                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                            containerLayoutParams.setMargins(x, y, 0, 0);
+                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        }
 
-        mLocationCallback = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                if (fragment != null) {
-                    fragment.setLocation(location);
+                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                        webView.getView().setBackgroundColor(0x00000000);
+                        webViewParent = webView.getView().getParent();
+                        webView.getView().bringToFront();
+                        cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
+                    }
+                },
+                null
+            );
+
+
+            cordova.getActivity().runOnUiThread(addViewTask);
+            addViewTask.get();
+
+            mLocationCallback = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    if (fragment != null) {
+                        fragment.setLocation(location);
+                    }
                 }
-            }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
+                }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+                @Override
+                public void onProviderEnabled(String provider) {
 
-            }
+                }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onProviderDisabled(String provider) {
 
-            }
-        };
+                }
+            };
 
-        fetchLocation();
+            fetchLocation();
+            return true;
 
-        return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
     }
 
     private int getIntegerFromOptions(JSONObject options, String key) {
@@ -167,20 +187,36 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commit();
-        fragment = null;
+        try {
+            cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
+            fragment = null;
 
-        if (webViewParent != null) {
-            cordova.getActivity().runOnUiThread(() -> {
-                webView.getView().bringToFront();
-                webViewParent = null;
-                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                ((ViewGroup) containerView.getParent()).removeView(containerView);
-            });
+            if (webViewParent != null) {
+
+                RunnableFuture<Void> removeViewTask = new FutureTask<>(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.getView().bringToFront();
+                            webViewParent = null;
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            ((ViewGroup) containerView.getParent()).removeView(containerView);
+                        }
+                    },
+                    null
+                );
+                cordova.getActivity().runOnUiThread(removeViewTask);
+                removeViewTask.get();
+            }
+
+            callbackContext.success();
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
         }
-
-        callbackContext.success();
-        return true;
     }
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
