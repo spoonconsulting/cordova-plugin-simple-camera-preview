@@ -119,7 +119,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                 imageCapture
         );
 
-        preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera.getCameraInfo()));
+        preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
             startCameraCallback.onCameraStarted();
