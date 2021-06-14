@@ -207,11 +207,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
 
         try {
-            cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
-            fragment = null;
-
             if (webViewParent != null) {
-
                 RunnableFuture<Void> removeViewTask = new FutureTask<>(
                     new Runnable() {
                         @Override
@@ -227,10 +223,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
             }
+            cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
+            fragment = null;
 
             callbackContext.success();
             return true;
-
         } catch (Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
