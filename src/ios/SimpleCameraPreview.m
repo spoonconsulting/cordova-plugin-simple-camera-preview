@@ -9,12 +9,6 @@
 
 @implementation SimpleCameraPreview
 
--(void) pluginInitialize{
-    // start as transparent
-    self.webView.opaque = NO;
-    self.webView.backgroundColor = [UIColor clearColor];
-}
-
 - (void) enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
@@ -22,6 +16,11 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
+
+    // start as transparent
+    self.webView.opaque = NO;
+    self.webView.backgroundColor = [UIColor clearColor];
+    
     //required to get gps exif
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;

@@ -1,6 +1,6 @@
 {
-  "name": "cordova-plugin-simple-camera-preview",
-  "version": "1.0.0",
+  "name": "@spoonconsulting/cordova-plugin-simple-camera-preview",
+  "version": "1.0.6",
   "description": "Cordova plugin that allows camera interaction from HTML code for showing camera preview below or on top of the HTML.",
   "keywords": [
     "cordova",
@@ -16,13 +16,16 @@
     "camera-preview",
     "preview"
   ],
+  "cordova": {
+    "id": "@spoonconsulting/cordova-plugin-simple-camera-preview"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview"
   },
   "author": {
     "name": "Mevin Dhunnooa",
-    "email": "mevin.dhunnooa@sc-mauritius.com",
+    "email": "mobile@sc-mauritius.com",
     "url": "spoonconsulting.com"
   },
   "license": "Apache 2.0",
