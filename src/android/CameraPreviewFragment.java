@@ -32,6 +32,14 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+interface CameraCallback {
+    void onCompleted(Exception err, String filename);
+}
+
+interface CameraStartedCallback {
+    void onCameraStarted();
+}
+
 public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
     private PreviewView viewFinder;
@@ -174,10 +182,10 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         );
     }
 
-    public void setLocation(Location loc) {
-        if (loc != null) {
-            this.location = loc;
-        }
+    @Override
+    public void onResume() {
+        super.onResume();
+        startCamera();
     }
 
     @Override
@@ -185,23 +193,15 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         super.onDestroy();
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        startCamera();
+    public void setLocation(Location loc) {
+        if (loc != null) {
+            this.location = loc;
+        }
     }
 
     @NonNull
     @Override
     public Lifecycle getLifecycle() {
         return lifecycleRegistry;
-    }
-
-    interface CameraCallback {
-        void onCompleted(Exception e, String filename);
-    }
-
-    interface CameraStartedCallback {
-        void onCameraStarted();
     }
 }
