@@ -157,20 +157,20 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
                         if (imgFile == null) {
                             capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
-                        } else {
-                            try {
-                                ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
-
-                                if (exif != null && location != null) {
-                                    exif.setGpsInfo(location);
-                                    exif.saveAttributes();
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                Log.e(TAG, "onImageSaved: " + e.getMessage());
-                            }
+                            return;
                         }
 
+                        try {
+                            ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
+                            if (exif != null && location != null) {
+                                exif.setGpsInfo(location);
+                                exif.saveAttributes();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Log.e(TAG, "onImageSaved: " + e.getMessage());
+                            capturePictureCallback.onCompleted(e, null);
+                        }
                         capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
                     }
 
