@@ -38,7 +38,7 @@ interface CameraCallback {
 }
 
 interface CameraStartedCallback {
-    void onCameraStarted();
+    void onCameraStarted(Exception err);
 }
 
 public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
@@ -62,7 +62,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     @SuppressLint("ValidFragment")
     public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback) {
         this.direction = cameraDirection;
-        this.startCameraCallback = cameraStartedCallback;
+        startCameraCallback = cameraStartedCallback;
     }
 
     @Nullable
@@ -101,8 +101,10 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
             Log.e(TAG, "startCamera: " + e.getMessage());
+            e.printStackTrace();
+            startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
+            return;
         }
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -122,12 +124,12 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
-            startCameraCallback.onCameraStarted();
+            startCameraCallback.onCameraStarted(null);
         }
     }
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
-        this.capturePictureCallback = takePictureCallback;
+        capturePictureCallback = takePictureCallback;
         camera.getCameraControl().enableTorch(useFlash);
 
         UUID uuid = UUID.randomUUID();
@@ -158,26 +160,38 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                         if (imgFile == null) {
                             capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
                             return;
+                        } else {
+
+                            ExifInterface exif = null;
+                            try {
+                                exif = new ExifInterface(imgFile.getAbsolutePath());
+                            } catch (IOException e) {
+                                Log.e(TAG, "new ExifInterface err: " + e.getMessage());
+                                e.printStackTrace();
+                                capturePictureCallback.onCompleted(new Exception("Unable to create exif object"), null);
+                                return;
+                            }
+
+                            if (location != null) {
+                                exif.setGpsInfo(location);
+                                try {
+                                    exif.saveAttributes();
+                                } catch (IOException e) {
+                                    Log.e(TAG, "save exif err: " + e.getMessage());
+                                    e.printStackTrace();
+                                    capturePictureCallback.onCompleted(new Exception("Unable to save exif"), null);
+                                    return;
+                                }
+                            }
                         }
 
-                        try {
-                            ExifInterface exif = new ExifInterface(imgFile.getAbsolutePath());
-                            if (exif != null && location != null) {
-                                exif.setGpsInfo(location);
-                                exif.saveAttributes();
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            Log.e(TAG, "onImageSaved: " + e.getMessage());
-                            capturePictureCallback.onCompleted(e, null);
-                        }
                         capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         Log.e(TAG, "takePicture: " + exception.getMessage());
-                        capturePictureCallback.onCompleted(exception, null);
+                        capturePictureCallback.onCompleted(new Exception("Unable to take picture"), null);
                     }
                 }
         );
