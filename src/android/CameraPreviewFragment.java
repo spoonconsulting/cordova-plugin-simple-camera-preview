@@ -48,7 +48,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     private ImageCapture imageCapture;
     private Camera camera;
     private LifecycleRegistry lifecycleRegistry;
-    private CameraCallback capturePictureCallback;
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
@@ -129,7 +128,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     }
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
-        capturePictureCallback = takePictureCallback;
         camera.getCameraControl().enableTorch(useFlash);
 
         UUID uuid = UUID.randomUUID();
@@ -158,7 +156,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                         }
 
                         if (imgFile == null) {
-                            capturePictureCallback.onCompleted(new Exception("Unable to save image"), null);
+                            takePictureCallback.onCompleted(new Exception("Unable to save image"), null);
                             return;
                         } else {
 
@@ -168,7 +166,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                             } catch (IOException e) {
                                 Log.e(TAG, "new ExifInterface err: " + e.getMessage());
                                 e.printStackTrace();
-                                capturePictureCallback.onCompleted(new Exception("Unable to create exif object"), null);
+                                takePictureCallback.onCompleted(new Exception("Unable to create exif object"), null);
                                 return;
                             }
 
@@ -179,19 +177,19 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                                 } catch (IOException e) {
                                     Log.e(TAG, "save exif err: " + e.getMessage());
                                     e.printStackTrace();
-                                    capturePictureCallback.onCompleted(new Exception("Unable to save exif"), null);
+                                    takePictureCallback.onCompleted(new Exception("Unable to save exif"), null);
                                     return;
                                 }
                             }
                         }
 
-                        capturePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
+                        takePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         Log.e(TAG, "takePicture: " + exception.getMessage());
-                        capturePictureCallback.onCompleted(new Exception("Unable to take picture"), null);
+                        takePictureCallback.onCompleted(new Exception("Unable to take picture"), null);
                     }
                 }
         );
