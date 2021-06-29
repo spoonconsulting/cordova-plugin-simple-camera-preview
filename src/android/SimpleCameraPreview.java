@@ -108,7 +108,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 return;
             }
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
-            pluginResult.setKeepCallback(true);
             callbackContext.sendPluginResult(pluginResult);
         });
 

@@ -177,7 +177,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
                                 } catch (IOException e) {
                                     Log.e(TAG, "save exif err: " + e.getMessage());
                                     e.printStackTrace();
-                                    takePictureCallback.onCompleted(new Exception("Unable to save exif"), null);
+                                    takePictureCallback.onCompleted(new Exception("Unable to save gps exif"), null);
                                     return;
                                 }
                             }
