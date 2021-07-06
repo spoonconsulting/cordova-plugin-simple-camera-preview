@@ -56,7 +56,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             this.callbackContext = callbackContext;
 
             cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-            return false;
+            return true;
         }
 
         switch (action) {
@@ -213,7 +213,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 if (permissionAlwaysDenied) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
                     builder.setTitle("Permissions required")
-                            .setMessage("Go to app info > permissions and allow them")
+                            .setMessage("Please grant the Camera permission for this app from your Settings.")
                             .setCancelable(false)
                             .setPositiveButton("App info", ((dialogInterface, i) -> {
                                 Intent intent = new Intent(
