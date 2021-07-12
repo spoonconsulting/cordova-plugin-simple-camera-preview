@@ -52,7 +52,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (!allPermissionsGranted()) {
-            this.options = (JSONObject) args.get(0);
+            if (action.equals("enable")) { this.options = (JSONObject) args.get(0); }
             this.callbackContext = callbackContext;
 
             cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
