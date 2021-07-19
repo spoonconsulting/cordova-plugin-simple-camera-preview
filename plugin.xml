@@ -22,6 +22,7 @@
 
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
+    <source-file src="src/android/PermissionHandler.java" target-dir="src/com/spoon/simplecamerapreview" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="SimpleCameraPreview">
