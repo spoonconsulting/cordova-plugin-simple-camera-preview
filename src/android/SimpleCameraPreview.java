@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PermissionHelper;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +35,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private CameraPreviewFragment fragment;
     private JSONObject options;
-    private CallbackContext callbackContext;
+    private CallbackContext enableCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
@@ -51,14 +52,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        if (!allPermissionsGranted()) {
-            if (action.equals("enable")) { this.options = (JSONObject) args.get(0); }
-            this.callbackContext = callbackContext;
-
-            cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-            return true;
-        }
-
         switch (action) {
             case "enable":
                 return enable((JSONObject) args.get(0), callbackContext);
@@ -76,19 +69,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return false;
     }
 
-    private boolean allPermissionsGranted() {
-        for (int i = 0; i < REQUIRED_PERMISSIONS.length; i++) {
-            boolean isGranted = ContextCompat.checkSelfPermission(cordova.getContext(), REQUIRED_PERMISSIONS[i]) == PackageManager.PERMISSION_GRANTED;
-
-            if (!isGranted) {
-                return false;
-            }
+    private boolean enable(JSONObject options, CallbackContext callbackContext) {
+        if (!this.hasAllPermissions()) {
+            this.enableCallbackContext = callbackContext;
+            this.options = options;
+            this.requestPermissions();
+            return true;
         }
 
-        return true;
-    }
-
-    private boolean enable(JSONObject options, CallbackContext callbackContext) {
         if (fragment != null) {
             callbackContext.error("Camera already started");
             return true;
@@ -166,7 +154,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 }
             };
-
             fetchLocation();
             return true;
         } catch (Exception e) {
@@ -181,59 +168,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return options.getInt(key);
         } catch (JSONException error) {
             return 0;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            boolean permissionsGranted = true;
-            if (grantResults.length > 0) {
-                for (int result : grantResults) {
-                    if (result != PackageManager.PERMISSION_GRANTED) {
-                        permissionsGranted = false;
-                        break;
-                    }
-                }
-            }
-
-            if (!permissionsGranted) {
-                boolean permissionAlwaysDenied = false;
-
-                for (String permission : permissions) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), permission)) {
-                        cordova.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
-                    } else {
-                        if (ActivityCompat.checkSelfPermission(cordova.getContext(), permission) == PackageManager.PERMISSION_DENIED) {
-                            permissionAlwaysDenied = true;
-                        }
-                    }
-                }
-
-                if (permissionAlwaysDenied) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
-                    builder.setTitle("Permissions required")
-                            .setMessage("Please grant the Camera permission for this app from your Settings.")
-                            .setCancelable(false)
-                            .setPositiveButton("App info", ((dialogInterface, i) -> {
-                                Intent intent = new Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", cordova.getActivity().getPackageName(), null)
-                                );
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                cordova.getActivity().startActivity(intent);
-                                cordova.getActivity().finish();
-                            }))
-                            .setNegativeButton("Cancel", ((dialogInterface, i) -> {
-                                cordova.getActivity().finish();
-                            }))
-                            .create()
-                            .show();
-                }
-            } else {
-                enable(this.options, this.callbackContext);
-                fetchLocation();
-            }
         }
     }
 
@@ -300,6 +234,79 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
+        }
+    }
+
+    public boolean hasAllPermissions() {
+        for(String p : REQUIRED_PERMISSIONS) {
+            if(!PermissionHelper.hasPermission(this, p)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void requestPermissions() {
+        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+    }
+
+    public boolean permissionsGranted(int[] grantResults) {
+        if (grantResults.length > 0) {
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void showAlertPermissionAlwaysDenied() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
+        builder.setTitle("Permissions required")
+                .setMessage("Please grant the Camera permission for this app from your Settings.")
+                .setCancelable(false)
+                .setPositiveButton("App info", ((dialogInterface, i) -> {
+                    Intent intent = new Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", cordova.getActivity().getPackageName(), null)
+                    );
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    cordova.getActivity().startActivity(intent);
+                    cordova.getActivity().finish();
+                }))
+                .setNegativeButton("Cancel", ((dialogInterface, i) -> {
+                    cordova.getActivity().finish();
+                }))
+                .create()
+                .show();
+    }
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS && this.enableCallbackContext != null) {
+            if (grantResults.length < 1) { return; }
+            boolean permissionsGranted = this.permissionsGranted(grantResults);
+
+            if (!permissionsGranted) {
+                boolean permissionAlwaysDenied = false;
+
+                for (String permission : permissions) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), permission)) {
+                        this.requestPermissions();
+                    } else {
+                        if (ActivityCompat.checkSelfPermission(cordova.getContext(), permission) == PackageManager.PERMISSION_DENIED) {
+                            permissionAlwaysDenied = true;
+                        }
+                    }
+                }
+
+                if (permissionAlwaysDenied) {
+                    this.showAlertPermissionAlwaysDenied();
+                }
+            } else {
+                enable(this.options, this.enableCallbackContext);
+            }
         }
     }
 
