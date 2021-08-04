@@ -13,7 +13,7 @@ ionic cordova plugin add https://github.com/spoonconsulting/cordova-plugin-simpl
 
 ```
 
-Make the webview html background color transparent
+Make the webview html background color transparent.
 ```css
 html, body, .ion-app, .ion-content {
   background-color: transparent;
@@ -22,38 +22,46 @@ html, body, .ion-app, .ion-content {
 
 
 ### Android
-Uses camera2 api
+Uses Google's CameraX API
 
 
 # Methods
 
-### enable()
+### enable(options, successCallback, errorCallback)
 
 Starts the camera preview instance.
 <br>
 
 ```javascript
-CameraPreview.enable(()=>console.log('camera enabled'));
+const params = {
+  direction: 'back' // Camera direction (front or back). Default is back.
+}
+
+SimpleCameraPreview.enable(params, () => {
+  console.log("Camera enabled");
+});
 ```
 
-### disable()
+### disable(successCallback, errorCallback)
 
 <info>Stops the camera preview instance.</info><br/>
 
 ```javascript
-SimpleCameraPreview.disable(()=>console.log('camera disabled'));
+SimpleCameraPreview.disable(params, () => {
+  console.log("Camera disabled");
+});
 ```
 
-### capture(options, successCallback, [errorCallback])
+### capture(options, successCallback, errorCallback)
 
 <info>Take the picture</info>
 
 ```javascript
-let options  = {
+let options = {
   flash: true
-}
-SimpleCameraPreview.capture(options, (imageName)=>{
-  //image will be in cordova data directory
-});
+};
 
+SimpleCameraPreview.capture(options, (imagaeNativePath) => {
+  console.log(imagaeNativePath);
+});
 ```

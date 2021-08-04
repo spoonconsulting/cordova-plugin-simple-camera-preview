@@ -1,109 +1,220 @@
 package com.spoon.simplecamerapreview;
 
-import android.content.ContextWrapper;
-import android.location.Location;
-import android.os.Bundle;
+import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.location.Location;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
-import com.otaliastudios.cameraview.CameraOptions;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.content.ContextCompat;
+import androidx.exifinterface.media.ExifInterface;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LifecycleRegistry;
+
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
-import com.otaliastudios.cameraview.CameraListener;
-import com.otaliastudios.cameraview.CameraView;
-import com.otaliastudios.cameraview.PictureResult;
-import com.otaliastudios.cameraview.controls.Audio;
-import com.otaliastudios.cameraview.controls.Flash;
+import java.util.concurrent.ExecutionException;
 
-
-interface CameraCallBack {
-    void onCompleted(Exception err, String fileName);
+interface CameraCallback {
+    void onCompleted(Exception err, String nativePath);
 }
 
-interface CameraStartedCallBack {
-    void onCameraStarted();
+interface CameraStartedCallback {
+    void onCameraStarted(Exception err);
 }
 
-public class CameraPreviewFragment extends Fragment {
-    CameraView camera;
-    CameraCallBack capturePictureCallback;
-    CameraStartedCallBack startCameraCallback;
+public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
-    public CameraPreviewFragment(){
+    private PreviewView viewFinder;
+    private Preview preview;
+    private ImageCapture imageCapture;
+    private Camera camera;
+    private LifecycleRegistry lifecycleRegistry;
+    private CameraStartedCallback startCameraCallback;
+    private Location location;
+    private int direction;
+
+    private static final String TAG = "SimpleCameraPreview";
+
+    public CameraPreviewFragment() {
 
     }
 
-
-    public CameraPreviewFragment(CameraStartedCallBack cb){
-        this.startCameraCallback = cb;
+    @SuppressLint("ValidFragment")
+    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback) {
+        this.direction = cameraDirection;
+        startCameraCallback = cameraStartedCallback;
     }
 
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        lifecycleRegistry = new LifecycleRegistry(this::getLifecycle);
+        lifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+
         RelativeLayout containerView = new RelativeLayout(getActivity());
         RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_START);
         containerView.setLayoutParams(containerLayoutParams);
-        camera = new CameraView(getActivity());
-        camera.setAudio(Audio.OFF);
-        camera.addCameraListener(new CameraListener() {
-            @Override
-            public void onCameraOpened(CameraOptions options) {
-                if (startCameraCallback != null)
-                    startCameraCallback.onCameraStarted();
-            }
-            @Override
-            public void onPictureTaken(PictureResult result) {
-                UUID uuid = UUID.randomUUID();
-                File file = new File(new ContextWrapper(getActivity().getBaseContext()).getFilesDir(), uuid.toString() + ".jpg");
-                result.toFile(file, (File mfile)->{
-                    if (mfile == null){
-                        capturePictureCallback.onCompleted(new Exception("unable to save image"), null);
-                    }
-                    capturePictureCallback.onCompleted(null, mfile.getName());
-                });
 
-            }
-        });
-        camera.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-        containerView.addView(camera);
+        viewFinder = new PreviewView(getActivity());
+        viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
+        containerView.addView(viewFinder);
+        startCamera();
+
         return containerView;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (lifecycleRegistry.getCurrentState() == Lifecycle.State.CREATED) {
+            lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+        }
+    }
+
+    public void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        ProcessCameraProvider cameraProvider = null;
+
+        try {
+            cameraProvider = cameraProviderFuture.get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.e(TAG, "startCamera: " + e.getMessage());
+            e.printStackTrace();
+            startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
+            return;
+        }
+
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(direction)
+                .build();
+        preview = new Preview.Builder().build();
+        imageCapture = new ImageCapture.Builder().build();
+
+        cameraProvider.unbindAll();
+        camera = cameraProvider.bindToLifecycle(
+                this::getLifecycle,
+                cameraSelector,
+                preview,
+                imageCapture
+        );
+
+        preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+
+        if (startCameraCallback != null) {
+            startCameraCallback.onCameraStarted(null);
+        }
+    }
+
+    public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
+        camera.getCameraControl().enableTorch(useFlash);
+
+        UUID uuid = UUID.randomUUID();
+
+        File imgFile = new File(
+                getActivity().getBaseContext().getFilesDir(),
+                uuid.toString() + ".jpg"
+        );
+
+        if (imageCapture == null) {
+            imageCapture = new ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setTargetRotation(getActivity().getWindowManager().getDefaultDisplay().getRotation())
+                    .build();
+        }
+
+        ImageCapture.OutputFileOptions outputOptions = new ImageCapture.OutputFileOptions.Builder(imgFile).build();
+        imageCapture.takePicture(
+                outputOptions,
+                ContextCompat.getMainExecutor(getActivity().getApplicationContext()),
+                new ImageCapture.OnImageSavedCallback() {
+                    @Override
+                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                        if (camera.getCameraInfo().hasFlashUnit()) {
+                            camera.getCameraControl().enableTorch(false);
+                        }
+
+                        if (imgFile == null) {
+                            takePictureCallback.onCompleted(new Exception("Unable to save image"), null);
+                            return;
+                        } else {
+
+                            ExifInterface exif = null;
+                            try {
+                                exif = new ExifInterface(imgFile.getAbsolutePath());
+                            } catch (IOException e) {
+                                Log.e(TAG, "new ExifInterface err: " + e.getMessage());
+                                e.printStackTrace();
+                                takePictureCallback.onCompleted(new Exception("Unable to create exif object"), null);
+                                return;
+                            }
+
+                            if (location != null) {
+                                exif.setGpsInfo(location);
+                                try {
+                                    exif.saveAttributes();
+                                } catch (IOException e) {
+                                    Log.e(TAG, "save exif err: " + e.getMessage());
+                                    e.printStackTrace();
+                                    takePictureCallback.onCompleted(new Exception("Unable to save gps exif"), null);
+                                    return;
+                                }
+                            }
+                        }
+
+                        takePictureCallback.onCompleted(null, Uri.fromFile(imgFile).toString());
+                    }
+
+                    @Override
+                    public void onError(@NonNull ImageCaptureException exception) {
+                        Log.e(TAG, "takePicture: " + exception.getMessage());
+                        takePictureCallback.onCompleted(new Exception("Unable to take picture"), null);
+                    }
+                }
+        );
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        camera.open();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        camera.close();
+        startCamera();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        camera.destroy();
     }
 
-    public void setLocation(Location loc){
-        if (camera != null && loc != null)
-            camera.setLocation(loc);
+    public void setLocation(Location loc) {
+        if (loc != null) {
+            this.location = loc;
+        }
     }
 
-    public void disableCamera() {
-        camera.close();
+    @NonNull
+    @Override
+    public Lifecycle getLifecycle() {
+        return lifecycleRegistry;
     }
-
-    public void takePicture(Boolean useFlash, CameraCallBack takePictureCallback) {
-        this.capturePictureCallback = takePictureCallback;
-        camera.setFlash(useFlash ? Flash.ON : Flash.OFF);
-        camera.takePicture();
-    }
-
 }

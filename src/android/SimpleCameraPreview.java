@@ -1,24 +1,28 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
-import android.app.FragmentTransaction;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
-import androidx.core.content.ContextCompat;
-
-import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PermissionHelper;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,48 +33,71 @@ import java.util.concurrent.RunnableFuture;
 
 public class SimpleCameraPreview extends CordovaPlugin {
 
-    private static final String TAG = "SimpleCameraPreview";
-    private static final int GEO_REQ_CODE = 23;
-    private static final int containerViewId = 20;
     private CameraPreviewFragment fragment;
-    private ViewParent webViewParent;
+    private JSONObject options;
+    private CallbackContext enableCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
+    private ViewParent webViewParent;
 
+    private static final int containerViewId = 20;
+    private static final int DIRECTION_FRONT = 0;
+    private static final int DIRECTION_BACK = 1;
+    private static final int REQUEST_CODE_PERMISSIONS = 4582679;
+    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
 
     public SimpleCameraPreview() {
         super();
     }
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-        try {
-            if (action.equals("enable")) {
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        switch (action) {
+            case "enable":
                 return enable((JSONObject) args.get(0), callbackContext);
-            } else if (action.equals("capture")) {
-                return capture(args.getBoolean(0), callbackContext);
-            } else if (action.equals("disable")) {
+
+            case "disable":
                 return disable(callbackContext);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+            case "capture":
+                return capture(args.getBoolean(0), callbackContext);
+
+            default:
+                break;
         }
+
         return false;
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
-        Log.d(TAG, "start camera action");
+        webView.getView().setBackgroundColor(0x00000000);
+        if (!this.hasAllPermissions()) {
+            this.enableCallbackContext = callbackContext;
+            this.options = options;
+            this.requestPermissions();
+            return true;
+        }
+
         if (fragment != null) {
             callbackContext.error("Camera already started");
             return true;
         }
 
-        fragment = new CameraPreviewFragment(new CameraStartedCallBack() {
-            @Override
-            public void onCameraStarted() {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
-                callbackContext.sendPluginResult(pluginResult);
+        int cameraDirection;
+
+        try {
+            cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
+        } catch (JSONException e) {
+            cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
+        }
+
+        fragment = new CameraPreviewFragment(cameraDirection, (err) -> {
+            if (err != null) {
+                callbackContext.error(err.getMessage());
+                return;
             }
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
+            callbackContext.sendPluginResult(pluginResult);
         });
 
         try {
@@ -94,7 +121,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
                             cordova.getActivity().addContentView(containerView, containerLayoutParams);
                         }
                         cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                        webView.getView().setBackgroundColor(0x00000000);
                         webViewParent = webView.getView().getParent();
                         webView.getView().bringToFront();
                         cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
@@ -108,8 +134,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
             mLocationCallback = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
-                    if (fragment != null)
+                    if (fragment != null) {
                         fragment.setLocation(location);
+                    }
                 }
 
                 @Override
@@ -127,20 +154,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 }
             };
-
-            if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))
-                fetchLocation();
-            else
-                cordova.requestPermission(this, GEO_REQ_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
+            fetchLocation();
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
         }
     }
 
-    private int getIntegerFromOptions(JSONObject options, String key){
+    private int getIntegerFromOptions(JSONObject options, String key) {
         try {
             return options.getInt(key);
         } catch (JSONException error) {
@@ -148,31 +171,28 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (grantResults.length < 1)
-            return;
-        if (grantResults[0] == PackageManager.PERMISSION_DENIED)
-            return;
-
-        if (requestCode == GEO_REQ_CODE)
-            fetchLocation();
-    }
-
     public void fetchLocation() {
-        if (ContextCompat.checkSelfPermission(cordova.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            if (locationManager == null)
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
+            if (locationManager == null) {
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+            }
             Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if (cachedLocation != null)
+            if (cachedLocation != null) {
                 fragment.setLocation(cachedLocation);
+            }
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
         }
     }
 
-    private boolean capture(Boolean useFlash, CallbackContext callbackContext) {
-        fragment.takePicture(useFlash, (Exception err, String fileName) -> {
+    private boolean capture(boolean useFlash, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        fragment.takePicture(useFlash, (Exception err, String nativePath) -> {
             if (err == null) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, fileName);
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, nativePath);
                 pluginResult.setKeepCallback(true);
                 callbackContext.sendPluginResult(pluginResult);
             } else {
@@ -182,8 +202,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-
     private boolean disable(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera already closed");
+            return true;
+        }
+
         try {
             if (webViewParent != null) {
                 RunnableFuture<Void> removeViewTask = new FutureTask<>(
@@ -201,26 +225,97 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
             }
-            fragment.disableCamera();
-            FragmentTransaction fragmentTransaction = cordova.getActivity().getFragmentManager().beginTransaction();
-            fragmentTransaction.remove(fragment);
-            fragmentTransaction.commitAllowingStateLoss();
+            cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
             fragment = null;
 
             callbackContext.success();
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
         }
     }
 
+    public boolean hasAllPermissions() {
+        for(String p : REQUIRED_PERMISSIONS) {
+            if(!PermissionHelper.hasPermission(this, p)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void requestPermissions() {
+        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+    }
+
+    public boolean permissionsGranted(int[] grantResults) {
+        if (grantResults.length > 0) {
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void showAlertPermissionAlwaysDenied() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
+        builder.setTitle("Permissions required")
+                .setMessage("Please grant the Camera permission for this app from your Settings.")
+                .setCancelable(false)
+                .setPositiveButton("App info", ((dialogInterface, i) -> {
+                    Intent intent = new Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", cordova.getActivity().getPackageName(), null)
+                    );
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    cordova.getActivity().startActivity(intent);
+                    cordova.getActivity().finish();
+                }))
+                .setNegativeButton("Cancel", ((dialogInterface, i) -> {
+                    cordova.getActivity().finish();
+                }))
+                .create()
+                .show();
+    }
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS && this.enableCallbackContext != null) {
+            if (grantResults.length < 1) { return; }
+            boolean permissionsGranted = this.permissionsGranted(grantResults);
+
+            if (!permissionsGranted) {
+                boolean permissionAlwaysDenied = false;
+
+                for (String permission : permissions) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), permission)) {
+                        this.requestPermissions();
+                    } else {
+                        if (ActivityCompat.checkSelfPermission(cordova.getContext(), permission) == PackageManager.PERMISSION_DENIED) {
+                            permissionAlwaysDenied = true;
+                        }
+                    }
+                }
+
+                if (permissionAlwaysDenied) {
+                    this.showAlertPermissionAlwaysDenied();
+                }
+            } else {
+                enable(this.options, this.enableCallbackContext);
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (locationManager != null)
+        if (locationManager != null) {
             locationManager.removeUpdates(mLocationCallback);
+        }
         locationManager = null;
     }
 }

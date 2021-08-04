@@ -10,10 +10,10 @@ SimpleCameraPreview.disable = function(onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
 };
 
-SimpleCameraPreview.capture = function(options,onSuccess, onError) {
+SimpleCameraPreview.capture = function(options, onSuccess, onError) {
     options = options || {};
     options.flash = options.flash || false;
-    exec(onSuccess, onError, PLUGIN_NAME, "capture",[options.flash]);
+    exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
 };
 
 SimpleCameraPreview.setSize = function(options, onSuccess, onError) {
