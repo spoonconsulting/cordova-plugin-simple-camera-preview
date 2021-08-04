@@ -61,7 +61,7 @@ let options = {
   flash: true
 };
 
-SimpleCameraPreview.capture(options, (imageName) => {
-  console.log(imageName);
+SimpleCameraPreview.capture(options, (imagaeNativePath) => {
+  console.log(imagaeNativePath);
 });
 ```
