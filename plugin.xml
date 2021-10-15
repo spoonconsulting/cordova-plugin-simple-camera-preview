@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin id="@spoonconsulting/cordova-plugin-simple-camera-preview" version="2.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="@spoonconsulting/cordova-plugin-simple-camera-preview" version="2.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
 
   <name>cordova-plugin-simple-camera-preview</name>
   <description>Cordova plugin that allows camera interaction from HTML code. Show camera preview popup on top of the HTML.</description>
@@ -15,10 +15,10 @@
 
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.3.1" />
-   <framework src="androidx.exifinterface:exifinterface:1.3.0" />
-   <framework src="androidx.camera:camera-camera2:1.0.0" />
-   <framework src="androidx.camera:camera-lifecycle:1.0.0" />
-   <framework src="androidx.camera:camera-view:1.0.0-alpha25" />
+   <framework src="androidx.exifinterface:exifinterface:1.3.3" />
+   <framework src="androidx.camera:camera-camera2:1.0.2" />
+   <framework src="androidx.camera:camera-lifecycle:1.0.2" />
+   <framework src="androidx.camera:camera-view:1.0.0-alpha30" />
 
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
