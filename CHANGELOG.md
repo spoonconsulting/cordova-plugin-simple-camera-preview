@@ -1,3 +1,16 @@
+## [2.0.1](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.0...v2.0.1) (2021-10-15)
+
+
+* **Android:** Update CameraX libraries. ([#23](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/35))
+
+    - androidx.exifinterface:exifinterface
+
+    - androidx.camera:camera-camera2
+
+    - androidx.camera:camera-lifecycle
+
+    - androidx.camera:camera-view
+
 ## [2.0.0](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v1.0.1...v2.0.0) (2021-08-04)
 
 
