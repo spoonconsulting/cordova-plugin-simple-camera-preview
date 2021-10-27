@@ -1,3 +1,8 @@
+## [2.0.2](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.0...v2.0.2) (2021-10-27)
+
+
+* **Android:** Added try catch to cordova exec method implementation. ([#36](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/36))
+
 ## [2.0.1](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.0...v2.0.1) (2021-10-15)
 
 
