@@ -51,22 +51,28 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        switch (action) {
-            case "enable":
-                return enable((JSONObject) args.get(0), callbackContext);
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
+        try {
+            switch (action) {
+                case "enable":
+                    return enable((JSONObject) args.get(0), callbackContext);
 
-            case "disable":
-                return disable(callbackContext);
+                case "disable":
+                    return disable(callbackContext);
 
-            case "capture":
-                return capture(args.getBoolean(0), callbackContext);
+                case "capture":
+                    return capture(args.getBoolean(0), callbackContext);
 
-            default:
-                break;
+                default:
+                    break;
+            }
+            return false;
+            
+        } catch (JSONException e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
         }
-
-        return false;
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
