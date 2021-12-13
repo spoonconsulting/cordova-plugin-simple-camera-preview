@@ -89,7 +89,11 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         super.onStart();
 
         if (lifecycleRegistry.getCurrentState() == Lifecycle.State.CREATED) {
-            lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+            try {
+                lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+            }
         }
     }
 
