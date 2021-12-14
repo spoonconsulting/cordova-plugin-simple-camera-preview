@@ -68,7 +68,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         lifecycleRegistry = new LifecycleRegistry(this::getLifecycle);
-        lifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
 
         RelativeLayout containerView = new RelativeLayout(getActivity());
         RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -87,10 +86,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     @Override
     public void onStart() {
         super.onStart();
-
-        if (lifecycleRegistry.getCurrentState() == Lifecycle.State.CREATED) {
-            lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
-        }
     }
 
     public void startCamera() {
