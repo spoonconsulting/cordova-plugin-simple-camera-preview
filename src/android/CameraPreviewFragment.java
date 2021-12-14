@@ -84,11 +84,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         return containerView;
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
-
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
