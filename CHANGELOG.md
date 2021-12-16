@@ -1,3 +1,7 @@
+## [2.0.3](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.2...v2.0.3) (2021-12-16)
+
+
+* **Android:** Remove lifecycle owner and used androidx fragment. ([#38](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/38))
 ## [2.0.2](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.0...v2.0.2) (2021-10-27)
 
 
