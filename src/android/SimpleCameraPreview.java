@@ -67,7 +67,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     break;
             }
             return false;
-            
+
         } catch (JSONException e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
@@ -129,7 +129,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                         cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
                         webViewParent = webView.getView().getParent();
                         webView.getView().bringToFront();
-                        cordova.getActivity().getFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
+                        cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                     }
                 },
                 null
@@ -231,7 +231,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
             }
-            cordova.getActivity().getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
+            cordova.getActivity().getSupportFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
             fragment = null;
 
             callbackContext.success();

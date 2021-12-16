@@ -1,7 +1,6 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
-import android.app.Fragment;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +21,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -41,13 +41,12 @@ interface CameraStartedCallback {
     void onCameraStarted(Exception err);
 }
 
-public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
+public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
     private Preview preview;
     private ImageCapture imageCapture;
     private Camera camera;
-    private LifecycleRegistry lifecycleRegistry;
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
@@ -67,9 +66,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        lifecycleRegistry = new LifecycleRegistry(this::getLifecycle);
-        lifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
-
         RelativeLayout containerView = new RelativeLayout(getActivity());
         RelativeLayout.LayoutParams containerLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         containerLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -82,15 +78,6 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         startCamera();
 
         return containerView;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        if (lifecycleRegistry.getCurrentState() == Lifecycle.State.CREATED) {
-            lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
-        }
     }
 
     public void startCamera() {
@@ -114,7 +101,7 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
 
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
-                this::getLifecycle,
+                this,
                 cameraSelector,
                 preview,
                 imageCapture
@@ -195,26 +182,9 @@ public class CameraPreviewFragment extends Fragment implements LifecycleOwner {
         );
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        startCamera();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
     public void setLocation(Location loc) {
         if (loc != null) {
             this.location = loc;
         }
-    }
-
-    @NonNull
-    @Override
-    public Lifecycle getLifecycle() {
-        return lifecycleRegistry;
     }
 }
