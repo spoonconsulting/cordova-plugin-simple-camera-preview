@@ -208,6 +208,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
+    private boolean torchSwitch(boolean torchState, CallbackContext torchCallback) {
+      fragment.torchSwitch(torchState, (Exception err) -> {
+          if (err == null) {
+              torchCallback.success();
+          } else {
+            torchCallback.error(err.getMessage());
+          }
+      });
+      return torchState;
+  }
+
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera already closed");

@@ -50,6 +50,7 @@ public class CameraPreviewFragment extends Fragment {
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
+    private boolean torchActivated = false;
 
     private static final String TAG = "SimpleCameraPreview";
 
@@ -114,7 +115,26 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
+    public void torchSwitch(boolean torch, TorchCallback torchCallback) {
+        if (!camera.getCameraInfo().hasFlashUnit()) {
+            torchCallback.onCompleted(new Exception("No flash unit present"));
+            return;
+        } else {
+            torchActivated = torch;
+            try {
+                camera.getCameraControl().enableTorch(torch);
+                torchCallback.onCompleted(null);
+                return;
+            } catch (Exception e) {
+                torchCallback.onCompleted(new Exception("Flash switch failure"));
+            }
+          }
+      }
+
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
+        if (torchActivated) {
+          useFlash = true;
+        }
         camera.getCameraControl().enableTorch(useFlash);
 
         UUID uuid = UUID.randomUUID();
@@ -138,7 +158,7 @@ public class CameraPreviewFragment extends Fragment {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        if (camera.getCameraInfo().hasFlashUnit()) {
+                        if (camera.getCameraInfo().hasFlashUnit() && !torchActivated) {
                             camera.getCameraControl().enableTorch(false);
                         }
 
