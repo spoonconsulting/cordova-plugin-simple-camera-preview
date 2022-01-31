@@ -133,6 +133,13 @@
     return -1;
 }
 
+- (void) torchSwitch:(NSInteger)torchState{
+    NSError *error = nil;
+    [self.device lockForConfiguration:&error];
+    self.device.torchMode = torchState;
+    [self.device unlockForConfiguration];
+}
+
 - (void)setFlashMode:(NSInteger)flashMode {
     NSError *error = nil;
     // Let's save the setting even if we can't set it up on this camera.
