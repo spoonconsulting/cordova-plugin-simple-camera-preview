@@ -144,6 +144,7 @@
         [self.ciContext drawImage:croppedImage inRect:dest fromRect:[croppedImage extent]];
         //[self.ciContext drawImage:image inRect:dest fromRect:[image extent]];
         dispatch_async(dispatch_get_main_queue(), ^{
+            [self destroyRenderBuffer];
             [self.context presentRenderbuffer:GL_RENDERBUFFER];
             [(GLKView *)(self.view)display];
         });
@@ -166,6 +167,10 @@
 
 -(void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
     [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+}
+
+-(void)destroyRenderBuffer {
+    glDeleteFramebuffers(1, &_renderBuffer);
 }
 
 @end
