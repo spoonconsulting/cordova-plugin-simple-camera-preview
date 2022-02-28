@@ -62,14 +62,12 @@
             dispatch_async(dispatch_get_main_queue(), ^{
               [self.cameraRenderController.view removeFromSuperview];
               [self.cameraRenderController removeFromParentViewController];
-              self.cameraRenderController = nil;
-              [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
             });
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         }
         else {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
-        
     }];
 }
 

@@ -60,10 +60,6 @@
     [super viewWillDisappear:animated];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-    dispatch_async(self.sessionManager.sessionQueue, ^{
-          NSLog(@"Stopping session");
-          [self.sessionManager.session stopRunning];
-    });
 }
 
 - (void) appplicationIsActive:(NSNotification *)notification {
@@ -143,7 +139,6 @@
         
         [self.ciContext drawImage:croppedImage inRect:dest fromRect:[croppedImage extent]];
         //[self.ciContext drawImage:image inRect:dest fromRect:[image extent]];
-        [self destroyRenderBuffer];
         [self.context presentRenderbuffer:GL_RENDERBUFFER];
         dispatch_async(dispatch_get_main_queue(), ^{
             [(GLKView *)(self.view)display];
@@ -167,10 +162,6 @@
 
 -(void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
     [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
-}
-
--(void)destroyRenderBuffer {
-    glDeleteFramebuffers(1, &_renderBuffer);
 }
 
 @end
