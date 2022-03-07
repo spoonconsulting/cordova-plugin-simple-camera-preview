@@ -59,6 +59,9 @@
             }
             dispatch_async(dispatch_get_main_queue(), ^{
               [self.cameraRenderController.view removeFromSuperview];
+              if(self.cameraRenderController.isMovingFromParentViewController) {
+                  [self.cameraRenderController removeFromParentViewController];
+              }
               self.cameraRenderController = nil;
             });
             [self.sessionManager.session stopRunning];
