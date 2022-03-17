@@ -61,7 +61,7 @@
             self.sessionManager = nil;
             dispatch_async(dispatch_get_main_queue(), ^{
               [self.cameraRenderController.view removeFromSuperview];
-              if(self.cameraRenderController.isMovingFromParentViewController) {
+              if(self.viewController.parentViewController != nil) {
                   [self.cameraRenderController removeFromParentViewController];
               }
               self.cameraRenderController = nil;
