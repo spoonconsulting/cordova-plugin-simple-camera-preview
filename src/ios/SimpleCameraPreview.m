@@ -9,6 +9,8 @@
 
 @implementation SimpleCameraPreview
 
+BOOL torchActivated = false;
+
 - (void) enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
@@ -88,11 +90,22 @@
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
 }
 
+- (void) torchSwitch:(CDVInvokedUrlCommand*)command{
+    BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
+    torchActivated = true;
+    if (self.sessionManager != nil)
+        [self.sessionManager torchSwitch:torchState? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) capture:(CDVInvokedUrlCommand*)command {
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
-    if (self.sessionManager != nil) 
-        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
-    
+    if (self.sessionManager != nil)
+        if (!torchActivated) {
+            [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+        }
+
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
         self.onPictureTakenHandlerId = command.callbackId;
