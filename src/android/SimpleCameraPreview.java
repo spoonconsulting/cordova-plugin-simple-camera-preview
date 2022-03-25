@@ -63,6 +63,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "capture":
                     return capture(args.getBoolean(0), callbackContext);
 
+                case "torchSwitch":
+                    return torchSwitch(args.getBoolean(0), callbackContext);
+
                 default:
                     break;
             }
@@ -208,12 +211,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean torchSwitch(boolean torchState, CallbackContext torchCallback) {
+    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
       fragment.torchSwitch(torchState, (Exception err) -> {
           if (err == null) {
-              torchCallback.success();
+              callbackContext.success();
           } else {
-            torchCallback.error(err.getMessage());
+            callbackContext.error(err.getMessage());
           }
       });
       return torchState;

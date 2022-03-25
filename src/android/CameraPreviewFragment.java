@@ -41,6 +41,10 @@ interface CameraStartedCallback {
     void onCameraStarted(Exception err);
 }
 
+interface TorchCallback {
+    void onEnabled(Exception err);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -115,20 +119,20 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    public void torchSwitch(boolean torch, TorchCallback torchCallback) {
+    public void torchSwitch(boolean on, TorchCallback torchCallback) {
         if (!camera.getCameraInfo().hasFlashUnit()) {
-            torchCallback.onCompleted(new Exception("No flash unit present"));
+            torchCallback.onEnabled(new Exception("No flash unit present"));
             return;
         } else {
-            torchActivated = torch;
             try {
-                camera.getCameraControl().enableTorch(torch);
-                torchCallback.onCompleted(null);
-                return;
+                camera.getCameraControl().enableTorch(on);
+                torchCallback.onEnabled(null);
             } catch (Exception e) {
-                torchCallback.onCompleted(new Exception("Flash switch failure"));
+                torchCallback.onEnabled(new Exception("Failed to switch " + (on ? "on" : "off") + " torch", e));
+                return;
             }
-          }
+            torchActivated = on;
+        }
       }
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
