@@ -92,20 +92,22 @@ BOOL torchActivated = false;
 
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
     BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
-    torchActivated = true;
     if (self.sessionManager != nil)
-        [self.sessionManager torchSwitch:torchState? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+        torchActivated = torchState;
+    [self.sessionManager torchSwitch:torchState? 1 : 0];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
-    if (self.sessionManager != nil)
-        if (!torchActivated) {
+    if (self.sessionManager != nil) {
+        if (torchActivated) {
+            [self.sessionManager setFlashMode:AVCaptureFlashModeOff];
+        } else {
             [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
         }
-
+    }
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
         self.onPictureTakenHandlerId = command.callbackId;
