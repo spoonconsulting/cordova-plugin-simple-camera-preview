@@ -101,11 +101,7 @@ BOOL torchActivated = false;
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
-    if (self.sessionManager != nil) {
-        if (torchActivated) {
-            [self.sessionManager setFlashMode:AVCaptureFlashModeOff];
-        } else {
-            [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+    [self.sessionManager setFlashMode: !useFlash || torch ? AVCaptureFlashModeOff : AVCaptureFlashModeOn];
         }
     }
     CDVPluginResult *pluginResult;
