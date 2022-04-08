@@ -148,9 +148,6 @@
     if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
         
         if ([self.device lockForConfiguration:&error]) {
-            if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-                self.device.torchMode=0;
-            }
             [self.device setFlashMode:self.defaultFlashMode];
             [self.device unlockForConfiguration];
             
