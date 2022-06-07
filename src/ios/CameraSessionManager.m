@@ -125,18 +125,22 @@
     }
 }
 - (NSInteger)getFlashMode {
-    
+
     if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
         return self.device.flashMode;
     }
-    
+
     return -1;
 }
 
 - (void) torchSwitch:(NSInteger)torchState{
     NSError *error = nil;
     [self.device lockForConfiguration:&error];
-    self.device.torchMode = torchState;
+    if ([self.device lockForConfiguration:&error]) {
+      if ([self.device hasTorch] && [self.device isTorchAvailable]) {
+        self.device.torchMode = torchState;
+      }
+    }
     [self.device unlockForConfiguration];
 }
 
