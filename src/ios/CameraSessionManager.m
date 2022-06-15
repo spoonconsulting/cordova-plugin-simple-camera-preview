@@ -135,13 +135,12 @@
 
 - (void) torchSwitch:(NSInteger)torchState{
     NSError *error = nil;
-    [self.device lockForConfiguration:&error];
-    if ([self.device lockForConfiguration:&error]) {
-      if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        self.device.torchMode = torchState;
-      }
+    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
+        if ([self.device lockForConfiguration:&error]) {
+            self.device.torchMode = torchState;
+            [self.device unlockForConfiguration];
+        }
     }
-    [self.device unlockForConfiguration];
 }
 
 - (void)setFlashMode:(NSInteger)flashMode {

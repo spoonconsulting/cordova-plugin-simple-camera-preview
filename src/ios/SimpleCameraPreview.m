@@ -102,8 +102,10 @@ BOOL torchActivated = false;
 - (void) capture:(CDVInvokedUrlCommand*)command {
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
-      useFlash = false
-    [self.sessionManager setFlashMode: useFlash ? AVCaptureFlashModeOn : AVCaptureFlashModeOff];
+        useFlash = false;
+    if (self.sessionManager != nil)
+        [self.sessionManager setFlashMode: useFlash ? AVCaptureFlashModeOn : AVCaptureFlashModeOff];
+
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
         self.onPictureTakenHandlerId = command.callbackId;
