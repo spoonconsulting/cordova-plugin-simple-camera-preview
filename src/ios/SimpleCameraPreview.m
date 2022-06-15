@@ -105,7 +105,7 @@ BOOL torchActivated = false;
     if (torchActivated)
         useFlash = false;
     if (self.sessionManager != nil)
-        [self.sessionManager setFlashMode:useFlash ? AVCaptureFlashModeOn : AVCaptureFlashModeOff];
+        [self.sessionManager setFlashMode:useFlash ? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
 
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
