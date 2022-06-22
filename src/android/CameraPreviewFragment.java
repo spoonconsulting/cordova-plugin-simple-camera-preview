@@ -41,6 +41,10 @@ interface CameraStartedCallback {
     void onCameraStarted(Exception err);
 }
 
+interface TorchCallback {
+    void onEnabled(Exception err);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -50,6 +54,7 @@ public class CameraPreviewFragment extends Fragment {
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
+    private boolean torchActivated = false;
 
     private static final String TAG = "SimpleCameraPreview";
 
@@ -114,8 +119,28 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
+    public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
+        if (!camera.getCameraInfo().hasFlashUnit()) {
+            torchCallback.onEnabled(new Exception("No flash unit present"));
+            return;
+        } else {
+            try {
+                camera.getCameraControl().enableTorch(torchOn);
+                torchCallback.onEnabled(null);
+            } catch (Exception e) {
+                torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch", e));
+                return;
+            }
+            torchActivated = torchOn;
+        }
+      }
+
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
-        camera.getCameraControl().enableTorch(useFlash);
+        if (torchActivated) {
+            useFlash = true;
+        } else {
+            camera.getCameraControl().enableTorch(useFlash);
+        }
 
         UUID uuid = UUID.randomUUID();
 
@@ -138,7 +163,7 @@ public class CameraPreviewFragment extends Fragment {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        if (camera.getCameraInfo().hasFlashUnit()) {
+                        if (camera.getCameraInfo().hasFlashUnit() && !torchActivated) {
                             camera.getCameraControl().enableTorch(false);
                         }
 

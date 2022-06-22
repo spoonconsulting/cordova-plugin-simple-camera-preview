@@ -20,4 +20,8 @@ SimpleCameraPreview.setSize = function(options, onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
 };
 
+SimpleCameraPreview.torchSwitch = function(options, onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
+};
+
 module.exports = SimpleCameraPreview;
