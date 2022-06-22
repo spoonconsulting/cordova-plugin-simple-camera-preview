@@ -1,3 +1,8 @@
+## [2.0.5](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.4...v2.0.5) (2022-06-22)
+
+* **Android:** Add torch functionality. ([#40](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/40))
+* **iOS:** Add torch functionality. ([#40](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/40))
+
 ## [2.0.4](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.3...v2.0.4) (2022-03-21)
 
 * **iOS:** Check if ParentViewController has already been removed. ([#41](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/41))
