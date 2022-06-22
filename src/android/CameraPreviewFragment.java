@@ -137,9 +137,10 @@ public class CameraPreviewFragment extends Fragment {
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         if (torchActivated) {
-          useFlash = true;
+            useFlash = true;
+        } else {
+            camera.getCameraControl().enableTorch(useFlash);
         }
-        camera.getCameraControl().enableTorch(useFlash);
 
         UUID uuid = UUID.randomUUID();
 
