@@ -83,7 +83,6 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
-    @SuppressLint("RestrictedApi")
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
@@ -111,7 +110,7 @@ public class CameraPreviewFragment extends Fragment {
         );
 
         preview = new Preview.Builder().build();
-        Size targetResolution = calculateResolution(tempImageCapture.getAttachedSurfaceResolution().getWidth(), 1024);
+        Size targetResolution = calculateResolution(tempImageCapture, 1024);
         imageCapture = new ImageCapture.Builder().setTargetResolution(targetResolution).build();
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
@@ -128,7 +127,9 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    public Size calculateResolution(int actualWidth, int height) {
+    @SuppressLint("RestrictedApi")
+    public Size calculateResolution(ImageCapture imageCapture, int height) {
+        int actualWidth = imageCapture.getAttachedSurfaceResolution().getWidth();
         float width = (height / (float) actualWidth) * actualWidth;
         return new Size((int) width, height);
     }
