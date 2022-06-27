@@ -5,7 +5,6 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +22,9 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LifecycleRegistry;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -83,7 +85,6 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
-    @SuppressLint("RestrictedApi")
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
@@ -100,19 +101,9 @@ public class CameraPreviewFragment extends Fragment {
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(direction)
                 .build();
-
-        Preview tempPreview = new Preview.Builder().build();
-        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
-        Camera tempCamera = cameraProvider.bindToLifecycle(
-                this,
-                cameraSelector,
-                tempPreview,
-                tempImageCapture
-        );
-
         preview = new Preview.Builder().build();
-        Size targetResolution = calculateResolution(tempImageCapture.getAttachedSurfaceResolution().getWidth(), 1024);
-        imageCapture = new ImageCapture.Builder().setTargetResolution(targetResolution).build();
+        imageCapture = new ImageCapture.Builder().build();
+
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
                 this,
@@ -126,11 +117,6 @@ public class CameraPreviewFragment extends Fragment {
         if (startCameraCallback != null) {
             startCameraCallback.onCameraStarted(null);
         }
-    }
-
-    public Size calculateResolution(int actualWidth, int height) {
-        float width = (height / (float) actualWidth) * actualWidth;
-        return new Size((int) width, height);
     }
 
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
