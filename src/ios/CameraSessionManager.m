@@ -72,6 +72,12 @@
                     success = FALSE;
                 }
                 
+                AVCaptureSessionPreset calculatedPreset = [self calculateResolution:700];
+                
+                if ([self.session canSetSessionPreset:calculatedPreset]) {
+                    [self.session setSessionPreset:calculatedPreset];
+                }
+                
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
@@ -107,6 +113,20 @@
             completion(false);
         }
     }];
+}
+
+- (AVCaptureSessionPreset) calculateResolution:(NSInteger)height {
+    if (height >= 3840) {
+        return AVCaptureSessionPreset3840x2160;
+    } else if (height >= 1920) {
+        return AVCaptureSessionPreset1920x1080;
+    } else if (height >= 1280) {
+        return AVCaptureSessionPreset1280x720;
+    } else if (height >= 640) {
+        return AVCaptureSessionPreset640x480;
+    } else {
+        return AVCaptureSessionPreset352x288;
+    }
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
