@@ -134,7 +134,13 @@ public class CameraPreviewFragment extends Fragment {
     public Size calculateResolution(ImageCapture imageCapture, int height) {
         int actualWidth = imageCapture.getAttachedSurfaceResolution().getWidth();
         int actualHeight = imageCapture.getAttachedSurfaceResolution().getHeight();
-        float width = (actualHeight / (float) actualWidth) * height;
+        int orientation = getResources().getConfiguration().orientation;
+        float width;
+        if (orientation == 1) {
+            width = (actualHeight / (float) actualWidth) * height;
+        } else {
+            width = (actualWidth / (float) actualHeight) * height;
+        }
         return new Size((int) width, height);
     }
 
