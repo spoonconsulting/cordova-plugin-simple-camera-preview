@@ -100,6 +100,7 @@ public class CameraPreviewFragment extends Fragment {
                 .requireLensFacing(direction)
                 .build();
 
+        // tempCamera to calculate targetResolution
         Preview tempPreview = new Preview.Builder().build();
         ImageCapture tempImageCapture = new ImageCapture.Builder().build();
         Camera tempCamera = cameraProvider.bindToLifecycle(
@@ -108,10 +109,12 @@ public class CameraPreviewFragment extends Fragment {
                 tempPreview,
                 tempImageCapture
         );
+        Size targetResolution = calculateResolution(tempImageCapture, 1200);
 
         preview = new Preview.Builder().build();
-        Size targetResolution = calculateResolution(tempImageCapture, 1024);
-        imageCapture = new ImageCapture.Builder().setTargetResolution(targetResolution).build();
+        imageCapture = new ImageCapture.Builder()
+                .setTargetResolution(targetResolution)
+                .build();
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
                 this,
@@ -130,7 +133,8 @@ public class CameraPreviewFragment extends Fragment {
     @SuppressLint("RestrictedApi")
     public Size calculateResolution(ImageCapture imageCapture, int height) {
         int actualWidth = imageCapture.getAttachedSurfaceResolution().getWidth();
-        float width = (height / (float) actualWidth) * actualWidth;
+        int actualHeight = imageCapture.getAttachedSurfaceResolution().getHeight();
+        float width = (actualHeight / (float) actualWidth) * height;
         return new Size((int) width, height);
     }
 
