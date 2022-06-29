@@ -100,7 +100,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
         }
 
-        fragment = new CameraPreviewFragment(cameraDirection, (err) -> {
+        int heightResolution = 0;
+
+        try {
+            heightResolution = Integer.parseInt(options.getString("heightResolution"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        fragment = new CameraPreviewFragment(cameraDirection, heightResolution, (err) -> {
             if (err != null) {
                 callbackContext.error(err.getMessage());
                 return;
