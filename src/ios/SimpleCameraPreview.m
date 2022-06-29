@@ -43,11 +43,14 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
+    NSDictionary* config = command.arguments[0];
+    NSInteger heightResolution = ((NSNumber*)config[@"heightResolution"]).intValue;
+    
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         });
-    }];
+    } heightResolution:heightResolution];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {

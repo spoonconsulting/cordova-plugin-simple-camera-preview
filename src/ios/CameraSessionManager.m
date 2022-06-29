@@ -37,7 +37,7 @@
     return orientation;
 }
 
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion{
+- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion heightResolution:(NSInteger)heightResolution {
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
@@ -72,7 +72,7 @@
                     success = FALSE;
                 }
                 
-                AVCaptureSessionPreset calculatedPreset = [self calculateResolution:700];
+                AVCaptureSessionPreset calculatedPreset = [self calculateResolution:heightResolution];
                 
                 if ([self.session canSetSessionPreset:calculatedPreset]) {
                     [self.session setSessionPreset:calculatedPreset];
