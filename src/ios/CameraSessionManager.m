@@ -72,10 +72,11 @@
                     success = FALSE;
                 }
                 
-                AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxHeightResolution];
-                
-                if ([self.session canSetSessionPreset:calculatedPreset]) {
-                    [self.session setSessionPreset:calculatedPreset];
+                if (maxHeightResolution != 0) {
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxHeightResolution];
+                    if ([self.session canSetSessionPreset:calculatedPreset]) {
+                        [self.session setSessionPreset:calculatedPreset];
+                    }
                 }
                 
                 if ([self.session canAddInput:videoDeviceInput]) {
