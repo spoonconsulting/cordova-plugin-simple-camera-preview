@@ -100,15 +100,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
         }   
 
-        int maxHeightResolution = 0;
+        int maxSize = 0;
 
         try {
-            maxHeightResolution = Integer.parseInt(options.getString("maxHeightResolution"));
+            maxSize = Integer.parseInt(options.getString("maxSize"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        fragment = new CameraPreviewFragment(cameraDirection, maxHeightResolution, (err) -> {
+        fragment = new CameraPreviewFragment(cameraDirection, maxSize, (err) -> {
             if (err != null) {
                 callbackContext.error(err.getMessage());
                 return;

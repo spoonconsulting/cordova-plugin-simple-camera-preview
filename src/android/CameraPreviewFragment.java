@@ -52,7 +52,7 @@ public class CameraPreviewFragment extends Fragment {
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
-    private int maxHeightResolution;
+    private int maxSize;
     private boolean torchActivated = false;
 
     private static final String TAG = "SimpleCameraPreview";
@@ -62,9 +62,9 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(int cameraDirection, int maxHeightResolution, CameraStartedCallback cameraStartedCallback) {
+    public CameraPreviewFragment(int cameraDirection, int maxSize, CameraStartedCallback cameraStartedCallback) {
         this.direction = cameraDirection;
-        this.maxHeightResolution = maxHeightResolution;
+        this.maxSize = maxSize;
         startCameraCallback = cameraStartedCallback;
     }
 
@@ -112,8 +112,8 @@ public class CameraPreviewFragment extends Fragment {
                 tempImageCapture
         );
         Size targetResolution = null;
-        if (maxHeightResolution != 0) {
-            targetResolution = calculateResolution(tempImageCapture, maxHeightResolution);
+        if (maxSize != 0) {
+            targetResolution = calculateResolution(tempImageCapture, maxSize);
         }
 
         preview = new Preview.Builder().build();
