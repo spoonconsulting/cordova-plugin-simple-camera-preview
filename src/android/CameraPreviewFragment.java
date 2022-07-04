@@ -85,6 +85,7 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
+    @SuppressLint("RestrictedApi")
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
@@ -118,7 +119,7 @@ public class CameraPreviewFragment extends Fragment {
 
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution)
+                .setMaxResolution(targetResolution)
                 .build();
         cameraProvider.unbindAll();
         camera = cameraProvider.bindToLifecycle(
@@ -136,17 +137,18 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("RestrictedApi")
-    public Size calculateResolution(ImageCapture imageCapture, int height) {
+    public Size calculateResolution(ImageCapture imageCapture, int maxSize) {
         int actualWidth = imageCapture.getAttachedSurfaceResolution().getWidth();
         int actualHeight = imageCapture.getAttachedSurfaceResolution().getHeight();
         int orientation = getResources().getConfiguration().orientation;
-        float width;
+        float width = maxSize;
+        float height = maxSize;
         if (orientation == 1) {
-            width = (actualHeight / (float) actualWidth) * height;
+            width = (actualHeight / (float) actualWidth) * maxSize;
         } else {
-            width = (actualWidth / (float) actualHeight) * height;
+            height = (actualHeight / (float) actualWidth) * maxSize;
         }
-        return new Size((int) width, height);
+        return new Size((int) width, (int) height);
     }
 
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
