@@ -1,174 +1,173 @@
-#include "CameraSessionManager.h"
-@implementation CameraSessionManager
+#import "CameraRenderController.h"
+#import <CoreVideo/CVOpenGLESTextureCache.h>
+#import <GLKit/GLKit.h>
+#import <OpenGLES/ES2/glext.h>
 
-- (CameraSessionManager *)init {
-    if (self = [super init]) {
-        // Create the AVCaptureSession
-        self.session = [[AVCaptureSession alloc] init];
-        self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
-        if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
-            [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
-        }
-        self.filterLock = [[NSLock alloc] init];
-    }
+@implementation CameraRenderController
+@synthesize context = _context;
+
+- (CameraRenderController *)init {
+    if (self = [super init])
+        self.renderLock = [[NSLock alloc] init];
     return self;
 }
 
-- (AVCaptureVideoOrientation) getCurrentOrientation {
-    return [self getCurrentOrientation: [[UIApplication sharedApplication] statusBarOrientation]];
+- (void)loadView {
+    GLKView *glkView = [[GLKView alloc] init];
+    [glkView setBackgroundColor:[UIColor blackColor]];
+    [glkView setAutoresizingMask:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+    [self setView:glkView];
 }
 
-- (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
-    AVCaptureVideoOrientation orientation;
-    switch (toInterfaceOrientation) {
-        case UIInterfaceOrientationPortraitUpsideDown:
-            orientation = AVCaptureVideoOrientationPortraitUpsideDown;
-            break;
-        case UIInterfaceOrientationLandscapeRight:
-            orientation = AVCaptureVideoOrientationLandscapeRight;
-            break;
-        case UIInterfaceOrientationLandscapeLeft:
-            orientation = AVCaptureVideoOrientationLandscapeLeft;
-            break;
-        default:
-        case UIInterfaceOrientationPortrait:
-            orientation = AVCaptureVideoOrientationPortrait;
-    }
-    return orientation;
-}
-
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion{
-    // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
-    [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
-        NSLog(@"permission callback");
-        if (granted) {
-            dispatch_async(self.sessionQueue, ^{
-                NSError *error = nil;
-                BOOL success = TRUE;
-                
-                NSLog(@"defaultCamera: %@", defaultCamera);
-                if ([defaultCamera isEqual: @"front"]) {
-                    self.defaultCamera = AVCaptureDevicePositionFront;
-                } else {
-                    self.defaultCamera = AVCaptureDevicePositionBack;
-                }
-                
-                AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
-                
-                if ([videoDevice hasFlash] && [videoDevice isFlashModeSupported:AVCaptureFlashModeAuto]) {
-                    if ([videoDevice lockForConfiguration:&error]) {
-                        [videoDevice setFlashMode:AVCaptureFlashModeAuto];
-                        [videoDevice unlockForConfiguration];
-                    } else {
-                        NSLog(@"%@", error);
-                        success = FALSE;
-                    }
-                }
-                
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-                
-                if (error) {
-                    NSLog(@"%@", error);
-                    success = FALSE;
-                }
-                
-                if ([self.session canAddInput:videoDeviceInput]) {
-                    [self.session addInput:videoDeviceInput];
-                    self.videoDeviceInput = videoDeviceInput;
-                }
-                
-                AVCaptureStillImageOutput *stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-                if ([self.session canAddOutput:stillImageOutput]) {
-                    [self.session addOutput:stillImageOutput];
-                    [stillImageOutput setOutputSettings:@{AVVideoCodecKey : AVVideoCodecJPEG}];
-                    self.stillImageOutput = stillImageOutput;
-                }
-                
-                AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
-                if ([self.session canAddOutput:dataOutput]) {
-                    self.dataOutput = dataOutput;
-                    [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
-                    [dataOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
-                    
-                    [dataOutput setSampleBufferDelegate:self.delegate queue:self.sessionQueue];
-                    
-                    [self.session addOutput:dataOutput];
-                }
-                __block AVCaptureVideoOrientation orientation;
-                dispatch_sync(dispatch_get_main_queue(), ^{
-                    orientation=[self getCurrentOrientation];
-                });
-                [self updateOrientation:orientation];
-                self.device = videoDevice;
-                
-                completion(success);
-            });
-        }else{
-            completion(false);
-        }
-    }];
-}
-
-- (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
-    AVCaptureConnection *captureConnection;
-    if (self.stillImageOutput != nil) {
-        captureConnection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-        if ([captureConnection isVideoOrientationSupported]) {
-            [captureConnection setVideoOrientation:orientation];
-        }
-    }
-    if (self.dataOutput != nil) {
-        captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
-        if ([captureConnection isVideoOrientationSupported]) {
-            [captureConnection setVideoOrientation:orientation];
-        }
-    }
-}
-- (NSInteger)getFlashMode {
-
-    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
-        return self.device.flashMode;
-    }
-
-    return -1;
-}
-
-- (void) torchSwitch:(NSInteger)torchState{
-    NSError *error = nil;
-    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        if ([self.device lockForConfiguration:&error]) {
-            self.device.torchMode = torchState;
-            [self.device unlockForConfiguration];
-        }
-    }
-}
-
-- (void)setFlashMode:(NSInteger)flashMode {
-    NSError *error = nil;
-    // Let's save the setting even if we can't set it up on this camera.
-    self.defaultFlashMode = flashMode;
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    if (!self.context)
+        NSLog(@"Failed to create ES context");
     
-    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
-        
-        if ([self.device lockForConfiguration:&error]) {
-            [self.device setFlashMode:self.defaultFlashMode];
-            [self.device unlockForConfiguration];
-            
-        } else {
-            NSLog(@"%@", error);
+    CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL, self.context, NULL, &_videoTextureCache);
+    if (err) {
+        NSLog(@"Error at CVOpenGLESTextureCacheCreate %d", err);
+        return;
+    }
+    
+    GLKView *view = (GLKView *)self.view;
+    view.context = self.context;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    view.contentMode = UIViewContentModeScaleToFill;
+    
+    glGenRenderbuffers(1, &_renderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _renderBuffer);
+    self.ciContext = [CIContext contextWithEAGLContext:self.context];
+}
+
+- (void) viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+    
+    UIInterfaceOrientation orientation= [UIApplication sharedApplication].statusBarOrientation;
+    dispatch_async(self.sessionManager.sessionQueue, ^{
+        if (!self.sessionManager.session.running){
+            NSLog(@"Starting session from viewWillAppear");
+            [self.sessionManager.session startRunning];
         }
-    } else {
-        NSLog(@"Camera has no flash or flash mode not supported");
+        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation: orientation]];
+    });
+}
+
+- (void) viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    dispatch_async(self.sessionManager.sessionQueue, ^{
+        if (self.sessionManager.session.running){
+            NSLog(@"Stopping session");
+            [self.sessionManager.session stopRunning];
+        }
+    });
+}
+
+- (void) appplicationIsActive:(NSNotification *)notification {
+    dispatch_async(self.sessionManager.sessionQueue, ^{
+        if (!self.sessionManager.session.running){
+            NSLog(@"Starting session");
+            [self.sessionManager.session startRunning];
+        }
+    });
+}
+
+- (void) applicationEnteredForeground:(NSNotification *)notification {
+     dispatch_async(self.sessionManager.sessionQueue, ^{
+         if (self.sessionManager.session.running){
+             NSLog(@"Stopping session");
+             [self.sessionManager.session stopRunning];
+         }
+     });
+}
+
+-(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
+    if ([self.renderLock tryLock]) {
+        CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
+        CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+        
+        __block CGRect frame;
+        frame = self.view.frame;
+        
+        CGFloat scaleHeight = frame.size.height/image.extent.size.height;
+        CGFloat scaleWidth = frame.size.width/image.extent.size.width;
+        
+        CGFloat scale, x, y;
+        if (scaleHeight < scaleWidth) {
+            scale = scaleWidth;
+            x = 0;
+            y = ((scale * image.extent.size.height) - frame.size.height ) / 2;
+        } else {
+            scale = scaleHeight;
+            x = ((scale * image.extent.size.width) - frame.size.width )/ 2;
+            y = 0;
+        }
+        
+        // scale - translate
+        CGAffineTransform xscale = CGAffineTransformMakeScale(scale, scale);
+        CGAffineTransform xlate = CGAffineTransformMakeTranslation(-x, -y);
+        CGAffineTransform xform =  CGAffineTransformConcat(xscale, xlate);
+        
+        CIFilter *centerFilter = [CIFilter filterWithName:@"CIAffineTransform"  keysAndValues:
+                                  kCIInputImageKey, image,
+                                  kCIInputTransformKey, [NSValue valueWithBytes:&xform objCType:@encode(CGAffineTransform)],
+                                  nil];
+        
+        CIImage *transformedImage = [centerFilter outputImage];
+        
+        // crop
+        CIFilter *cropFilter = [CIFilter filterWithName:@"CICrop"];
+        CIVector *cropRect = [CIVector vectorWithX:0 Y:0 Z:frame.size.width W:frame.size.height];
+        [cropFilter setValue:transformedImage forKey:kCIInputImageKey];
+        [cropFilter setValue:cropRect forKey:@"inputRectangle"];
+        CIImage *croppedImage = [cropFilter outputImage];
+        
+        //fix front mirroring
+        if (self.sessionManager.defaultCamera == AVCaptureDevicePositionFront) {
+            CGAffineTransform matrix = CGAffineTransformTranslate(CGAffineTransformMakeScale(-1, 1), 0, croppedImage.extent.size.height);
+            croppedImage = [croppedImage imageByApplyingTransform:matrix];
+        }
+        
+        self.latestFrame = croppedImage;
+        
+        CGFloat pointScale;
+        if ([[UIScreen mainScreen] respondsToSelector:@selector(nativeScale)]) {
+            pointScale = [[UIScreen mainScreen] nativeScale];
+        } else {
+            pointScale = [[UIScreen mainScreen] scale];
+        }
+        CGRect dest = CGRectMake(0, 0, frame.size.width*pointScale, frame.size.height*pointScale);
+        
+        [self.ciContext drawImage:croppedImage inRect:dest fromRect:[croppedImage extent]];
+        //[self.ciContext drawImage:image inRect:dest fromRect:[image extent]];
+        [self.context presentRenderbuffer:GL_RENDERBUFFER];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [(GLKView *)(self.view)display];
+        });
+        [self.renderLock unlock];
     }
 }
-// Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
-- (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
-    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-    for (AVCaptureDevice *device in devices){
-        if ([device position] == position)
-            return device;
+
+- (void)viewDidUnload {
+    [super viewDidUnload];
+    
+    if ([EAGLContext currentContext] == self.context) {
+        [EAGLContext setCurrentContext:nil];
     }
-    return nil;
+    self.context = nil;
+}
+
+- (BOOL)shouldAutorotate {
+    return YES;
+}
+
+-(void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
 }
 
 @end
