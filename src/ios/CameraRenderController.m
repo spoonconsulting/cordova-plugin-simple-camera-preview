@@ -60,6 +60,12 @@
     [super viewWillDisappear:animated];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    dispatch_async(self.sessionManager.sessionQueue, ^{
+        if (self.sessionManager.session.running){
+            NSLog(@"Stopping session");
+            [self.sessionManager.session stopRunning];
+        }
+    });
 }
 
 - (void) appplicationIsActive:(NSNotification *)notification {
@@ -72,10 +78,12 @@
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {
-    // dispatch_async(self.sessionManager.sessionQueue, ^{
-    //     NSLog(@"Stopping session");
-    //     [self.sessionManager.session stopRunning];
-    // });
+     dispatch_async(self.sessionManager.sessionQueue, ^{
+         if (self.sessionManager.session.running){
+             NSLog(@"Stopping session");
+             [self.sessionManager.session stopRunning];
+         }
+     });
 }
 
 -(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
@@ -84,9 +92,7 @@
         CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
         
         __block CGRect frame;
-        dispatch_sync(dispatch_get_main_queue(), ^{
-            frame = self.view.frame;
-        });
+        frame = self.view.frame;
         
         CGFloat scaleHeight = frame.size.height/image.extent.size.height;
         CGFloat scaleWidth = frame.size.width/image.extent.size.width;
