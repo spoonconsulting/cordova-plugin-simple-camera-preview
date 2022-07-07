@@ -122,12 +122,25 @@ public class CameraPreviewFragment extends Fragment {
                 .setMaxResolution(targetResolution)
                 .build();
         cameraProvider.unbindAll();
-        camera = cameraProvider.bindToLifecycle(
-                this,
-                cameraSelector,
-                preview,
-                imageCapture
-        );
+        try {
+            camera = cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        } catch (IllegalArgumentException e) {
+            // Error with result in capturing image with default resolution
+            e.printStackTrace();
+            imageCapture = new ImageCapture.Builder()
+                    .build();
+            camera = cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        }
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
