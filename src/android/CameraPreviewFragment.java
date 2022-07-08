@@ -32,6 +32,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -156,18 +160,49 @@ public class CameraPreviewFragment extends Fragment {
                 tempImageCapture
         );
 
-        int actualWidth = tempImageCapture.getAttachedSurfaceResolution().getWidth();
-        int actualHeight = tempImageCapture.getAttachedSurfaceResolution().getHeight();
-        int orientation = getResources().getConfiguration().orientation;
-        float width = maxSize;
-        float height = maxSize;
-        if (orientation == 1) {
-            width = (actualHeight / (float) actualWidth) * maxSize;
-        } else {
-            height = (actualHeight / (float) actualWidth) * maxSize;
+        @SuppressLint("UnsafeOptInUsageError") CameraCharacteristics cameraCharacteristics = Camera2CameraInfo
+                .extractCameraCharacteristics(tempCamera.getCameraInfo());
+        StreamConfigurationMap streamConfigurationMap = cameraCharacteristics
+                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        List<Size> supportedSizes = Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG));
+        Collections.sort(supportedSizes, new Comparator<Size>(){
+            @Override
+            public int compare(Size size, Size t1) {
+                return Integer.compare(t1.getHeight(), size.getHeight());
+            }
+        });
+        for (Size size: supportedSizes) {
+            if (size.getHeight() >= maxSize) {
+                return size;
+            }
         }
-        return new Size((int) width, (int) height);
+        return supportedSizes.get(supportedSizes.size() - 1);
     }
+
+//    @SuppressLint("RestrictedApi")
+//    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int maxSize) {
+//        // tempCamera to calculate targetResolution
+//        Preview tempPreview = new Preview.Builder().build();
+//        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
+//        Camera tempCamera = cameraProvider.bindToLifecycle(
+//                this,
+//                cameraSelector,
+//                tempPreview,
+//                tempImageCapture
+//        );
+//
+//        int actualWidth = tempImageCapture.getAttachedSurfaceResolution().getWidth();
+//        int actualHeight = tempImageCapture.getAttachedSurfaceResolution().getHeight();
+//        int orientation = getResources().getConfiguration().orientation;
+//        float width = maxSize;
+//        float height = maxSize;
+//        if (orientation == 1) {
+//            width = (actualHeight / (float) actualWidth) * maxSize;
+//        } else {
+//            height = (actualHeight / (float) actualWidth) * maxSize;
+//        }
+//        return new Size((int) width, (int) height);
+//    }
 
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
         if (!camera.getCameraInfo().hasFlashUnit()) {
