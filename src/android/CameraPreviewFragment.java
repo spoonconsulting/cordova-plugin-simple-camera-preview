@@ -172,7 +172,7 @@ public class CameraPreviewFragment extends Fragment {
             }
         });
         for (Size size: supportedSizes) {
-            if (size.getHeight() >= maxSize) {
+            if (size.getHeight() <= maxSize) {
                 return size;
             }
         }
