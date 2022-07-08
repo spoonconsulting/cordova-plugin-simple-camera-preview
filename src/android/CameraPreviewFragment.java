@@ -168,11 +168,11 @@ public class CameraPreviewFragment extends Fragment {
         Collections.sort(supportedSizes, new Comparator<Size>(){
             @Override
             public int compare(Size size, Size t1) {
-                return Integer.compare(t1.getHeight(), size.getHeight());
+                return Integer.compare(t1.getWidth(), size.getWidth());
             }
         });
         for (Size size: supportedSizes) {
-            if (size.getHeight() <= maxSize) {
+            if (size.getWidth() <= maxSize) {
                 return size;
             }
         }
