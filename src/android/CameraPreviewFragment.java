@@ -1,6 +1,9 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
+import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,6 +16,7 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -103,18 +107,9 @@ public class CameraPreviewFragment extends Fragment {
                 .requireLensFacing(direction)
                 .build();
 
-        // tempCamera to calculate targetResolution
-        Preview tempPreview = new Preview.Builder().build();
-        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
-        Camera tempCamera = cameraProvider.bindToLifecycle(
-                this,
-                cameraSelector,
-                tempPreview,
-                tempImageCapture
-        );
         Size targetResolution = null;
         if (maxSize != 0) {
-            targetResolution = calculateResolution(tempImageCapture, maxSize);
+            targetResolution = calculateResolution(cameraProvider, cameraSelector, maxSize);
         }
 
         preview = new Preview.Builder().build();
@@ -150,9 +145,19 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("RestrictedApi")
-    public Size calculateResolution(ImageCapture imageCapture, int maxSize) {
-        int actualWidth = imageCapture.getAttachedSurfaceResolution().getWidth();
-        int actualHeight = imageCapture.getAttachedSurfaceResolution().getHeight();
+    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int maxSize) {
+        // tempCamera to calculate targetResolution
+        Preview tempPreview = new Preview.Builder().build();
+        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
+        Camera tempCamera = cameraProvider.bindToLifecycle(
+                this,
+                cameraSelector,
+                tempPreview,
+                tempImageCapture
+        );
+
+        int actualWidth = tempImageCapture.getAttachedSurfaceResolution().getWidth();
+        int actualHeight = tempImageCapture.getAttachedSurfaceResolution().getHeight();
         int orientation = getResources().getConfiguration().orientation;
         float width = maxSize;
         float height = maxSize;
