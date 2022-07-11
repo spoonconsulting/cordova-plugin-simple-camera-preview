@@ -37,7 +37,7 @@
     return orientation;
 }
 
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion maxSize:(NSInteger)maxSize {
+- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion setupSessionOptions:(NSDictionary *)setupSessionOptions {
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
@@ -72,7 +72,8 @@
                     success = FALSE;
                 }
                 
-                if (maxSize != 0) {
+                NSInteger maxSize = ((NSNumber*)setupSessionOptions[@"maxSize"]).intValue;
+                if (maxSize && maxSize != 0) {
                     AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxSize];
                     if ([self.session canSetSessionPreset:calculatedPreset]) {
                         [self.session setSessionPreset:calculatedPreset];
@@ -116,14 +117,14 @@
     }];
 }
 
-- (AVCaptureSessionPreset) calculateResolution:(NSInteger)height {
-    if (height >= 3840) {
+- (AVCaptureSessionPreset) calculateResolution:(NSInteger)maxSize {
+    if (maxSize >= 3840) {
         return AVCaptureSessionPreset3840x2160;
-    } else if (height >= 1920) {
+    } else if (maxSize >= 1920) {
         return AVCaptureSessionPreset1920x1080;
-    } else if (height >= 1280) {
+    } else if (maxSize >= 1280) {
         return AVCaptureSessionPreset1280x720;
-    } else if (height >= 640) {
+    } else if (maxSize >= 640) {
         return AVCaptureSessionPreset640x480;
     } else {
         return AVCaptureSessionPreset352x288;

@@ -5,7 +5,7 @@
 @interface CameraSessionManager : NSObject
 
 - (CameraSessionManager *)init;
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion maxSize:(NSInteger)maxSize;
+- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion setupSessionOptions:(NSDictionary *)setupSessionOptions;
 - (void) setFlashMode:(NSInteger)flashMode;
 - (void) torchSwitch:(NSInteger)torchState;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
