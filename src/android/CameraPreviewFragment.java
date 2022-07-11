@@ -30,6 +30,9 @@ import androidx.fragment.app.Fragment;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -70,9 +73,13 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(int cameraDirection, int maxSize, CameraStartedCallback cameraStartedCallback) {
+    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback, JSONObject options) {
         this.direction = cameraDirection;
-        this.maxSize = maxSize;
+        try {
+            this.maxSize = options.getInt("maxSize");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         startCameraCallback = cameraStartedCallback;
     }
 

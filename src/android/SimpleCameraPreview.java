@@ -108,14 +108,21 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        fragment = new CameraPreviewFragment(cameraDirection, maxSize, (err) -> {
+        JSONObject cameraPreviewOptions = new JSONObject();
+        try {
+            cameraPreviewOptions.put("maxSize", maxSize);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        fragment = new CameraPreviewFragment(cameraDirection, (err) -> {
             if (err != null) {
                 callbackContext.error(err.getMessage());
                 return;
             }
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
             callbackContext.sendPluginResult(pluginResult);
-        });
+        }, cameraPreviewOptions);
 
         try {
             RunnableFuture<Void> addViewTask = new FutureTask<>(
