@@ -185,11 +185,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (locationManager == null) {
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
             }
-            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            Location cachedLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (cachedLocation != null) {
                 fragment.setLocation(cachedLocation);
             }
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationCallback);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationCallback);
         }
     }
 
