@@ -52,7 +52,7 @@ BOOL torchActivated = false;
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         });
-    } setupSessionOptions:setupSessionOptions];
+    } options:setupSessionOptions];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
