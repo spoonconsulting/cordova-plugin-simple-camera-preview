@@ -73,7 +73,7 @@
                 }
                 
                 NSInteger maxSize = ((NSNumber*)options[@"maxSize"]).intValue;
-                if (maxSize && maxSize != 0) {
+                if (maxSize != 0) {
                     AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxSize];
                     if ([self.session canSetSessionPreset:calculatedPreset]) {
                         [self.session setSessionPreset:calculatedPreset];
