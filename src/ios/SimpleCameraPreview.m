@@ -27,6 +27,8 @@ BOOL torchActivated = false;
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.distanceFilter = kCLHeadingFilterNone;
+    locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
     
     // Create the session manager
