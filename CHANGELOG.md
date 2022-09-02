@@ -1,3 +1,11 @@
+## [2.0.7](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.6...v2.0.7) (2022-08-31)
+
+* **iOS:** Use pausesLocationUpdatesAutomatically for improving location. ([#48](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/48))
+
+## [2.0.6](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.5...v2.0.6) (2022-08-22)
+
+* **Android:** Use FUSED_PROVIDER instead of NETWORK_PROVIDER for location. ([#46](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/46))
+
 ## [2.0.5](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.4...v2.0.5) (2022-06-22)
 
 * **Android:** Add torch functionality. ([#40](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/40))
