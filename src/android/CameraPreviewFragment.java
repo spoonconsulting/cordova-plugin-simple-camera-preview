@@ -156,7 +156,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public Size calculateResolution(int maxSize) {
-        return new Size(maxSize, maxSize / (4 / 3));
+        return new Size(maxSize, (maxSize / (4 / 3)));
     }
 
 //    Another way to Calculate
