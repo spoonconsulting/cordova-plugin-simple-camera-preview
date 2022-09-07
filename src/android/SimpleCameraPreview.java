@@ -101,7 +101,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }   
 
         int maxSize = 0;
-
         try {
             maxSize = Integer.parseInt(options.getString("maxSize"));
         } catch (JSONException e) {

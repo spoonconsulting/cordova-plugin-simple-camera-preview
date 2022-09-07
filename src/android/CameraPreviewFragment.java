@@ -119,8 +119,8 @@ public class CameraPreviewFragment extends Fragment {
                 .build();
 
         Size targetResolution = null;
-        if (maxSize != 0) {
-            targetResolution = calculateResolution(cameraProvider, cameraSelector, maxSize);
+        if (maxSize > 0) {
+            targetResolution = calculateResolution(maxSize);
         }
 
         preview = new Preview.Builder().build();
@@ -155,37 +155,11 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    @SuppressLint("RestrictedApi")
-    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int maxSize) {
-        // tempCamera to calculate targetResolution
-        Preview tempPreview = new Preview.Builder().build();
-        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
-        Camera tempCamera = cameraProvider.bindToLifecycle(
-                this,
-                cameraSelector,
-                tempPreview,
-                tempImageCapture
-        );
-
-        @SuppressLint("UnsafeOptInUsageError") CameraCharacteristics cameraCharacteristics = Camera2CameraInfo
-                .extractCameraCharacteristics(tempCamera.getCameraInfo());
-        StreamConfigurationMap streamConfigurationMap = cameraCharacteristics
-                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        List<Size> supportedSizes = Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG));
-        Collections.sort(supportedSizes, new Comparator<Size>(){
-            @Override
-            public int compare(Size size, Size t1) {
-                return Integer.compare(t1.getWidth(), size.getWidth());
-            }
-        });
-        for (Size size: supportedSizes) {
-            if (size.getWidth() <= maxSize) {
-                return size;
-            }
-        }
-        return supportedSizes.get(supportedSizes.size() - 1);
+    public Size calculateResolution(int maxSize) {
+        return new Size(maxSize, maxSize / (4 / 3));
     }
 
+//    Another way to Calculate
 //    @SuppressLint("RestrictedApi")
 //    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int maxSize) {
 //        // tempCamera to calculate targetResolution
@@ -198,17 +172,23 @@ public class CameraPreviewFragment extends Fragment {
 //                tempImageCapture
 //        );
 //
-//        int actualWidth = tempImageCapture.getAttachedSurfaceResolution().getWidth();
-//        int actualHeight = tempImageCapture.getAttachedSurfaceResolution().getHeight();
-//        int orientation = getResources().getConfiguration().orientation;
-//        float width = maxSize;
-//        float height = maxSize;
-//        if (orientation == 1) {
-//            width = (actualHeight / (float) actualWidth) * maxSize;
-//        } else {
-//            height = (actualHeight / (float) actualWidth) * maxSize;
+//        @SuppressLint("UnsafeOptInUsageError") CameraCharacteristics cameraCharacteristics = Camera2CameraInfo
+//                .extractCameraCharacteristics(tempCamera.getCameraInfo());
+//        StreamConfigurationMap streamConfigurationMap = cameraCharacteristics
+//                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+//        List<Size> supportedSizes = Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG));
+//        Collections.sort(supportedSizes, new Comparator<Size>(){
+//            @Override
+//            public int compare(Size size, Size t1) {
+//                return Integer.compare(t1.getWidth(), size.getWidth());
+//            }
+//        });
+//        for (Size size: supportedSizes) {
+//            if (size.getWidth() <= maxSize) {
+//                return size;
+//            }
 //        }
-//        return new Size((int) width, (int) height);
+//        return supportedSizes.get(supportedSizes.size() - 1);
 //    }
 
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
