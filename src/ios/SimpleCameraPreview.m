@@ -44,10 +44,12 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
-    NSDictionary* config = command.arguments[0];
-    NSInteger maxSize = ((NSNumber*)config[@"maxSize"]).intValue;
-    
-    NSDictionary *setupSessionOptions = @{ @"maxSize" : [NSNumber numberWithInt:maxSize] };
+    NSDictionary *setupSessionOptions;
+    if (command.arguments.count > 0) {
+        NSDictionary* config = command.arguments[0];
+        NSInteger maxSize = ((NSNumber*)config[@"maxSize"]).intValue;
+        setupSessionOptions = @{ @"maxSize" : [NSNumber numberWithInt:maxSize] };
+    }
     
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{

@@ -72,11 +72,13 @@
                     success = FALSE;
                 }
                 
-                NSInteger maxSize = ((NSNumber*)options[@"maxSize"]).intValue;
-                if (maxSize != 0) {
-                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxSize];
-                    if ([self.session canSetSessionPreset:calculatedPreset]) {
-                        [self.session setSessionPreset:calculatedPreset];
+                if (options) {
+                    NSInteger maxSize = ((NSNumber*)options[@"maxSize"]).intValue;
+                    if (maxSize > 0) {
+                        AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxSize];
+                        if ([self.session canSetSessionPreset:calculatedPreset]) {
+                            [self.session setSessionPreset:calculatedPreset];
+                        }
                     }
                 }
                 
