@@ -65,6 +65,7 @@ public class CameraPreviewFragment extends Fragment {
     private int direction;
     private int maxSize;
     private boolean torchActivated = false;
+    private float aspectRatio = (4 / 3);
 
     private static final String TAG = "SimpleCameraPreview";
 
@@ -125,7 +126,7 @@ public class CameraPreviewFragment extends Fragment {
 
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
-                .setMaxResolution(targetResolution)
+                .setDefaultResolution(targetResolution)
                 .build();
         cameraProvider.unbindAll();
         try {
@@ -156,7 +157,14 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public Size calculateResolution(int maxSize) {
-        return new Size(maxSize, (maxSize / (4 / 3)));
+        int orientation = getResources().getConfiguration().orientation;
+        Size calculatedSize;
+        if (orientation == 1) {
+            calculatedSize = new Size((int) ((float) maxSize / aspectRatio), maxSize);
+        } else {
+            calculatedSize = new Size(maxSize, (int) ((float) maxSize / aspectRatio));
+        }
+        return calculatedSize;
     }
 
 //    Another way to Calculate
