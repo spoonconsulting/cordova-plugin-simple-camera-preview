@@ -1,9 +1,6 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
-import android.graphics.ImageFormat;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,7 +13,6 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -35,10 +31,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
