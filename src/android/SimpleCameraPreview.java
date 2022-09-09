@@ -100,16 +100,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
         }   
 
-        int maxSize = 0;
+        int targetSize = 0;
         try {
-            maxSize = Integer.parseInt(options.getString("maxSize"));
+            targetSize = Integer.parseInt(options.getString("targetSize"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         JSONObject cameraPreviewOptions = new JSONObject();
         try {
-            cameraPreviewOptions.put("maxSize", maxSize);
+            cameraPreviewOptions.put("targetSize", targetSize);
         } catch (JSONException e) {
             e.printStackTrace();
         }

@@ -73,9 +73,9 @@
                 }
                 
                 if (options) {
-                    NSInteger maxSize = ((NSNumber*)options[@"maxSize"]).intValue;
-                    if (maxSize > 0) {
-                        AVCaptureSessionPreset calculatedPreset = [self calculateResolution:maxSize];
+                    NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
+                    if (targetSize > 0) {
+                        AVCaptureSessionPreset calculatedPreset = [self calculateResolution:targetSize];
                         if ([self.session canSetSessionPreset:calculatedPreset]) {
                             [self.session setSessionPreset:calculatedPreset];
                         }
@@ -119,14 +119,14 @@
     }];
 }
 
-- (AVCaptureSessionPreset) calculateResolution:(NSInteger)maxSize {
-    if (maxSize >= 3840) {
+- (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
+    if (targetSize >= 3840) {
         return AVCaptureSessionPreset3840x2160;
-    } else if (maxSize >= 1920) {
+    } else if (targetSize >= 1920) {
         return AVCaptureSessionPreset1920x1080;
-    } else if (maxSize >= 1280) {
+    } else if (targetSize >= 1280) {
         return AVCaptureSessionPreset1280x720;
-    } else if (maxSize >= 640) {
+    } else if (targetSize >= 640) {
         return AVCaptureSessionPreset640x480;
     } else {
         return AVCaptureSessionPreset352x288;

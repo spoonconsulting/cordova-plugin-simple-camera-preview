@@ -55,7 +55,7 @@ public class CameraPreviewFragment extends Fragment {
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
-    private int maxSize;
+    private int targetSize;
     private boolean torchActivated = false;
     private float aspectRatio = (4 / 3);
 
@@ -69,7 +69,7 @@ public class CameraPreviewFragment extends Fragment {
     public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback, JSONObject options) {
         this.direction = cameraDirection;
         try {
-            this.maxSize = options.getInt("maxSize");
+            this.targetSize = options.getInt("targetSize");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -112,8 +112,8 @@ public class CameraPreviewFragment extends Fragment {
                 .build();
 
         Size targetResolution = null;
-        if (maxSize > 0) {
-            targetResolution = calculateResolution(maxSize);
+        if (targetSize > 0) {
+            targetResolution = calculateResolution(targetSize);
         }
 
         preview = new Preview.Builder().build();
@@ -148,20 +148,20 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    public Size calculateResolution(int maxSize) {
+    public Size calculateResolution(int targetSize) {
         int orientation = getResources().getConfiguration().orientation;
         Size calculatedSize;
         if (orientation == 1) {
-            calculatedSize = new Size((int) ((float) maxSize / aspectRatio), maxSize);
+            calculatedSize = new Size((int) ((float) targetSize / aspectRatio), targetSize);
         } else {
-            calculatedSize = new Size(maxSize, (int) ((float) maxSize / aspectRatio));
+            calculatedSize = new Size(targetSize, (int) ((float) targetSize / aspectRatio));
         }
         return calculatedSize;
     }
 
 //    Another way to Calculate
 //    @SuppressLint("RestrictedApi")
-//    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int maxSize) {
+//    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int targetSize) {
 //        // tempCamera to calculate targetResolution
 //        Preview tempPreview = new Preview.Builder().build();
 //        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
@@ -184,7 +184,7 @@ public class CameraPreviewFragment extends Fragment {
 //            }
 //        });
 //        for (Size size: supportedSizes) {
-//            if (size.getWidth() <= maxSize) {
+//            if (size.getWidth() <= targetSize) {
 //                return size;
 //            }
 //        }

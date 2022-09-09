@@ -47,8 +47,8 @@ BOOL torchActivated = false;
     NSDictionary *setupSessionOptions;
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
-        NSInteger maxSize = ((NSNumber*)config[@"maxSize"]).intValue;
-        setupSessionOptions = @{ @"maxSize" : [NSNumber numberWithInt:maxSize] };
+        NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+        setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
     }
     
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
