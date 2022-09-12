@@ -1,15 +1,19 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Point;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
@@ -150,14 +154,26 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public Size calculateResolution(int targetSize) {
-        int orientation = getResources().getConfiguration().orientation;
         Size calculatedSize;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (getScreenOrientation() == Configuration.ORIENTATION_PORTRAIT) {
             calculatedSize = new Size((int) (targetSize / aspectRatio), targetSize);
         } else {
             calculatedSize = new Size(targetSize, (int) (targetSize / aspectRatio));
         }
         return calculatedSize;
+    }
+
+    private int getScreenOrientation() {
+        Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        Point pointSize = new Point();
+        display.getSize(pointSize);
+        int orientation;
+        if (pointSize.x < pointSize.y) {
+            orientation = Configuration.ORIENTATION_PORTRAIT;
+        } else {
+            orientation = Configuration.ORIENTATION_LANDSCAPE;
+        }
+        return orientation;
     }
 
 //    Another way to Calculate
