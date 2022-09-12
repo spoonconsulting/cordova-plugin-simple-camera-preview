@@ -1,6 +1,7 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
+import android.content.res.Configuration;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -57,7 +58,7 @@ public class CameraPreviewFragment extends Fragment {
     private int direction;
     private int targetSize;
     private boolean torchActivated = false;
-    private float aspectRatio = (4 / 3);
+    private float aspectRatio = 4 / 3;
 
     private static final String TAG = "SimpleCameraPreview";
 
@@ -151,10 +152,10 @@ public class CameraPreviewFragment extends Fragment {
     public Size calculateResolution(int targetSize) {
         int orientation = getResources().getConfiguration().orientation;
         Size calculatedSize;
-        if (orientation == 1) {
-            calculatedSize = new Size((int) ((float) targetSize / aspectRatio), targetSize);
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            calculatedSize = new Size((int) (targetSize / aspectRatio), targetSize);
         } else {
-            calculatedSize = new Size(targetSize, (int) ((float) targetSize / aspectRatio));
+            calculatedSize = new Size(targetSize, (int) (targetSize / aspectRatio));
         }
         return calculatedSize;
     }
