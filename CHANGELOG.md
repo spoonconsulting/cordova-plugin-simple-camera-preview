@@ -1,3 +1,8 @@
+## [2.0.8](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.7...v2.0.8) (2022-09-13)
+
+* **Android:** Add configurable output resolution. ([#43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/43))
+* **iOS:** Add configurable output resolution. ([#43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/43))
+
 ## [2.0.7](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.6...v2.0.7) (2022-08-31)
 
 * **iOS:** Use pausesLocationUpdatesAutomatically for improving location. ([#48](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/48))
