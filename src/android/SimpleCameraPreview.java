@@ -98,6 +98,20 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
         } catch (JSONException e) {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
+        }   
+
+        int targetSize = 0;
+        try {
+            targetSize = Integer.parseInt(options.getString("targetSize"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JSONObject cameraPreviewOptions = new JSONObject();
+        try {
+            cameraPreviewOptions.put("targetSize", targetSize);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         fragment = new CameraPreviewFragment(cameraDirection, (err) -> {
@@ -107,7 +121,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Camera started");
             callbackContext.sendPluginResult(pluginResult);
-        });
+        }, cameraPreviewOptions);
 
         try {
             RunnableFuture<Void> addViewTask = new FutureTask<>(

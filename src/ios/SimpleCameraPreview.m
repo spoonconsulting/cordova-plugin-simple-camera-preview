@@ -44,11 +44,18 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
+    NSDictionary *setupSessionOptions;
+    if (command.arguments.count > 0) {
+        NSDictionary* config = command.arguments[0];
+        NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+        setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
+    }
+    
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         });
-    }];
+    } options:setupSessionOptions];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {

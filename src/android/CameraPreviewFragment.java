@@ -1,13 +1,19 @@
 package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Point;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Size;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
@@ -22,11 +28,11 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.LifecycleRegistry;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +60,9 @@ public class CameraPreviewFragment extends Fragment {
     private CameraStartedCallback startCameraCallback;
     private Location location;
     private int direction;
+    private int targetSize;
     private boolean torchActivated = false;
+    private float aspectRatio = 4 / 3;
 
     private static final String TAG = "SimpleCameraPreview";
 
@@ -63,8 +71,13 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback) {
+    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback, JSONObject options) {
         this.direction = cameraDirection;
+        try {
+            this.targetSize = options.getInt("targetSize");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         startCameraCallback = cameraStartedCallback;
     }
 
@@ -85,6 +98,7 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
+    @SuppressLint("RestrictedApi")
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
@@ -101,16 +115,36 @@ public class CameraPreviewFragment extends Fragment {
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(direction)
                 .build();
-        preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder().build();
 
+        Size targetResolution = null;
+        if (targetSize > 0) {
+            targetResolution = calculateResolution(targetSize);
+        }
+
+        preview = new Preview.Builder().build();
+        imageCapture = new ImageCapture.Builder()
+                .setDefaultResolution(targetResolution)
+                .build();
         cameraProvider.unbindAll();
-        camera = cameraProvider.bindToLifecycle(
-                this,
-                cameraSelector,
-                preview,
-                imageCapture
-        );
+        try {
+            camera = cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        } catch (IllegalArgumentException e) {
+            // Error with result in capturing image with default resolution
+            e.printStackTrace();
+            imageCapture = new ImageCapture.Builder()
+                    .build();
+            camera = cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        }
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -118,6 +152,61 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(null);
         }
     }
+
+    public Size calculateResolution(int targetSize) {
+        Size calculatedSize;
+        if (getScreenOrientation() == Configuration.ORIENTATION_PORTRAIT) {
+            calculatedSize = new Size((int) (targetSize / aspectRatio), targetSize);
+        } else {
+            calculatedSize = new Size(targetSize, (int) (targetSize / aspectRatio));
+        }
+        return calculatedSize;
+    }
+
+    private int getScreenOrientation() {
+        Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        Point pointSize = new Point();
+        display.getSize(pointSize);
+        int orientation;
+        if (pointSize.x < pointSize.y) {
+            orientation = Configuration.ORIENTATION_PORTRAIT;
+        } else {
+            orientation = Configuration.ORIENTATION_LANDSCAPE;
+        }
+        return orientation;
+    }
+
+//    Another way to Calculate
+//    @SuppressLint("RestrictedApi")
+//    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int targetSize) {
+//        // tempCamera to calculate targetResolution
+//        Preview tempPreview = new Preview.Builder().build();
+//        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
+//        Camera tempCamera = cameraProvider.bindToLifecycle(
+//                this,
+//                cameraSelector,
+//                tempPreview,
+//                tempImageCapture
+//        );
+//
+//        @SuppressLint("UnsafeOptInUsageError") CameraCharacteristics cameraCharacteristics = Camera2CameraInfo
+//                .extractCameraCharacteristics(tempCamera.getCameraInfo());
+//        StreamConfigurationMap streamConfigurationMap = cameraCharacteristics
+//                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+//        List<Size> supportedSizes = Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG));
+//        Collections.sort(supportedSizes, new Comparator<Size>(){
+//            @Override
+//            public int compare(Size size, Size t1) {
+//                return Integer.compare(t1.getWidth(), size.getWidth());
+//            }
+//        });
+//        for (Size size: supportedSizes) {
+//            if (size.getWidth() <= targetSize) {
+//                return size;
+//            }
+//        }
+//        return supportedSizes.get(supportedSizes.size() - 1);
+//    }
 
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
         if (!camera.getCameraInfo().hasFlashUnit()) {
