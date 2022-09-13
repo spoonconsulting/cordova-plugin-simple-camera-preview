@@ -1,3 +1,7 @@
+## [2.0.9](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.8...v2.0.9) (2022-09-13)
+
+* **iOS:** Add configurable output resolution: Add If statement for inValue passing. ([#51](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/51))
+
 ## [2.0.8](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.7...v2.0.8) (2022-09-13)
 
 * **Android:** Add configurable output resolution. ([#43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/43))
