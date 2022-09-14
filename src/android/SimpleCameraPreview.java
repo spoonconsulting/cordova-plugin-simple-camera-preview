@@ -103,13 +103,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
         int targetSize = 0;
         try {
             if (options.getString("targetSize") != null && options.getString("targetSize") != "null") {
-                try {
-                    targetSize = Integer.parseInt(options.getString("targetSize"));
-                } catch(NumberFormatException e) {
-                    e.printStackTrace();
-                }
+                targetSize = Integer.parseInt(options.getString("targetSize"));
             }
-        } catch (JSONException e) {
+        } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
 

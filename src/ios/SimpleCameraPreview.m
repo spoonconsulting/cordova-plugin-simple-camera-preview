@@ -47,13 +47,14 @@ BOOL torchActivated = false;
     NSDictionary *setupSessionOptions;
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
-        if (config[@"targetSize"] != [NSNull null]) {
-            @try {
+        @try {
+            if (config[@"targetSize"] != [NSNull null]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
-            } @catch(NSException *exception) {
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
+                
             }
+        } @catch(NSException *exception) {
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
     }
     
