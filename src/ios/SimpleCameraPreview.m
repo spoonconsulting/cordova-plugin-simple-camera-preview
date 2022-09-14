@@ -48,8 +48,12 @@ BOOL torchActivated = false;
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         if (config[@"targetSize"] != [NSNull null]) {
-            NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-            setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
+            @try {
+                NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+                setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
+            } @catch(NSException *exception) {
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
+            }
         }
     }
     
