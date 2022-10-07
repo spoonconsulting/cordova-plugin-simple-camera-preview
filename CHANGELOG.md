@@ -1,3 +1,7 @@
+## [2.0.11](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.10...v2.0.11) (2022-10-07)
+
+* **Android:** Add requestFocus on WebView. ([#55](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/55))
+
 ## [2.0.10](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.9...v2.0.10) (2022-09-14)
 
 * **Android:** Add configurable output resolution: Add If & Try/Catch statement for Integer.parseInt passing. ([#53](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/53))
