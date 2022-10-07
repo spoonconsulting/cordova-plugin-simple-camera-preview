@@ -80,6 +80,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
         webView.getView().setBackgroundColor(0x00000000);
+        // Request focus on webView as page needs to be clicked/tapped to get focus on page events
         webView.getView().requestFocus();
         if (!this.hasAllPermissions()) {
             this.enableCallbackContext = callbackContext;
