@@ -11,6 +11,23 @@
 
 BOOL torchActivated = false;
 
+- (void) calculateRatio:(CDVInvokedUrlCommand*)command {
+    NSDictionary* config = command.arguments[0];
+    @try {
+        if (config[@"targetSize"] != [NSNull null]) {
+            NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+            AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
+            NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
+            float height = [calculatedPresetArray[0] floatValue];
+            float width = [calculatedPresetArray[1] floatValue];
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%f", (height / width)]];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
+    } @catch(NSException *exception) {
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
+    }
+}
+
 - (void) enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
@@ -51,7 +68,6 @@ BOOL torchActivated = false;
             if (config[@"targetSize"] != [NSNull null]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
-                
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];

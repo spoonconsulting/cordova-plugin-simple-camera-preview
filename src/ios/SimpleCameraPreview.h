@@ -10,6 +10,7 @@
     CLLocation* currentLocation;
 }
 
+- (void) calculateRatio:(CDVInvokedUrlCommand*)command;
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;
 - (void) capture:(CDVInvokedUrlCommand*)command;
