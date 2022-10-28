@@ -202,13 +202,7 @@ BOOL torchActivated = false;
     AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
         if (CMSampleBufferIsValid(sampleBuffer)) {
-            if (error) {
-                NSLog(@"%@", error);
-                NSString* errorDescription =  error.description ? error.description : @"";
-                errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
-            } else {
+            if (!error) {
                 NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
                 CFDictionaryRef metaDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
                 CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
@@ -230,6 +224,12 @@ BOOL torchActivated = false;
                 CFRelease(mutableDict);
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
                 [pluginResult setKeepCallbackAsBool:true];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+            } else {
+                NSLog(@"%@", error);
+                NSString* errorDescription =  error.description ? error.description : @"";
+                errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
             }
         } else {
