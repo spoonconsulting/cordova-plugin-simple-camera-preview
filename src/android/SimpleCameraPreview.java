@@ -1,6 +1,7 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -13,12 +14,17 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LifecycleOwner;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -54,6 +60,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             switch (action) {
+                case "getRatio":
+                    return getRatio((JSONObject) args.get(0), callbackContext);
+
                 case "enable":
                     return enable((JSONObject) args.get(0), callbackContext);
 
@@ -76,6 +85,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
+    }
+
+    private boolean getRatio(JSONObject options, CallbackContext callbackContext) {
+        int targetSize = 0;
+        try {
+            if (options.getString("targetSize") != null && options.getString("targetSize") != "null") {
+                targetSize = Integer.parseInt(options.getString("targetSize"));
+            }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+        Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
+        ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
+                .setTargetResolution(targetResolution);
+        @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
+        @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
+        callbackContext.sendPluginResult(pluginResult);
+        return true;
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
