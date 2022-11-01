@@ -11,7 +11,7 @@
 
 BOOL torchActivated = false;
 
-- (void) calculateRatio:(CDVInvokedUrlCommand*)command {
+- (void) getRatio:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     @try {
         if (config[@"targetSize"] != [NSNull null]) {
