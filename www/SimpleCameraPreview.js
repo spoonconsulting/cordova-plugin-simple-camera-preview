@@ -3,7 +3,7 @@ var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function () {};
 
 SimpleCameraPreview.calculateRatio = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "calculateRatio", [options]);
+  exec(onSuccess, onError, PLUGIN_NAME, "getRatio", [options]);
 };
 
 SimpleCameraPreview.enable = function (options, onSuccess, onError) {
