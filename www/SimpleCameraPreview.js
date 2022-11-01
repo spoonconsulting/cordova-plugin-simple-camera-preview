@@ -2,7 +2,7 @@ var exec = require("cordova/exec");
 var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function () {};
 
-SimpleCameraPreview.calculateRatio = function (options, onSuccess, onError) {
+SimpleCameraPreview.getRatio = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "getRatio", [options]);
 };
 
