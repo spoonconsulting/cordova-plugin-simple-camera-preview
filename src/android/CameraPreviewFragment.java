@@ -63,7 +63,7 @@ public class CameraPreviewFragment extends Fragment {
     private int targetSize;
     private boolean torchActivated = false;
 
-    private static double ratio = 1.5;
+    private static float ratio = (16 / (float) 9);
     private static final String TAG = "SimpleCameraPreview";
 
     public CameraPreviewFragment() {
@@ -156,9 +156,9 @@ public class CameraPreviewFragment extends Fragment {
     public static Size calculateResolution(Context context, int targetSize) {
         Size calculatedSize;
         if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
-            calculatedSize = new Size((int) ((double) targetSize / ratio), targetSize);
+            calculatedSize = new Size((int) ((float) targetSize / ratio), targetSize);
         } else {
-            calculatedSize = new Size(targetSize, (int) ((double) targetSize / ratio));
+            calculatedSize = new Size(targetSize, (int) ((float) targetSize / ratio));
         }
         return calculatedSize;
     }
