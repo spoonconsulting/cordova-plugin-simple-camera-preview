@@ -14,7 +14,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -23,8 +22,6 @@ import android.widget.FrameLayout;
 import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LifecycleOwner;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -96,14 +93,22 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
-        Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
-        ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution);
-        @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
-        @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
-        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
-        callbackContext.sendPluginResult(pluginResult);
-        return true;
+        try {
+            if (targetSize > 0) {
+                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
+                ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
+                        .setTargetResolution(targetResolution);
+                @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
+                @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
+                callbackContext.sendPluginResult(pluginResult);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {

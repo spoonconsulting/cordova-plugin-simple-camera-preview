@@ -121,9 +121,8 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         preview = new Preview.Builder().build();
-        ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution);
-        imageCapture = imageCaptureBuilder.setTargetResolution(targetResolution)
+        imageCapture = new ImageCapture.Builder()
+                .setTargetResolution(targetResolution)
                 .build();
 
         cameraProvider.unbindAll();
