@@ -27,6 +27,17 @@ Uses Google's CameraX API
 
 # Methods
 
+### getRatio(options, successCallback, errorCallback)
+
+Get the ratio for the camera preview instance (4:3, 16:9, ....).
+<br>
+
+```javascript
+SimpleCameraPreview.getRatio(targetSize: 1024, (ratio) => {
+  console.log(ratio);
+});
+```
+
 ### enable(options, successCallback, errorCallback)
 
 Starts the camera preview instance.
@@ -34,6 +45,7 @@ Starts the camera preview instance.
 
 ```javascript
 const params = {
+  targetSize: 1024
   direction: 'back' // Camera direction (front or back). Default is back.
 }
 
@@ -63,5 +75,20 @@ let options = {
 
 SimpleCameraPreview.capture(options, (imagaeNativePath) => {
   console.log(imagaeNativePath);
+});
+```
+
+### setSize(options, successCallback, errorCallback)
+
+```javascript
+let size = {
+  x: 0
+  y: 0
+  width: 1080,
+  height: 1920,
+};
+
+SimpleCameraPreview.setSize(size, () => {
+  console.log("Camera frame size set");
 });
 ```
