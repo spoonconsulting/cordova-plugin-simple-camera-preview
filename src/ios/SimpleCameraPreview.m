@@ -14,7 +14,7 @@ BOOL torchActivated = false;
 - (void) getRatio:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     @try {
-        if (config[@"targetSize"] != [NSNull null]) {
+        if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
             NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
             AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
             NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
