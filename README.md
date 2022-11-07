@@ -33,7 +33,11 @@ Get the ratio for the camera preview instance (4:3, 16:9, ....).
 <br>
 
 ```javascript
-SimpleCameraPreview.getRatio(targetSize: 1024, (ratio) => {
+const params = {
+  targetSize: 1024,
+}
+
+SimpleCameraPreview.getRatio(params, (ratio) => {
   console.log(ratio);
 });
 ```
@@ -45,8 +49,8 @@ Starts the camera preview instance.
 
 ```javascript
 const params = {
-  targetSize: 1024
-  direction: 'back' // Camera direction (front or back). Default is back.
+  targetSize: 1024,
+  direction: 'back', // Camera direction (front or back). Default is back.
 }
 
 SimpleCameraPreview.enable(params, () => {
@@ -66,11 +70,11 @@ SimpleCameraPreview.disable(params, () => {
 
 ### capture(options, successCallback, errorCallback)
 
-<info>Take the picture</info>
+<info>Take the picture</info><br>
 
 ```javascript
 let options = {
-  flash: true
+  flash: true,
 };
 
 SimpleCameraPreview.capture(options, (imagaeNativePath) => {
@@ -80,10 +84,13 @@ SimpleCameraPreview.capture(options, (imagaeNativePath) => {
 
 ### setSize(options, successCallback, errorCallback)
 
+Set the camera frame size
+<br>
+
 ```javascript
 let size = {
-  x: 0
-  y: 0
+  x: 0,
+  y: 0,
   width: 1080,
   height: 1920,
 };
