@@ -65,7 +65,7 @@ BOOL torchActivated = false;
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
-            if (config[@"targetSize"] != [NSNull null]) {
+            if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
             }
