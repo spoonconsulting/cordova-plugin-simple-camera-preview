@@ -204,12 +204,12 @@ BOOL torchActivated = false;
         if (error) {
             NSLog(@"%@", error);
             CDVPluginResult *pluginResult;
-            if (!CMSampleBufferIsValid(sampleBuffer)) {
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Sample buffer not valid"];
-            } else {
+            if (CMSampleBufferIsValid(sampleBuffer)) {
                 NSString* errorDescription =  error.description ? error.description : @"";
                 errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Sample buffer not valid"];
             }
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
             return;
