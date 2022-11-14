@@ -1,3 +1,7 @@
+## [2.0.12](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.11...v2.0.12) (2022-11-14)
+
+* **iOS:** Fix Error: AVFoundationErrorDomain Code=-11803. ([#57](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/57))
+
 ## [2.0.11](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.10...v2.0.11) (2022-10-07)
 
 * **Android:** Add requestFocus on WebView. ([#55](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/55))
