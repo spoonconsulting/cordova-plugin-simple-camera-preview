@@ -203,11 +203,18 @@ BOOL torchActivated = false;
     [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
         if (error) {
             NSLog(@"%@", error);
-            NSString* errorDescription =  error.description ? error.description : @"";
-            errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
+            CDVPluginResult *pluginResult;
+            if (CMSampleBufferIsValid(sampleBuffer)) {
+                NSString* errorDescription =  error.description ? error.description : @"";
+                errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Sample buffer not valid"];
+            }
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
-        } else {
+            return;
+        }
+        [self runBlockWithTryCatch:^{
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
             CFDictionaryRef metaDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
             CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
@@ -230,7 +237,7 @@ BOOL torchActivated = false;
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
             [pluginResult setKeepCallbackAsBool:true];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
-        }
+        }];
     }];
 }
 
@@ -249,6 +256,16 @@ BOOL torchActivated = false;
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
     NSLog(@"failed to fetch current location : %@", error);
+}
+
+- (void)runBlockWithTryCatch:(void (^)(void))block {
+    @try {
+        block();
+    } @catch (NSException *exception) {
+        NSString* message = [NSString stringWithFormat:@"(%@) - %@", exception.name, exception.reason];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+    }
 }
 
 @end
