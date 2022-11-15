@@ -87,7 +87,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private boolean getRatio(JSONObject options, CallbackContext callbackContext) {
         int targetSize = 0;
         try {
-            if (options.getString("targetSize") != null && options.getString("targetSize") != "null") {
+            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
                 targetSize = Integer.parseInt(options.getString("targetSize"));
             }
         } catch (JSONException | NumberFormatException e) {
@@ -137,7 +137,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         int targetSize = 0;
         try {
-            if (options.getString("targetSize") != null && options.getString("targetSize") != "null") {
+            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
                 targetSize = Integer.parseInt(options.getString("targetSize"));
             }
         } catch (JSONException | NumberFormatException e) {
