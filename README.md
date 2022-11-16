@@ -27,7 +27,7 @@ Uses Google's CameraX API
 
 # Methods
 
-### getRatio(options, successCallback, errorCallback)
+### setOptions(options, successCallback, errorCallback)
 
 Get the ratio for the camera preview instance (4:3, 16:9, ....).
 <br>
@@ -37,7 +37,7 @@ const params = {
   targetSize: 1024,
 }
 
-SimpleCameraPreview.getRatio(params, (ratio) => {
+SimpleCameraPreview.setOptions(params, (ratio) => {
   console.log(ratio);
 });
 ```
