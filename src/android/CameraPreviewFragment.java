@@ -63,7 +63,7 @@ public class CameraPreviewFragment extends Fragment {
     private int targetSize;
     private boolean torchActivated = false;
 
-    private static float ratio = (16 / (float) 9);
+    private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
 
     public CameraPreviewFragment() {

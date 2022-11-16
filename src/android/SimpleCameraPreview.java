@@ -57,8 +57,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             switch (action) {
-                case "getRatio":
-                    return getRatio((JSONObject) args.get(0), callbackContext);
+                case "setOptions":
+                    return setOptions((JSONObject) args.get(0), callbackContext);
 
                 case "enable":
                     return enable((JSONObject) args.get(0), callbackContext);
@@ -84,7 +84,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean getRatio(JSONObject options, CallbackContext callbackContext) {
+    private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
         int targetSize = 0;
         try {
             if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
