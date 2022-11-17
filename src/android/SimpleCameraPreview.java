@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -57,9 +58,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             switch (action) {
-                case "setOptions":
-                    return setOptions((JSONObject) args.get(0), callbackContext);
-
                 case "enable":
                     return enable((JSONObject) args.get(0), callbackContext);
 
@@ -78,33 +76,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return false;
 
         } catch (JSONException e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
-        int targetSize = 0;
-        try {
-            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
-                targetSize = Integer.parseInt(options.getString("targetSize"));
-            }
-        } catch (JSONException | NumberFormatException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (targetSize > 0) {
-                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
-                ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
-                        .setTargetResolution(targetResolution);
-                @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
-                @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
-                callbackContext.sendPluginResult(pluginResult);
-            }
-            return true;
-        } catch (Exception e) {
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
@@ -135,13 +106,19 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
         }   
 
-        int targetSize = 0;
-        try {
-            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
-                targetSize = Integer.parseInt(options.getString("targetSize"));
-            }
-        } catch (JSONException | NumberFormatException e) {
-            e.printStackTrace();
+        int targetSize = getIntegerFromOptions(options, "targetSize");
+        int windowHeight = getIntegerFromOptions(options, "windowHeight");
+        int windowWidth = getIntegerFromOptions(options, "windowWidth");
+
+        int minimum = Math.min(windowWidth, windowHeight);
+        int previewWidth;
+        int previewHeight;
+        if (CameraPreviewFragment.getScreenOrientation(cordova.getContext()) == Configuration.ORIENTATION_PORTRAIT) {
+            previewWidth = minimum;
+            previewHeight = Math.round(minimum * getRatio(targetSize));
+        } else {
+            previewWidth = Math.round(minimum * getRatio(targetSize));
+            previewHeight = minimum;
         }
 
         JSONObject cameraPreviewOptions = new JSONObject();
@@ -167,10 +144,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     public void run() {
                         DisplayMetrics metrics = new DisplayMetrics();
                         cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+                        int x = Math.round(((windowWidth - previewWidth) / 2) * metrics.density);
+                        int y = Math.round(((windowHeight - previewHeight) / 2) * metrics.density);
+                        int width = Math.round(previewWidth * metrics.density);
+                        int height = Math.round(previewHeight * metrics.density);
 
                         FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
                         if (containerView == null) {
@@ -225,10 +202,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private int getIntegerFromOptions(JSONObject options, String key) {
         try {
-            return options.getInt(key);
-        } catch (JSONException error) {
-            return 0;
+            if (options.getString("targetSize") != null && !options.getString(key).equals("null")) {
+                return Integer.parseInt(options.getString(key));
+            }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
         }
+        return 0;
     }
 
     public void fetchLocation() {
@@ -384,6 +364,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 enable(this.options, this.enableCallbackContext);
             }
         }
+    }
+
+    private float getRatio(int targetSize) {
+        float ratio = (4 / (float) 3);
+        try {
+            if (targetSize > 0) {
+                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
+                ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
+                        .setTargetResolution(targetResolution);
+                @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
+                @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
+                ratio = (height / (float) width);
+            } else {
+                ratio = (4 / (float) 3);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ratio;
     }
 
     @Override
