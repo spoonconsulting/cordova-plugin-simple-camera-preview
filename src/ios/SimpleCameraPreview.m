@@ -4,7 +4,6 @@
 #import <Cordova/CDVInvokedUrlCommand.h>
 @import CoreLocation; 
 @import ImageIO;
-#import <math.h>
 
 #import "SimpleCameraPreview.h"
 
@@ -287,6 +286,7 @@ BOOL torchActivated = false;
 }
 
 - (float) getRatio:(NSInteger)targetSize {
+    NSLog(@"ZAFIR taget Suze %ld", (long)targetSize);
     float ratio = (4.0 / 3.0);
     @try {
         if (targetSize > 0) {
@@ -294,12 +294,13 @@ BOOL torchActivated = false;
             NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
             float height = [calculatedPresetArray[0] floatValue];
             float width = [calculatedPresetArray[1] floatValue];
+            NSLog(@"ZAFIR Resolution %f %f", height, width);
             ratio = (height / width);
         } else {
             ratio = (4.0 / 3.0);
         }
     } @catch(NSException *exception) {
-        NSLog(@"%@", exception);
+        NSLog(@"Exception: %@", exception);
     }
     return ratio;
 }
