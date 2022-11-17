@@ -105,22 +105,21 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
         } catch (JSONException e) {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
-        }   
+        }
 
         int targetSize = getIntegerFromOptions(options, "targetSize");
         int windowHeight = getIntegerFromOptions(options, "windowHeight");
         int windowWidth = getIntegerFromOptions(options, "windowWidth");
-        
+
+        int minimum = Math.min(windowWidth, windowHeight);
         int previewWidth;
         int previewHeight;
         if (CameraPreviewFragment.getScreenOrientation(cordova.getActivity().getApplicationContext()) == Configuration.ORIENTATION_PORTRAIT) {
-            int minimum = Math.min(windowWidth, windowHeight);
             previewWidth = minimum;
             previewHeight = Math.round(minimum * getRatio(targetSize));
         } else {
-            int maximum = Math.max(windowWidth, windowHeight);
-            previewWidth = maximum;
-            previewHeight = Math.round(maximum * getRatio(targetSize));
+            previewWidth = Math.round(minimum * getRatio(targetSize));
+            previewHeight = minimum;
         }
 
         JSONObject cameraPreviewOptions = new JSONObject();
@@ -141,31 +140,31 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         try {
             RunnableFuture<Void> addViewTask = new FutureTask<>(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        DisplayMetrics metrics = new DisplayMetrics();
-                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                        int x = Math.round(((windowWidth - previewWidth) / 2) * metrics.density);
-                        int y = Math.round(((windowHeight - previewHeight) / 2) * metrics.density);
-                        int width = Math.round(previewWidth * metrics.density);;
-                        int height = Math.round(previewHeight * metrics.density);
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            DisplayMetrics metrics = new DisplayMetrics();
+                            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                            int x = Math.round(((windowWidth - previewWidth) / 2) * metrics.density);
+                            int y = Math.round(((windowHeight - previewHeight) / 2) * metrics.density);
+                            int width = Math.round(previewWidth * metrics.density);;
+                            int height = Math.round(previewHeight * metrics.density);
 
-                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                        if (containerView == null) {
-                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                            containerView.setId(containerViewId);
-                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                            containerLayoutParams.setMargins(x, y, 0, 0);
-                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            if (containerView == null) {
+                                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                                containerView.setId(containerViewId);
+                                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                                containerLayoutParams.setMargins(x, y, 0, 0);
+                                cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                            }
+                            cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                            webViewParent = webView.getView().getParent();
+                            webView.getView().bringToFront();
+                            cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                         }
-                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                        webViewParent = webView.getView().getParent();
-                        webView.getView().bringToFront();
-                        cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
-                    }
-                },
-                null
+                    },
+                    null
             );
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
@@ -245,20 +244,20 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
-      if (fragment == null) {
-        callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
-        return true;
-      }
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
+            return true;
+        }
 
-      fragment.torchSwitch(torchState, (Exception err) -> {
-          if (err == null) {
-              callbackContext.success();
-          } else {
-            callbackContext.error(err.getMessage());
-          }
-      });
-      return torchState;
-  }
+        fragment.torchSwitch(torchState, (Exception err) -> {
+            if (err == null) {
+                callbackContext.success();
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return torchState;
+    }
 
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
@@ -269,16 +268,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         try {
             if (webViewParent != null) {
                 RunnableFuture<Void> removeViewTask = new FutureTask<>(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            webView.getView().bringToFront();
-                            webViewParent = null;
-                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                            ((ViewGroup) containerView.getParent()).removeView(containerView);
-                        }
-                    },
-                    null
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.getView().bringToFront();
+                                webViewParent = null;
+                                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                                ((ViewGroup) containerView.getParent()).removeView(containerView);
+                            }
+                        },
+                        null
                 );
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
