@@ -10,12 +10,11 @@
     CLLocation* currentLocation;
 }
 
-- (void) setOptions:(CDVInvokedUrlCommand*)command;
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;
 - (void) capture:(CDVInvokedUrlCommand*)command;
-- (void) setSize:(CDVInvokedUrlCommand*)command;
 - (void) torchSwitch: (CDVInvokedUrlCommand*)command;
+- (float) getRatio:(NSInteger)targetSize;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
