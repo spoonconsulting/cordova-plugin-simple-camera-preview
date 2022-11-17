@@ -110,17 +110,6 @@ BOOL torchActivated = false;
     }];
 }
 
--(void) setSize:(CDVInvokedUrlCommand*)command {
-    [self _setSize:command];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
--(void)_setSize:(CDVInvokedUrlCommand*)command {
-    NSDictionary* config = command.arguments[0];
-    
-}
-
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
     BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
     if (self.sessionManager != nil) {

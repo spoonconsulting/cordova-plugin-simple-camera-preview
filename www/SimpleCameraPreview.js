@@ -16,10 +16,6 @@ SimpleCameraPreview.capture = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
 };
 
-SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
-};
-
 SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
