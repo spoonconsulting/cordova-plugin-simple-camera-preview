@@ -36,7 +36,6 @@ BOOL torchActivated = false;
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    self.cameraRenderController.sessionManager = self.sessionManager;
     
     NSDictionary* config = command.arguments[0];
     NSNumber *targetSize = ((NSNumber*)config[@"targetSize"]);
