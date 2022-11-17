@@ -194,7 +194,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private int getIntegerFromOptions(JSONObject options, String key) {
         try {
-            if (options.getString("targetSize") != null && !options.getString(key).equals("null")) {
+            if (options.getString(key) != null && !options.getString(key).equals("null")) {
                 return Integer.parseInt(options.getString(key));
             }
         } catch (JSONException | NumberFormatException e) {
