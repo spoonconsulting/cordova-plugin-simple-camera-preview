@@ -163,7 +163,7 @@ public class CameraPreviewFragment extends Fragment {
         return calculatedSize;
     }
 
-    public static int getScreenOrientation(Context context) {
+    private static int getScreenOrientation(Context context) {
         Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         Point pointSize = new Point();
         display.getSize(pointSize);

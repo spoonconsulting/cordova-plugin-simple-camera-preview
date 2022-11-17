@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -111,15 +110,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
         int windowWidth = getIntegerFromOptions(options, "windowWidth");
 
         int minimum = Math.min(windowWidth, windowHeight);
-        int previewWidth;
-        int previewHeight;
-        if (CameraPreviewFragment.getScreenOrientation(cordova.getContext()) == Configuration.ORIENTATION_PORTRAIT) {
-            previewWidth = minimum;
-            previewHeight = Math.round(minimum * getRatio(targetSize));
-        } else {
-            previewWidth = Math.round(minimum * getRatio(targetSize));
-            previewHeight = minimum;
-        }
+        int previewWidth = minimum;
+        int previewHeight = Math.round(minimum * getRatio(targetSize));
 
         JSONObject cameraPreviewOptions = new JSONObject();
         try {
