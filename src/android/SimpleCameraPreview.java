@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -108,10 +110,18 @@ public class SimpleCameraPreview extends CordovaPlugin {
         int targetSize = getIntegerFromOptions(options, "targetSize");
         int windowHeight = getIntegerFromOptions(options, "windowHeight");
         int windowWidth = getIntegerFromOptions(options, "windowWidth");
-
-        int minimum = Math.min(windowWidth, windowHeight);
-        int previewWidth = minimum;
-        int previewHeight = Math.round(minimum * getRatio(targetSize));
+        
+        int previewWidth;
+        int previewHeight;
+        if (CameraPreviewFragment.getScreenOrientation(cordova.getActivity().getApplicationContext()) == Configuration.ORIENTATION_PORTRAIT) {
+            int minimum = Math.min(windowWidth, windowHeight);
+            previewWidth = minimum;
+            previewHeight = Math.round(minimum * getRatio(targetSize));
+        } else {
+            int maximum = Math.max(windowWidth, windowHeight);
+            previewWidth = maximum;
+            previewHeight = Math.round(maximum * getRatio(targetSize));
+        }
 
         JSONObject cameraPreviewOptions = new JSONObject();
         try {
@@ -138,7 +148,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                         cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
                         int x = Math.round(((windowWidth - previewWidth) / 2) * metrics.density);
                         int y = Math.round(((windowHeight - previewHeight) / 2) * metrics.density);
-                        int width = Math.round(previewWidth * metrics.density);
+                        int width = Math.round(previewWidth * metrics.density);;
                         int height = Math.round(previewHeight * metrics.density);
 
                         FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
