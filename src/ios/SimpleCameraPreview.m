@@ -51,7 +51,7 @@ BOOL torchActivated = false;
         if (targetSize != [NSNull null]) {
             previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] *  [self getRatio:targetSize.intValue])];
         } else {
-            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
         }
         previewHeight = minimum;
     } else {
