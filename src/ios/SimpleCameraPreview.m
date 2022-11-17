@@ -44,23 +44,12 @@ BOOL torchActivated = false;
     NSNumber *windowWidth = ((NSNumber*)config[@"windowWidth"]);
     
     NSNumber *minimum = MIN(windowWidth, windowHeight);
-    AVCaptureVideoOrientation orientation = [self.sessionManager getCurrentOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
-    NSNumber *previewWidth;
+    NSNumber *previewWidth = minimum;
     NSNumber *previewHeight;
-    if ((long) orientation > 1) {
-        if (targetSize != [NSNull null]) {
-            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] *  [self getRatio:targetSize.intValue])];
-        } else {
-            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
-        }
-        previewHeight = minimum;
+    if (targetSize != [NSNull null]) {
+        previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
     } else {
-        previewWidth = minimum;
-        if (targetSize != [NSNull null]) {
-            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
-        } else {
-            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
-        }
+        previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
     }
     
     float x = ((windowWidth.floatValue - previewWidth.floatValue) / 2);
