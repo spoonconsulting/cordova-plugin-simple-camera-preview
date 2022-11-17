@@ -4,29 +4,13 @@
 #import <Cordova/CDVInvokedUrlCommand.h>
 @import CoreLocation; 
 @import ImageIO;
+#import <math.h>
 
 #import "SimpleCameraPreview.h"
 
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
-
-- (void) setOptions:(CDVInvokedUrlCommand*)command {
-    NSDictionary* config = command.arguments[0];
-    @try {
-        if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
-            NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-            AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
-            NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
-            float height = [calculatedPresetArray[0] floatValue];
-            float width = [calculatedPresetArray[1] floatValue];
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%f", (height / width)]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }
-    } @catch(NSException *exception) {
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
-    }
-}
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
@@ -53,7 +37,39 @@ BOOL torchActivated = false;
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
-    [self _setSize:command];
+    self.cameraRenderController.sessionManager = self.sessionManager;
+    
+    NSDictionary* config = command.arguments[0];
+    NSNumber *targetSize = ((NSNumber*)config[@"targetSize"]);
+    NSNumber *windowHeight = ((NSNumber*)config[@"windowHeight"]);
+    NSNumber *windowWidth = ((NSNumber*)config[@"windowWidth"]);
+    
+    NSNumber *minimum = MIN(windowWidth, windowHeight);
+    AVCaptureVideoOrientation orientation = [self.sessionManager getCurrentOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
+    NSNumber *previewWidth;
+    NSNumber *previewHeight;
+    if ((long) orientation > 1) {
+        if (targetSize != [NSNull null]) {
+            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] *  [self getRatio:targetSize.intValue])];
+        } else {
+            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+        }
+        previewHeight = minimum;
+    } else {
+        previewWidth = minimum;
+        if (targetSize != [NSNull null]) {
+            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
+        } else {
+            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+        }
+    }
+    
+    float x = ((windowWidth.floatValue - previewWidth.floatValue) / 2);
+    float y = ((windowHeight.floatValue - previewHeight.floatValue) / 2) + self.webView.frame.origin.y;
+    float width = previewWidth.floatValue;
+    float height = previewHeight.floatValue;
+    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
+    
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     self.viewController.view.backgroundColor = [UIColor blackColor];
@@ -115,11 +131,7 @@ BOOL torchActivated = false;
 
 -(void)_setSize:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
-    float x = ((NSNumber*)config[@"x"]).floatValue;
-    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
-    float width = ((NSNumber*)config[@"width"]).floatValue;
-    float height = ((NSNumber*)config[@"height"]).floatValue;
-    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
+    
 }
 
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
@@ -272,6 +284,24 @@ BOOL torchActivated = false;
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
     NSLog(@"failed to fetch current location : %@", error);
+}
+
+- (float) getRatio:(NSInteger)targetSize {
+    float ratio = (4.0 / 3.0);
+    @try {
+        if (targetSize > 0) {
+            AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
+            NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
+            float height = [calculatedPresetArray[0] floatValue];
+            float width = [calculatedPresetArray[1] floatValue];
+            ratio = (height / width);
+        } else {
+            ratio = (4.0 / 3.0);
+        }
+    } @catch(NSException *exception) {
+        NSLog(@"%@", exception);
+    }
+    return ratio;
 }
 
 - (void)runBlockWithTryCatch:(void (^)(void))block {
