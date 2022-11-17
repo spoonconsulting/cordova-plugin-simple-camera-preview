@@ -42,15 +42,26 @@ BOOL torchActivated = false;
     NSNumber *windowHeight = ((NSNumber*)config[@"windowHeight"]);
     NSNumber *windowWidth = ((NSNumber*)config[@"windowWidth"]);
     
+    AVCaptureVideoOrientation orientation = [self.sessionManager getCurrentOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
     NSNumber *minimum = MIN(windowWidth, windowHeight);
-    NSNumber *previewWidth = minimum;
+    NSNumber *previewWidth;
     NSNumber *previewHeight;
-    if (targetSize != [NSNull null]) {
-        previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
+    if ((long) orientation > 1) {
+        if (targetSize != [NSNull null]) {
+            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
+        } else {
+            previewWidth = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+        }
+        previewHeight = minimum;
     } else {
-        previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+        previewWidth = minimum;
+        if (targetSize != [NSNull null]) {
+            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:targetSize.intValue])];
+        } else {
+            previewHeight = [NSNumber numberWithFloat:round([minimum floatValue] * [self getRatio:0])];
+        }
     }
-    
+//
     float x = ((windowWidth.floatValue - previewWidth.floatValue) / 2);
     float y = ((windowHeight.floatValue - previewHeight.floatValue) / 2) + self.webView.frame.origin.y;
     float width = previewWidth.floatValue;
