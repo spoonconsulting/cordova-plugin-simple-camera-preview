@@ -10,6 +10,7 @@
 - (void) torchSwitch:(NSInteger)torchState;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
++ (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
 
 @property (atomic) CIFilter *ciFilter;
 @property (nonatomic) NSLock *filterLock;

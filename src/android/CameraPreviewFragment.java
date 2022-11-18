@@ -62,8 +62,8 @@ public class CameraPreviewFragment extends Fragment {
     private int direction;
     private int targetSize;
     private boolean torchActivated = false;
-    private float aspectRatio = 4 / 3;
 
+    private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
 
     public CameraPreviewFragment() {
@@ -98,7 +98,6 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
-    @SuppressLint("RestrictedApi")
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
@@ -118,13 +117,14 @@ public class CameraPreviewFragment extends Fragment {
 
         Size targetResolution = null;
         if (targetSize > 0) {
-            targetResolution = calculateResolution(targetSize);
+            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
         }
 
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
-                .setDefaultResolution(targetResolution)
+                .setTargetResolution(targetResolution)
                 .build();
+
         cameraProvider.unbindAll();
         try {
             camera = cameraProvider.bindToLifecycle(
@@ -153,18 +153,18 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    public Size calculateResolution(int targetSize) {
+    public static Size calculateResolution(Context context, int targetSize) {
         Size calculatedSize;
-        if (getScreenOrientation() == Configuration.ORIENTATION_PORTRAIT) {
-            calculatedSize = new Size((int) (targetSize / aspectRatio), targetSize);
+        if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
+            calculatedSize = new Size((int) ((float) targetSize / ratio), targetSize);
         } else {
-            calculatedSize = new Size(targetSize, (int) (targetSize / aspectRatio));
+            calculatedSize = new Size(targetSize, (int) ((float) targetSize / ratio));
         }
         return calculatedSize;
     }
 
-    private int getScreenOrientation() {
-        Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+    private static int getScreenOrientation(Context context) {
+        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         Point pointSize = new Point();
         display.getSize(pointSize);
         int orientation;
@@ -222,7 +222,7 @@ public class CameraPreviewFragment extends Fragment {
             }
             torchActivated = torchOn;
         }
-      }
+    }
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         if (torchActivated) {

@@ -75,7 +75,7 @@
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
                     if (targetSize > 0) {
-                        AVCaptureSessionPreset calculatedPreset = [self calculateResolution:targetSize];
+                        AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
                         if ([self.session canSetSessionPreset:calculatedPreset]) {
                             [self.session setSessionPreset:calculatedPreset];
                         }
@@ -119,7 +119,7 @@
     }];
 }
 
-- (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
++ (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
     if (targetSize >= 3840) {
         return AVCaptureSessionPreset3840x2160;
     } else if (targetSize >= 1920) {
