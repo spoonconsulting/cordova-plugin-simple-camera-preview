@@ -1,3 +1,8 @@
+## [2.0.13](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.12...v2.0.13) (2022-11-18)
+
+* **iOS:** Configurable Output Resolution Feature: Added getRatio function on plugin to return aspect ratio based on available resolution. ([#58](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/58))
+* **Android:** Configurable Output Resolution Feature: Added getRatio function on plugin to return aspect ratio based on available resolution. ([#58](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/58))
+
 ## [2.0.12](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.11...v2.0.12) (2022-11-14)
 
 * **iOS:** Fix Error: AVFoundationErrorDomain Code=-11803. ([#57](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/57))
