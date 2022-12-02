@@ -37,7 +37,7 @@
     return orientation;
 }
 
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options {
+- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options photoSettings:(AVCapturePhotoSettings *) photoSettings {
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
@@ -53,11 +53,11 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
-                AVCaptureDevice * videoDevice = [self cameraWithPosition: self.defaultCamera];
+                AVCaptureDevice *videoDevice = [self cameraWithPosition: self.defaultCamera];
                 
-                if ([videoDevice hasFlash] && [videoDevice isFlashModeSupported:AVCaptureFlashModeAuto]) {
+                if ([videoDevice hasFlash]) {
                     if ([videoDevice lockForConfiguration:&error]) {
-                        [videoDevice setFlashMode:AVCaptureFlashModeAuto];
+                        photoSettings.flashMode = AVCaptureFlashModeAuto;
                         [videoDevice unlockForConfiguration];
                     } else {
                         NSLog(@"%@", error);
@@ -87,11 +87,10 @@
                     self.videoDeviceInput = videoDeviceInput;
                 }
                 
-                AVCaptureStillImageOutput *stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-                if ([self.session canAddOutput:stillImageOutput]) {
-                    [self.session addOutput:stillImageOutput];
-                    [stillImageOutput setOutputSettings:@{AVVideoCodecKey : AVVideoCodecJPEG}];
-                    self.stillImageOutput = stillImageOutput;
+                AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
+                if ([self.session canAddOutput:imageOutput]) {
+                    [self.session addOutput:imageOutput];
+                    self.imageOutput = imageOutput;
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
@@ -135,8 +134,8 @@
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
     AVCaptureConnection *captureConnection;
-    if (self.stillImageOutput != nil) {
-        captureConnection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
+    if (self.imageOutput != nil) {
+        captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([captureConnection isVideoOrientationSupported]) {
             [captureConnection setVideoOrientation:orientation];
         }
@@ -148,10 +147,10 @@
         }
     }
 }
-- (NSInteger)getFlashMode {
+- (NSInteger)getFlashMode:(AVCapturePhotoSettings *)photoSettings {
 
-    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
-        return self.device.flashMode;
+    if ([self.device hasFlash]) {
+        return photoSettings.flashMode;
     }
 
     return -1;
@@ -167,15 +166,15 @@
     }
 }
 
-- (void)setFlashMode:(NSInteger)flashMode {
+- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
     NSError *error = nil;
     // Let's save the setting even if we can't set it up on this camera.
     self.defaultFlashMode = flashMode;
     
-    if ([self.device hasFlash] && [self.device isFlashModeSupported:self.defaultFlashMode]) {
+    if ([self.device hasFlash]) {
         
         if ([self.device lockForConfiguration:&error]) {
-            [self.device setFlashMode:self.defaultFlashMode];
+            photoSettings.flashMode = self.defaultFlashMode;
             [self.device unlockForConfiguration];
             
         } else {
@@ -187,7 +186,8 @@
 }
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
 - (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
-    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:self.defaultCamera];
+    NSArray *devices = [captureDeviceDiscoverySession devices];
     for (AVCaptureDevice *device in devices){
         if ([device position] == position)
             return device;
