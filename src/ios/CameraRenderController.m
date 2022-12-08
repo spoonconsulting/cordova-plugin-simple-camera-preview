@@ -147,8 +147,8 @@
     }
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:<#animated#>];
     
     if ([EAGLContext currentContext] == self.context) {
         [EAGLContext setCurrentContext:nil];
