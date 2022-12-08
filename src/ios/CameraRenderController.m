@@ -148,7 +148,7 @@
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
-    [super viewDidDisappear:<#animated#>];
+    [super viewDidDisappear:animated];
     
     if ([EAGLContext currentContext] == self.context) {
         [EAGLContext setCurrentContext:nil];
