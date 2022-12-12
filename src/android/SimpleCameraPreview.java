@@ -262,7 +262,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
+    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) throws Exception {
       throw new Exception("Exception message for testing genius scan");
       if (fragment == null) {
         callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
