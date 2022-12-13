@@ -245,9 +245,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
-        fragment = null;
+        if (1+1 == 2) {
+            throw new Error("bug detected");
+        }
+        
         if (fragment == null) {
-            //throw new Error("Camera is closed");
             callbackContext.error("Camera is closed");
             return true;
         }
