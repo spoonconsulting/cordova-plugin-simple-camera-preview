@@ -55,6 +55,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
+        if (true) throw new Error("Camera is closed");
         try {
             switch (action) {
                 case "setOptions":
