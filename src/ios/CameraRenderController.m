@@ -169,8 +169,12 @@
 
 -(void) viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    UIInterfaceOrientation toInterfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+    __block UIInterfaceOrientation toInterfaceOrientation;
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        toInterfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+    }];
 }
 
 @end
