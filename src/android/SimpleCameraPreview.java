@@ -18,6 +18,7 @@ import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
@@ -72,6 +73,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "torchSwitch":
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
+                case "deviceHasFlash":
+                    return deviceHasFlash(callbackContext);
+                case "showToast":
+                    return showToast();
                 default:
                     break;
             }
@@ -133,7 +138,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
         } catch (JSONException e) {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
-        }   
+        }
 
         int targetSize = 0;
         try {
@@ -162,31 +167,31 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         try {
             RunnableFuture<Void> addViewTask = new FutureTask<>(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        DisplayMetrics metrics = new DisplayMetrics();
-                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            DisplayMetrics metrics = new DisplayMetrics();
+                            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                            int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                            int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                            int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                            int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
-                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                        if (containerView == null) {
-                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                            containerView.setId(containerViewId);
-                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                            containerLayoutParams.setMargins(x, y, 0, 0);
-                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            if (containerView == null) {
+                                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                                containerView.setId(containerViewId);
+                                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                                containerLayoutParams.setMargins(x, y, 0, 0);
+                                cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                            }
+                            cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                            webViewParent = webView.getView().getParent();
+                            webView.getView().bringToFront();
+                            cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                         }
-                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                        webViewParent = webView.getView().getParent();
-                        webView.getView().bringToFront();
-                        cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
-                    }
-                },
-                null
+                    },
+                    null
             );
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
@@ -262,21 +267,41 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
-      if (fragment == null) {
-        callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
-        return true;
-      }
+    private boolean deviceHasFlash(CallbackContext callbackContext) {
+        fragment.hasFlash((boolean result) -> {
+            PluginResult pluginResult1;
+            if (result == true) {
+                pluginResult1 = new PluginResult(PluginResult.Status.OK, true);
+            } else {
+                pluginResult1 = new PluginResult(PluginResult.Status.OK, false);
+            }
 
-      fragment.torchSwitch(torchState, (Exception err) -> {
-          if (err == null) {
-              callbackContext.success();
-          } else {
-            callbackContext.error(err.getMessage());
-          }
-      });
-      return torchState;
-  }
+            pluginResult1.setKeepCallback(true);
+            callbackContext.sendPluginResult(pluginResult1);
+        });
+        return true;
+    }
+
+    private boolean showToast() {
+        Toast.makeText(cordova.getActivity(), "Flash not supported", Toast.LENGTH_SHORT).show();
+        return true;
+    }
+
+    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
+            return true;
+        }
+
+        fragment.torchSwitch(torchState, (Exception err) -> {
+            if (err == null) {
+                callbackContext.success();
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return torchState;
+    }
 
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
@@ -287,16 +312,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         try {
             if (webViewParent != null) {
                 RunnableFuture<Void> removeViewTask = new FutureTask<>(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            webView.getView().bringToFront();
-                            webViewParent = null;
-                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                            ((ViewGroup) containerView.getParent()).removeView(containerView);
-                        }
-                    },
-                    null
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.getView().bringToFront();
+                                webViewParent = null;
+                                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                                ((ViewGroup) containerView.getParent()).removeView(containerView);
+                            }
+                        },
+                        null
                 );
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
