@@ -138,7 +138,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
         } catch (JSONException e) {
             cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
-        }
+        }   
 
         int targetSize = 0;
         try {
