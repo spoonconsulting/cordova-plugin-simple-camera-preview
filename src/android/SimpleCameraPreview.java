@@ -167,31 +167,31 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         try {
             RunnableFuture<Void> addViewTask = new FutureTask<>(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            DisplayMetrics metrics = new DisplayMetrics();
-                            cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                            int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                            int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                            int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                            int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        DisplayMetrics metrics = new DisplayMetrics();
+                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
 
-                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                            if (containerView == null) {
-                                containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                                containerView.setId(containerViewId);
-                                FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                                containerLayoutParams.setMargins(x, y, 0, 0);
-                                cordova.getActivity().addContentView(containerView, containerLayoutParams);
-                            }
-                            cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                            webViewParent = webView.getView().getParent();
-                            webView.getView().bringToFront();
-                            cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
+                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                        if (containerView == null) {
+                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                            containerView.setId(containerViewId);
+                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                            containerLayoutParams.setMargins(x, y, 0, 0);
+                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
                         }
-                    },
-                    null
+                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                        webViewParent = webView.getView().getParent();
+                        webView.getView().bringToFront();
+                        cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
+                    }
+                },
+                null
             );
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
@@ -312,16 +312,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         try {
             if (webViewParent != null) {
                 RunnableFuture<Void> removeViewTask = new FutureTask<>(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                webView.getView().bringToFront();
-                                webViewParent = null;
-                                FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                                ((ViewGroup) containerView.getParent()).removeView(containerView);
-                            }
-                        },
-                        null
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.getView().bringToFront();
+                            webViewParent = null;
+                            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                            ((ViewGroup) containerView.getParent()).removeView(containerView);
+                        }
+                    },
+                    null
                 );
                 cordova.getActivity().runOnUiThread(removeViewTask);
                 removeViewTask.get();
