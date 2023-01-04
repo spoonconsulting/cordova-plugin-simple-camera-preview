@@ -75,8 +75,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
-                case "showToast":
-                    return showToast();
                 default:
                     break;
             }
