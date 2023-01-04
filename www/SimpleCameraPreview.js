@@ -32,8 +32,4 @@ SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
 };
 
-SimpleCameraPreview.showToast = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "showToast", []);
-};
-
 module.exports = SimpleCameraPreview;

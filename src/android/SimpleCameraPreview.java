@@ -282,11 +282,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean showToast() {
-        Toast.makeText(cordova.getActivity(), "Flash not supported", Toast.LENGTH_SHORT).show();
-        return true;
-    }
-
     private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
