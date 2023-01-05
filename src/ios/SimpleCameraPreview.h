@@ -16,6 +16,7 @@
 - (void) capture:(CDVInvokedUrlCommand*)command;
 - (void) setSize:(CDVInvokedUrlCommand*)command;
 - (void) torchSwitch: (CDVInvokedUrlCommand*)command;
+- (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
