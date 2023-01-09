@@ -229,11 +229,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void hasFlash(FlashCallback flashCallback) {
-        if (!camera.getCameraInfo().hasFlashUnit()) {
-            flashCallback.onResult(false);
-        } else {
-            flashCallback.onResult(true);
-        }
+        flashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
         return;
     }
 

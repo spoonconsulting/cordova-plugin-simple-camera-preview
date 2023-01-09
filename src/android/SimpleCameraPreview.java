@@ -18,7 +18,6 @@ import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
@@ -267,15 +266,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean deviceHasFlash(CallbackContext callbackContext) {
         fragment.hasFlash((boolean result) -> {
-            PluginResult pluginResult1;
-            if (result == true) {
-                pluginResult1 = new PluginResult(PluginResult.Status.OK, true);
-            } else {
-                pluginResult1 = new PluginResult(PluginResult.Status.OK, false);
-            }
-
-            pluginResult1.setKeepCallback(true);
-            callbackContext.sendPluginResult(pluginResult1);
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
         });
         return true;
     }
