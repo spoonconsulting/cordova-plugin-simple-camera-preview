@@ -51,7 +51,7 @@ interface TorchCallback {
     void onEnabled(Exception err);
 }
 
-interface FlashCallback {
+interface HasFlashCallback {
     void onResult(boolean result);
 }
 
@@ -228,7 +228,7 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-    public void hasFlash(FlashCallback flashCallback) {
+    public void hasFlash(HasFlashCallback flashCallback) {
         flashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
         return;
     }

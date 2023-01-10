@@ -146,8 +146,7 @@ BOOL torchActivated = false;
         }
     }
     
-    CDVPluginResult *pluginResult;
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasTorch];
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasTorch];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
