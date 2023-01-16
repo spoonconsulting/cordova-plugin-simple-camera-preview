@@ -28,8 +28,4 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
 
-SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
-};
-
 module.exports = SimpleCameraPreview;
