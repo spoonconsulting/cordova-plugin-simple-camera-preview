@@ -67,18 +67,20 @@ BOOL torchActivated = false;
         @try {
             if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-                setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInt:targetSize] };
+                setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInteger:targetSize] };
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
     }
     
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+    
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
         });
-    } options:setupSessionOptions];
+    } options:setupSessionOptions photoSettings:self.photoSettings];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
@@ -154,13 +156,14 @@ BOOL torchActivated = false;
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
         useFlash = false;
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     if (self.sessionManager != nil)
-        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff];
+        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings];
 
     CDVPluginResult *pluginResult;
     if (self.cameraRenderController != NULL) {
         self.onPictureTakenHandlerId = command.callbackId;
-        [self capture];
+        [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -232,46 +235,39 @@ BOOL torchActivated = false;
     return gps;
 }
 
-- (void) capture{
-    AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-    [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
-        if (error) {
-            NSLog(@"%@", error);
-            CDVPluginResult *pluginResult;
-            if (CMSampleBufferIsValid(sampleBuffer)) {
-                NSString* errorDescription =  error.description ? error.description : @"";
-                errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
-            } else {
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Sample buffer not valid"];
-            }
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
-            return;
-        }
-        [self runBlockWithTryCatch:^{
-            NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
-            CFDictionaryRef metaDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
-            CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
-            NSDictionary * gpsData = [self getGPSDictionaryForLocation];
-            if (gpsData)
-                CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
-            CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) imageData, NULL);
-            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-            NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
-            NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
-            NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
-            CFStringRef UTI = CGImageSourceGetType(source);
-            CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)  [NSURL URLWithString:dataPath], UTI, 1, NULL);
-            CGImageDestinationAddImageFromSource(destination, source, 0, mutableDict);
-            CGImageDestinationFinalize(destination);
-            CFRelease(source);
-            CFRelease(destination);
-            CFRelease(metaDict);
-            CFRelease(mutableDict);
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
-            [pluginResult setKeepCallbackAsBool:true];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
-        }];
+-(void)captureOutput:(AVCapturePhotoOutput *)captureOutput didFinishProcessingPhoto:(nonnull AVCapturePhoto *)photo error:(nullable NSError *)error {
+    if (error) {
+        NSLog(@"%@", error);
+        NSString* errorDescription =  error.description ? error.description : @"";
+        errorDescription = [@"Error taking picture: " stringByAppendingString:errorDescription];
+        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorDescription];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+        return;
+    }
+    [self runBlockWithTryCatch:^{
+        NSData *imageData = [photo fileDataRepresentation];
+        CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
+        CFDictionaryRef metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
+        CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
+        NSDictionary * gpsData = [self getGPSDictionaryForLocation];
+        if (gpsData)
+            CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
+        CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) imageData, NULL);
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+        NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
+        NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
+        CFStringRef UTI = CGImageSourceGetType(source);
+        CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)  [NSURL URLWithString:dataPath], UTI, 1, NULL);
+        CGImageDestinationAddImageFromSource(destination, source, 0, mutableDict);
+        CGImageDestinationFinalize(destination);
+        CFRelease(source);
+        CFRelease(destination);
+        CFRelease(metaDict);
+        CFRelease(mutableDict);
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+        [pluginResult setKeepCallbackAsBool:true];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
     }];
 }
 
