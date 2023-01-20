@@ -1,3 +1,7 @@
+## [2.0.14](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.13...v2.0.14) (2023-01-20)
+
+* **iOS:** Use AVCapturePhotoOutput and Remove All Deprecated Libraries/Warnings. ([#62](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/62))
+
 ## [2.0.13](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.12...v2.0.13) (2022-11-18)
 
 * **iOS:** Configurable Output Resolution Feature: Added getRatio function on plugin to return aspect ratio based on available resolution. ([#58](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/58))
