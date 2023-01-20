@@ -5,8 +5,8 @@
 @interface CameraSessionManager : NSObject
 
 - (CameraSessionManager *)init;
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options;
-- (void) setFlashMode:(NSInteger)flashMode;
+- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options photoSettings:(AVCapturePhotoSettings *)photoSettings;
+- (void) setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings;
 - (void) torchSwitch:(NSInteger)torchState;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
@@ -20,7 +20,7 @@
 @property (nonatomic) NSInteger defaultFlashMode;
 @property (nonatomic) AVCaptureDevice *device;
 @property (nonatomic) AVCaptureDeviceInput *videoDeviceInput;
-@property (nonatomic) AVCaptureStillImageOutput *stillImageOutput;
+@property (nonatomic) AVCapturePhotoOutput *imageOutput;
 @property (nonatomic) AVCaptureVideoDataOutput *dataOutput;
 @property (nonatomic, weak) id delegate;
 @end

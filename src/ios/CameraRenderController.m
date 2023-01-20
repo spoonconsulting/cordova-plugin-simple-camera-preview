@@ -147,9 +147,16 @@
     }
 }
 
-- (void)viewDidUnload {
-    [super viewDidUnload];
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
     
+    if ([EAGLContext currentContext] == self.context) {
+        [EAGLContext setCurrentContext:nil];
+    }
+    self.context = nil;
+}
+
+- (void)dealloc {
     if ([EAGLContext currentContext] == self.context) {
         [EAGLContext setCurrentContext:nil];
     }
@@ -160,8 +167,14 @@
     return YES;
 }
 
--(void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
-    [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+-(void) viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    __block UIInterfaceOrientation toInterfaceOrientation;
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        toInterfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+    }];
 }
 
 @end
