@@ -55,6 +55,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
+        if (true) throw new Error("Camera is closed");
         try {
             switch (action) {
                 case "setOptions":
@@ -245,6 +246,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
+        if (1+1 == 2) {
+            throw new Error("bug detected");
+        }
+        
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
@@ -263,6 +268,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
+
       if (fragment == null) {
         callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
         return true;
