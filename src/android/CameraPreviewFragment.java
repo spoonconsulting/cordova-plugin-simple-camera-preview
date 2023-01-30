@@ -51,6 +51,10 @@ interface TorchCallback {
     void onEnabled(Exception err);
 }
 
+interface HasFlashCallback {
+    void onResult(boolean result);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -222,6 +226,10 @@ public class CameraPreviewFragment extends Fragment {
             }
             torchActivated = torchOn;
         }
+    }
+
+    public void hasFlash(HasFlashCallback hasFlashCallback) {
+        hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {

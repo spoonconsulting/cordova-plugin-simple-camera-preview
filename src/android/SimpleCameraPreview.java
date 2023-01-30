@@ -72,6 +72,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "torchSwitch":
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
+                case "deviceHasFlash":
+                    return deviceHasFlash(callbackContext);
                 default:
                     break;
             }
@@ -262,21 +264,29 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
-      if (fragment == null) {
-        callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
+    private boolean deviceHasFlash(CallbackContext callbackContext) {
+        fragment.hasFlash((boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
         return true;
-      }
+    }
 
-      fragment.torchSwitch(torchState, (Exception err) -> {
-          if (err == null) {
-              callbackContext.success();
-          } else {
-            callbackContext.error(err.getMessage());
-          }
-      });
-      return torchState;
-  }
+    private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
+            return true;
+        }
+
+        fragment.torchSwitch(torchState, (Exception err) -> {
+            if (err == null) {
+                callbackContext.success();
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return torchState;
+    }
 
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
