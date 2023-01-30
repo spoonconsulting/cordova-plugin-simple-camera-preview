@@ -1,3 +1,8 @@
+## [2.0.15](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.14...v2.0.15) (2023-01-30)
+
+* **iOS:** Added a method deviceHasFlash to check if devices have a flash unit or no. ([#64](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/64))
+* **Android:** Added a method deviceHasFlash to check if devices have a flash unit or no. ([#64](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/64))
+
 ## [2.0.14](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.13...v2.0.14) (2023-01-20)
 
 * **iOS:** Use AVCapturePhotoOutput and Remove All Deprecated Libraries/Warnings. ([#62](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/62))
