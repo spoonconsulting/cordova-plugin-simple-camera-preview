@@ -36,7 +36,9 @@ BOOL torchActivated = false;
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionWasInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
 
     // start as transparent
     self.webView.opaque = NO;
@@ -100,9 +102,6 @@ BOOL torchActivated = false;
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
-    self.command = command;
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
-
     [self.commandDelegate runInBackground:^{
         if(self.sessionManager != nil) {
             for(AVCaptureInput *input in self.sessionManager.session.inputs) {
@@ -119,9 +118,7 @@ BOOL torchActivated = false;
                   [self.cameraRenderController removeFromParentViewController];
               }
               self.cameraRenderController = nil;
-              CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-              [pluginResult setKeepCallbackAsBool:true];
-              [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+              [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
             });
         }
         else {
