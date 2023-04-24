@@ -29,14 +29,14 @@ BOOL torchActivated = false;
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
-    self.command = command;
+    self.onFloatingAppDetectedHandlerId = command.callbackId;
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionWasInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
 
@@ -92,13 +92,13 @@ BOOL torchActivated = false;
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.command.callbackId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onFloatingAppDetectedHandlerId];
 }
 
 - (void) sessionWasInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.command.callbackId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onFloatingAppDetectedHandlerId];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
