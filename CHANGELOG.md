@@ -1,3 +1,7 @@
+## [2.0.16](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.15...v2.0.16) (2023-05-08)
+
+* **iOS:** Added a NSNotification observer to check if app is interrupted by a drawer app on ipad. ([#64](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/66))
+
 ## [2.0.15](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.14...v2.0.15) (2023-01-30)
 
 * **iOS:** Added a method deviceHasFlash to check if devices have a flash unit or no. ([#64](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/64))
