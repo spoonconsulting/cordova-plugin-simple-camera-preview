@@ -29,7 +29,7 @@ BOOL torchActivated = false;
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
-    self.onFloatingAppDetectedHandlerId = command.callbackId;
+    self.onCameraEnabledHandlerId = command.callbackId;
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
@@ -37,7 +37,7 @@ BOOL torchActivated = false;
         return;
     }
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionWasInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
 
     // start as transparent
@@ -92,13 +92,13 @@ BOOL torchActivated = false;
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onFloatingAppDetectedHandlerId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onCameraEnabledHandlerId];
 }
 
-- (void) sessionWasInterrupted:(NSNotification *)notification {
+- (void) sessionInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onFloatingAppDetectedHandlerId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onCameraEnabledHandlerId];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
