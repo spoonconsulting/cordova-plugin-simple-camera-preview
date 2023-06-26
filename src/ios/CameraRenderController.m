@@ -51,7 +51,7 @@
         UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
         orientation = [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
     } else {
-        orientation= [UIApplication sharedApplication].statusBarOrientation;
+        orientation = [UIApplication sharedApplication].statusBarOrientation;
     }
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){

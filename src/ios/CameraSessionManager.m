@@ -20,7 +20,7 @@
         UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
         orientation = [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
     } else {
-        orientation= [UIApplication sharedApplication].statusBarOrientation;
+        orientation = [UIApplication sharedApplication].statusBarOrientation;
     }
     return [self getCurrentOrientation: orientation];
 }
