@@ -46,13 +46,7 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     
-    UIInterfaceOrientation orientation;
-    if (@available(iOS 13.0, *)) {
-        UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
-        orientation = [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
-    } else {
-        orientation = [UIApplication sharedApplication].statusBarOrientation;
-    }
+    UIInterfaceOrientation orientation = [self getOrientation];
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
             NSLog(@"Starting session from viewWillAppear");
@@ -177,15 +171,20 @@
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
     __block UIInterfaceOrientation toInterfaceOrientation;
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        if (@available(iOS 13.0, *)) {
-            UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
-            toInterfaceOrientation = [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
-        } else {
-            toInterfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        }
+        toInterfaceOrientation = [self getOrientation];
+        
     } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
     }];
+}
+
+- (UIInterfaceOrientation) getOrientation {
+    if (@available(iOS 13.0, *)) {
+        UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
+        return [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
+    } else {
+        return [[UIApplication sharedApplication] statusBarOrientation];
+    }
 }
 
 @end
