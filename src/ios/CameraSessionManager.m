@@ -15,13 +15,7 @@
 }
 
 - (AVCaptureVideoOrientation) getCurrentOrientation {
-    UIInterfaceOrientation orientation;
-    if (@available(iOS 13.0, *)) {
-        UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
-        orientation = [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
-    } else {
-        orientation = [UIApplication sharedApplication].statusBarOrientation;
-    }
+    UIInterfaceOrientation orientation = [self getOrientation];
     return [self getCurrentOrientation: orientation];
 }
 
@@ -200,6 +194,15 @@
             return device;
     }
     return nil;
+}
+
+- (UIInterfaceOrientation) getOrientation {
+    if (@available(iOS 13.0, *)) {
+        UIWindowScene *activeWindow = (UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject];
+        return [activeWindow interfaceOrientation] ?: UIInterfaceOrientationPortrait;
+    } else {
+        return [[UIApplication sharedApplication] statusBarOrientation];
+    }
 }
 
 @end
