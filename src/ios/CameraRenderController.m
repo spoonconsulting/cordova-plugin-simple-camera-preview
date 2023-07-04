@@ -46,12 +46,12 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     
-    UIInterfaceOrientation orientation= [UIApplication sharedApplication].statusBarOrientation;
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
             NSLog(@"Starting session from viewWillAppear");
             [self.sessionManager.session startRunning];
         }
+        UIInterfaceOrientation orientation = [self.sessionManager getOrientation];
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation: orientation]];
     });
 }
@@ -171,7 +171,8 @@
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
     __block UIInterfaceOrientation toInterfaceOrientation;
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        toInterfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        toInterfaceOrientation = [self.sessionManager getOrientation];
+        
     } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
     }];

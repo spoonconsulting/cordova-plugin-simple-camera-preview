@@ -1,6 +1,10 @@
+## [2.0.17](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.16...v2.0.17) (2023-07-04)
+
+* **iOS:** Use interfaceOrientation for ios 13+. ([#67](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/67))
+
 ## [2.0.16](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.15...v2.0.16) (2023-05-08)
 
-* **iOS:** Added a NSNotification observer to check if app is interrupted by a drawer app on ipad. ([#64](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/66))
+* **iOS:** Added a NSNotification observer to check if app is interrupted by a drawer app on ipad. ([#66](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/66))
 
 ## [2.0.15](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.14...v2.0.15) (2023-01-30)
 
