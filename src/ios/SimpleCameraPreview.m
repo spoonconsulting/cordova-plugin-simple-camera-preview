@@ -65,13 +65,17 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
-    NSDictionary *setupSessionOptions;
+    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
             if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-                setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInteger:targetSize] };
+                [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
+            }
+            NSString *ulw = config[@"ulw"];
+            if (ulw != [NSNull null] && ![ulw isEqual: @""]) {
+                [setupSessionOptions setValue:ulw forKey:@"ulw"];
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
@@ -79,14 +83,14 @@ BOOL torchActivated = false;
     }
     
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    
+    NSDictionary *immutableSetupSessionOptions = [setupSessionOptions copy];
     [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:true];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
-    } options:setupSessionOptions photoSettings:self.photoSettings];
+    } options:immutableSetupSessionOptions photoSettings:self.photoSettings];
 }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {

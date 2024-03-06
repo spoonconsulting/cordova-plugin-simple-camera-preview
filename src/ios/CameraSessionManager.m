@@ -53,8 +53,14 @@
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
-                
-                AVCaptureDevice *videoDevice = [self cameraWithPosition: self.defaultCamera];
+                AVCaptureDevice *videoDevice;
+                if ([options[@"ulw"] isEqual: @"active"]) {
+                    // need to add check for ios version first
+                    videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                }
+                else {
+                    videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                }
                 
                 if ([videoDevice hasFlash]) {
                     if ([videoDevice lockForConfiguration:&error]) {
@@ -186,8 +192,8 @@
     }
 }
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
-- (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
-    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:self.defaultCamera];
+- (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position captureDeviceType:(AVCaptureDeviceType) captureDeviceType {
+    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ captureDeviceType] mediaType:AVMediaTypeVideo position:self.defaultCamera];
     NSArray *devices = [captureDeviceDiscoverySession devices];
     for (AVCaptureDevice *device in devices){
         if ([device position] == position)
