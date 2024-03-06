@@ -73,9 +73,9 @@ BOOL torchActivated = false;
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
             }
-            NSString *ulw = config[@"ulw"];
-            if (ulw != [NSNull null] && ![ulw isEqual: @""]) {
-                [setupSessionOptions setValue:ulw forKey:@"ulw"];
+            NSString *captureDevice = config[@"captureDevice"];
+            if (captureDevice != [NSNull null] && ![captureDevice isEqual: @""]) {
+                [setupSessionOptions setValue:captureDevice forKey:@"captureDevice"];
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];

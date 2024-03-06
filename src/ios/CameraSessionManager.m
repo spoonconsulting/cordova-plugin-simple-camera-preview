@@ -54,7 +54,7 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 AVCaptureDevice *videoDevice;
-                if ([options[@"ulw"] isEqual: @"active"]) {
+                if ([options[@"captureDevice"] isEqual: @"wide-angle"]) {
                     // need to add check for ios version first
                     videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
                 }
