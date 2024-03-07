@@ -1,9 +1,13 @@
 package com.spoon.simplecamerapreview;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Point;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraMetadata;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,13 +22,25 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
+import androidx.camera.camera2.interop.Camera2CameraInfo;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.Camera;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.video.FallbackStrategy;
+import androidx.camera.video.Quality;
+import androidx.camera.video.QualitySelector;
+import androidx.camera.video.Recorder;
+import androidx.camera.video.Recording;
+import androidx.camera.video.VideoCapture;
+import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
@@ -36,8 +52,23 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import android.content.ContentValues;
+import android.provider.MediaStore;
+import android.widget.Toast;
+
+import androidx.camera.video.MediaStoreOutputOptions;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 interface CameraCallback {
     void onCompleted(Exception err, String nativePath);
@@ -58,8 +89,11 @@ interface HasFlashCallback {
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
-    private Preview preview;
+    private Preview preview = null;
     private ImageCapture imageCapture;
+    Recording recording = null;
+    ProcessCameraProvider cameraProvider = null;
+    CameraSelector cameraSelector = null;
     private Camera camera;
     private CameraStartedCallback startCameraCallback;
     private Location location;
@@ -104,7 +138,6 @@ public class CameraPreviewFragment extends Fragment {
 
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-        ProcessCameraProvider cameraProvider = null;
 
         try {
             cameraProvider = cameraProviderFuture.get();
@@ -115,9 +148,11 @@ public class CameraPreviewFragment extends Fragment {
             return;
         }
 
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(direction)
-                .build();
+        if (cameraSelector == null) {
+            cameraSelector = new CameraSelector.Builder()
+                    .requireLensFacing(direction)
+                    .build();
+        }
 
         Size targetResolution = null;
         if (targetSize > 0) {
@@ -232,6 +267,108 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    public void recordVideo(boolean useFlash, CameraCallback takePictureCallback) {
+        if (recording != null) {
+            recording.stop();
+            return;
+        }
+        QualitySelector qualitySelector = QualitySelector.fromOrderedList(
+                Arrays.asList(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD),
+                FallbackStrategy.lowerQualityOrHigherThan(Quality.SD));
+        List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+        List<CameraInfo> backCameraInfos = new ArrayList<>();
+
+        for (CameraInfo info : cameraInfos) {
+            Integer lensFacing = Camera2CameraInfo.from(info).getCameraCharacteristic(CameraCharacteristics.LENS_FACING);
+            if (lensFacing != null && lensFacing == CameraMetadata.LENS_FACING_BACK) {
+                backCameraInfos.add(info);
+            }
+        }
+
+        if (!backCameraInfos.isEmpty()) {
+            List<Quality> supportedQualities = QualitySelector.getSupportedQualities(backCameraInfos.get(0));
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                List<Quality> filteredQualities = Arrays.asList(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD)
+                        .stream()
+                        .filter(supportedQualities::contains)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // Assuming cameraProvider, cameraExecutor, qualitySelector, and preview are already defined
+        Executor cameraExecutor = Executors.newSingleThreadExecutor();
+        Recorder recorder = new Recorder.Builder()
+                .setExecutor(cameraExecutor)
+                .setQualitySelector(qualitySelector)
+                .build();
+
+        VideoCapture<Recorder> videoCapture = VideoCapture.withOutput(recorder);
+
+        this.getActivity().runOnUiThread(() -> {
+            try {
+                // Bind use cases to camera
+                cameraProvider.unbindAll();
+                cameraProvider.bindToLifecycle(
+                        this, CameraSelector.DEFAULT_BACK_CAMERA, preview, videoCapture);
+            } catch (Exception exc) {
+                Log.e(TAG, "Use case binding failed", exc);
+            }
+        });
+
+
+        String name = "CameraX-recording-" +
+                new SimpleDateFormat("dd/mm/yyy", Locale.US)
+                        .format(System.currentTimeMillis()) + ".mp4";
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, name);
+
+        MediaStoreOutputOptions mediaStoreOutput = new MediaStoreOutputOptions.Builder(this.getContext().getContentResolver(),
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                .setContentValues(contentValues)
+                .build();
+
+// 2. Configure Recorder and Start recording to mediaStoreOutput
+        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
+        }
+
+        recording = videoCapture.getOutput()
+                .prepareRecording(this.getContext().getApplicationContext(), mediaStoreOutput)
+                .withAudioEnabled()
+                .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
+                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
+                        // Recording has started
+                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                        if (finalizeEvent.hasError()) {
+                            // Handle the error
+                            int errorCode = finalizeEvent.getError();
+                            Throwable errorCause = finalizeEvent.getCause();
+                            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
+                        } else {
+                            // Handle video saved
+                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+                            Log.d(TAG, "Video saved to: " + savedUri);
+                            Toast.makeText(this.getContext(), "Video stop" + savedUri, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    // Other event types can be handled if needed
+                });
+        Toast.makeText(this.getContext(), "Video started" , Toast.LENGTH_LONG).show();
+        takePictureCallback.onCompleted(null, "test.jpg");
+    }
+
+    private boolean hasRequiredPermissions() {
+        return ActivityCompat.checkSelfPermission(
+                this.getContext(),
+                Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(
+                        this.getContext(),
+                        Manifest.permission.RECORD_AUDIO
+                ) == PackageManager.PERMISSION_GRANTED;
+    }
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         if (torchActivated) {
             useFlash = true;
