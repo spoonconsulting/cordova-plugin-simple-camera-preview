@@ -28,6 +28,10 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
 
+SimpleCameraPreview.switchToUltraWideCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "switchToUltraWideCamera", []);
+};
+
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
 };

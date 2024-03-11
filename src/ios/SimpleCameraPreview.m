@@ -156,6 +156,14 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) switchToUltraWideCamera:(CDVInvokedUrlCommand*)command{
+    if (self.sessionManager != nil) {
+        [self.sessionManager switchToUltraWideCamera];
+    }
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) deviceHasFlash:(CDVInvokedUrlCommand*)command{
     AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
                                           mediaType:AVMediaTypeVideo
@@ -191,7 +199,6 @@ BOOL torchActivated = false;
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
-
 
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)

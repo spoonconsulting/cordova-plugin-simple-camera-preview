@@ -53,13 +53,16 @@
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
+                
                 AVCaptureDevice *videoDevice;
+                videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
                 if ([options[@"captureDevice"] isEqual: @"wide-angle"]) {
-                    // need to add check for ios version first
-                    videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
-                }
-                else {
-                    videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                    if ([self deviceHasUltraWideCamera]) {
+                        if (@available(iOS 13.0, *)) {
+                            videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                        }
+                    }
+
                 }
                 
                 if ([videoDevice hasFlash]) {
@@ -171,6 +174,58 @@
             [self.device unlockForConfiguration];
         }
     }
+}
+
+- (BOOL)switchToUltraWideCamera {
+    if (![self deviceHasUltraWideCamera]) return FALSE;
+
+    dispatch_async(self.sessionQueue, ^{
+        if (@available(iOS 13.0, *)) {
+            AVCaptureDevice *ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+            if (ultraWideCamera) {
+                // Remove the current input
+                [self.session removeInput:self.videoDeviceInput];
+                
+                // Create a new input with the ultra-wide camera
+                NSError *error = nil;
+                AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
+                
+                if (!error) {
+                    // Add the new input to the session
+                    if ([self.session canAddInput:ultraWideVideoDeviceInput]) {
+                        [self.session addInput:ultraWideVideoDeviceInput];
+                        self.videoDeviceInput = ultraWideVideoDeviceInput;
+                        __block AVCaptureVideoOrientation orientation;
+                        dispatch_sync(dispatch_get_main_queue(), ^{
+                            orientation=[self getCurrentOrientation];
+                        });
+                        [self updateOrientation:orientation];
+                    } else {
+                        NSLog(@"Failed to add ultra-wide input to session");
+                    }
+                } else {
+                    NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
+                }
+            } else {
+                NSLog(@"Ultra-wide camera not found");
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+    });
+    return TRUE;
+}
+
+- (BOOL)deviceHasUltraWideCamera {
+    NSArray *devices;
+    if (@available(iOS 13.0, *)) {
+        AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInUltraWideCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+        devices = discoverySession.devices;
+    } else {
+        // Fallback on earlier versions
+    }
+    
+    return devices.count > 0;
 }
 
 - (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
