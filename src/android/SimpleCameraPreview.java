@@ -74,6 +74,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
+
+                case "getMinZoomRatio":
+                    return getMinZoomRatio(callbackContext);
+
+                case "setZoomRatio":
+                    return setZoomRatio(Double.valueOf(args.getDouble(0)).floatValue(), callbackContext);
                 default:
                     break;
             }
@@ -323,6 +329,39 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    private boolean getMinZoomRatio(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot get minimum zoom ratio.");
+            return true;
+        }
+        try {
+            float minZoomRatio = fragment.getMinZoomRatio();
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, minZoomRatio);
+            callbackContext.sendPluginResult(pluginResult);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean setZoomRatio(float zoomRatio, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot set zoom ratio");
+            return true;
+        }
+
+        fragment.setZoom(zoomRatio, (Exception err) -> {
+            if (err == null) {
+                callbackContext.success();
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return true;
+    }
+
     public boolean hasAllPermissions() {
         for(String p : REQUIRED_PERMISSIONS) {
             if(!PermissionHelper.hasPermission(this, p)) {
@@ -395,6 +434,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
         }
     }
+    
 
     @Override
     public void onDestroy() {

@@ -55,6 +55,10 @@ interface HasFlashCallback {
     void onResult(boolean result);
 }
 
+interface ZoomCallback {
+    void onZoom(Exception err);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -69,6 +73,8 @@ public class CameraPreviewFragment extends Fragment {
 
     private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
+    private float minZoomRatio;
+    private float maxZoomRatio;
 
     public CameraPreviewFragment() {
 
@@ -148,6 +154,9 @@ public class CameraPreviewFragment extends Fragment {
                     preview,
                     imageCapture
             );
+        } finally {
+            minZoomRatio = camera.getCameraInfo().getZoomState().getValue().getMinZoomRatio();
+            maxZoomRatio = camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
         }
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
@@ -307,6 +316,22 @@ public class CameraPreviewFragment extends Fragment {
     public void setLocation(Location loc) {
         if (loc != null) {
             this.location = loc;
+        }
+    }
+
+    public float getMinZoomRatio() {
+        return minZoomRatio;
+    }
+
+    public void setZoomRatio(float zoomRatio, ZoomCallback zoomCallback) {
+        if ((zoomRatio < minZoomRatio) || (zoomRatio > maxZoomRatio)) {
+            zoomCallback.onZoom(new Exception("Unsupported zoom ratio"));
+            return;
+        }
+        try {
+            camera.getCameraControl().setZoomRatio(zoomRatio);
+        } catch (Exception e) {
+            zoomCallback.onZoom(new Exception("Failed to set zoom ratio to " + zoomRatio, e));
         }
     }
 }
