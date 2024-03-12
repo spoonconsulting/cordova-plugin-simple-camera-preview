@@ -352,7 +352,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        fragment.setZoom(zoomRatio, (Exception err) -> {
+        fragment.setZoomRatio(zoomRatio, (Exception err) -> {
             if (err == null) {
                 callbackContext.success();
             } else {
