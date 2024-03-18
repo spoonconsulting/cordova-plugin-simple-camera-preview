@@ -158,10 +158,11 @@ BOOL torchActivated = false;
 
 - (void) switchToUltraWideCamera:(CDVInvokedUrlCommand*)command{
     NSString *device = [command.arguments objectAtIndex:0];
+    BOOL cameraSwitched = FALSE;
     if (self.sessionManager != nil) {
-        [self.sessionManager switchToUltraWideCamera: device];
+        cameraSwitched = [self.sessionManager switchToUltraWideCamera: device];
     }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:cameraSwitched];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
