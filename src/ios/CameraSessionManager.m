@@ -176,16 +176,21 @@
     }
 }
 
-- (BOOL)switchToUltraWideCamera:(NSString*)cameraMode {
-    if (![self deviceHasUltraWideCamera]) return FALSE;
+- (void)switchToUltraWideCamera:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
+    if (![self deviceHasUltraWideCamera]) {
+        if (completion) {
+            completion(NO);
+        }
+        return;
+    }
 
     dispatch_async(self.sessionQueue, ^{
         if (@available(iOS 13.0, *)) {
             AVCaptureDevice *ultraWideCamera;
-            if([cameraMode  isEqual: @"default"]){
-                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            if([cameraMode isEqualToString:@"default"]) {
+                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             } else {
-                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
             }
             if (ultraWideCamera) {
                 // Remove the current input
@@ -202,23 +207,37 @@
                         self.videoDeviceInput = ultraWideVideoDeviceInput;
                         __block AVCaptureVideoOrientation orientation;
                         dispatch_sync(dispatch_get_main_queue(), ^{
-                            orientation=[self getCurrentOrientation];
+                            orientation = [self getCurrentOrientation];
                         });
                         [self updateOrientation:orientation];
+                        if (completion) {
+                            completion(YES);
+                        }
                     } else {
                         NSLog(@"Failed to add ultra-wide input to session");
+                        if (completion) {
+                            completion(NO);
+                        }
                     }
                 } else {
                     NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
+                    if (completion) {
+                        completion(NO);
+                    }
                 }
             } else {
                 NSLog(@"Ultra-wide camera not found");
+                if (completion) {
+                    completion(NO);
+                }
             }
         } else {
             // Fallback on earlier versions
+            if (completion) {
+                completion(NO);
+            }
         }
     });
-    return TRUE;
 }
 
 - (BOOL)deviceHasUltraWideCamera {

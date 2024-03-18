@@ -160,10 +160,18 @@ BOOL torchActivated = false;
     NSString *device = [command.arguments objectAtIndex:0];
     BOOL cameraSwitched = FALSE;
     if (self.sessionManager != nil) {
-        cameraSwitched = [self.sessionManager switchToUltraWideCamera: device];
+        [self.sessionManager switchToUltraWideCamera: device completion:^(BOOL success) {
+            if (success) {
+                NSLog(@"Camera switched successfully");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:TRUE];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                NSLog(@"Failed to switch camera");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:FALSE];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        }];
     }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:cameraSwitched];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) deviceHasUltraWideCamera:(CDVInvokedUrlCommand *)command{

@@ -8,7 +8,7 @@
 - (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options photoSettings:(AVCapturePhotoSettings *)photoSettings;
 - (void) setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings;
 - (void) torchSwitch:(NSInteger)torchState;
-- (BOOL) switchToUltraWideCamera:(NSString *)cameraMode;
+- (void) switchToUltraWideCamera:(NSString *)cameraMode completion:(void (^)(BOOL success))completion;
 - (BOOL) deviceHasUltraWideCamera;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
