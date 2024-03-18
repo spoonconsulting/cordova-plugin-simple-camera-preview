@@ -7,6 +7,7 @@ import android.graphics.Point;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,8 +26,18 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.MediaStoreOutputOptions;
+import androidx.camera.video.Quality;
+import androidx.camera.video.QualitySelector;
+import androidx.camera.video.Recorder;
+import androidx.camera.video.Recording;
+import androidx.camera.video.VideoCapture;
+import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
 
@@ -41,6 +53,11 @@ import java.util.concurrent.ExecutionException;
 
 interface CameraCallback {
     void onCompleted(Exception err, String nativePath);
+}
+
+interface VideoCallback {
+    void onStart(Exception err,Boolean recording, String nativePath);
+    void onStop(Exception err, Boolean recording, String nativePath);
 }
 
 interface CameraStartedCallback {
@@ -60,6 +77,9 @@ public class CameraPreviewFragment extends Fragment {
     private PreviewView viewFinder;
     private Preview preview;
     private ImageCapture imageCapture;
+    private VideoCapture<Recorder> videoCapture;
+    Recording recording = null;
+    ProcessCameraProvider cameraProvider = null;
     private Camera camera;
     private CameraStartedCallback startCameraCallback;
     private Location location;
@@ -102,9 +122,41 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
+
+//    public void startCamera() {
+//        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+//        cameraProviderFuture.addListener(() -> {
+//            try {
+//                // Used to bind the lifecycle of cameras to the lifecycle owner
+//                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+//
+//                Recorder recorder = new Recorder.Builder()
+//                        .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+//                        .build();
+//                videoCapture = VideoCapture.withOutput(recorder);
+//                imageCapture = new ImageCapture.Builder().build();
+//
+//                // Select back camera as a default
+//                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+//                try {
+//                    // Unbind use cases before rebinding
+//                    cameraProvider.unbindAll();
+//                    // Bind use cases to camera
+//                    cameraProvider.bindToLifecycle(
+//                            this, cameraSelector, preview, imageCapture, videoCapture);
+//                } catch (Exception exc) {
+//                    Log.e(TAG, "Use case binding failed", exc);
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }, ContextCompat.getMainExecutor(this.getContext()));
+//        if (startCameraCallback != null) {
+//            startCameraCallback.onCameraStarted(null);
+//        }
+//    }
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-        ProcessCameraProvider cameraProvider = null;
 
         try {
             cameraProvider = cameraProviderFuture.get();
@@ -124,31 +176,41 @@ public class CameraPreviewFragment extends Fragment {
             targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
         }
 
+        Recorder recorder = new Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.HD))
+                .build();
+        videoCapture = VideoCapture.withOutput(recorder);
+
+
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
                 .setTargetResolution(targetResolution)
                 .build();
-
-        cameraProvider.unbindAll();
-        try {
-            camera = cameraProvider.bindToLifecycle(
-                    this,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-        } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
-            e.printStackTrace();
+        this.getActivity().runOnUiThread(() -> {
+            try {
+                cameraProvider.unbindAll();
+                camera = cameraProvider.bindToLifecycle(
+                        this,
+                        cameraSelector,
+                        preview,
+                        imageCapture,
+                        videoCapture
+                );
+            } catch (IllegalArgumentException e) {
+                // Error with result in capturing image with default resolution
+                e.printStackTrace();
             imageCapture = new ImageCapture.Builder()
                     .build();
             camera = cameraProvider.bindToLifecycle(
                     this,
                     cameraSelector,
                     preview,
-                    imageCapture
+                    imageCapture,
+                    videoCapture
             );
-        }
+            }
+
+        });
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -231,6 +293,67 @@ public class CameraPreviewFragment extends Fragment {
     public void hasFlash(HasFlashCallback hasFlashCallback) {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
+
+    public void captureVideo(boolean useFlash, VideoCallback videoCallback) {
+       if (torchActivated) {
+           useFlash = true;
+       } else {
+           camera.getCameraControl().enableTorch(useFlash);
+       }
+        if (recording != null) {
+            Toast.makeText(this.getContext(), "Video not null" , Toast.LENGTH_LONG).show();
+
+            recording.stop();
+            return;
+        }
+        UUID uuid = UUID.randomUUID();
+
+        String filename = uuid.toString() + ".mp4";
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
+// 2. Configure Recorder and Start recording to the mediaStoreOutput.
+        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
+        }
+        File videoFile = new File(
+                getContext().getApplicationContext().getFilesDir(),
+                filename
+        );
+
+// Configure the recorder to save the video to the specified file
+        FileOutputOptions outputOptions = new FileOutputOptions.Builder(videoFile).build();
+
+        recording = videoCapture.getOutput()
+                .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
+                .withAudioEnabled()
+                .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
+                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
+                        videoCallback.onStart(null,true, null);
+                        Toast.makeText(this.getContext(), "Video start" , Toast.LENGTH_LONG).show();
+
+                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                        Toast.makeText(this.getContext(), "Video fin" , Toast.LENGTH_LONG).show();
+                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                        if (finalizeEvent.hasError()) {
+                            // Handle the error
+                            int errorCode = finalizeEvent.getError();
+                            Throwable errorCause = finalizeEvent.getCause();
+                            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
+                        } else {
+                            // Handle video saved
+                            videoCallback.onStop(null, false, Uri.fromFile(videoFile).toString());
+                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+                            Log.d(TAG, "Video saved to: " + savedUri);
+                            Toast.makeText(this.getContext(), "Video stop" + savedUri, Toast.LENGTH_LONG).show();
+                            recording = null;
+                        }
+                    }
+                    // Other event types can be handled if needed
+                });
+
+    }
+
+
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         if (torchActivated) {
