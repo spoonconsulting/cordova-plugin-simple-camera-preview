@@ -185,7 +185,7 @@
             if([cameraMode  isEqual: @"default"]){
                 ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             } else {
-                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
             }
             if (ultraWideCamera) {
                 // Remove the current input
