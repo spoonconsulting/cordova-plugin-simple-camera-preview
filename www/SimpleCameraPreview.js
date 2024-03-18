@@ -28,12 +28,18 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
 
-SimpleCameraPreview.switchToUltraWideCamera = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "switchToUltraWideCamera", []);
+SimpleCameraPreview.switchToUltraWideCamera = function (options, onSuccess, onError) {
+  options = options || {};
+  options.captureDevice = options.captureDevice || "default";
+  exec(onSuccess, onError, PLUGIN_NAME, "switchToUltraWideCamera", [options.captureDevice]);
 };
 
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
+};
+
+SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
 SimpleCameraPreview.getMinZoomRatio = function (onSuccess, onError) {

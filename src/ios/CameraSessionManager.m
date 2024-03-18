@@ -176,12 +176,17 @@
     }
 }
 
-- (BOOL)switchToUltraWideCamera {
+- (BOOL)switchToUltraWideCamera:(NSString*)cameraMode {
     if (![self deviceHasUltraWideCamera]) return FALSE;
 
     dispatch_async(self.sessionQueue, ^{
         if (@available(iOS 13.0, *)) {
-            AVCaptureDevice *ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+            AVCaptureDevice *ultraWideCamera;
+            if([cameraMode  isEqual: @"default"]){
+                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            } else {
+                ultraWideCamera = [self cameraWithPosition: self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            }
             if (ultraWideCamera) {
                 // Remove the current input
                 [self.session removeInput:self.videoDeviceInput];

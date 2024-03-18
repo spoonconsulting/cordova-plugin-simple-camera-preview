@@ -157,10 +157,20 @@ BOOL torchActivated = false;
 }
 
 - (void) switchToUltraWideCamera:(CDVInvokedUrlCommand*)command{
+    NSString *device = [command.arguments objectAtIndex:0];
     if (self.sessionManager != nil) {
-        [self.sessionManager switchToUltraWideCamera];
+        [self.sessionManager switchToUltraWideCamera: device];
     }
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) deviceHasUltraWideCamera:(CDVInvokedUrlCommand *)command{
+    BOOL hasUltraWideCamera = NO;
+    if (self.sessionManager != nil) {
+        hasUltraWideCamera = [self.sessionManager deviceHasUltraWideCamera];
+    }
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasUltraWideCamera];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
