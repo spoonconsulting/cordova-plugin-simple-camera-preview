@@ -75,11 +75,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
 
-                case "getMinZoomRatio":
-                    return getMinZoomRatio(callbackContext);
+                case "deviceHasUltraWideCamera":
+                    return deviceHasUltraWideCamera(callbackContext);
 
-                case "setZoomRatio":
-                    return setZoomRatio(Double.valueOf(args.getDouble(0)).floatValue(), callbackContext);
+                case "switchToUltraWideCamera":
+                    return switchToUltraWideCamera(args.getString(0), callbackContext);
                 default:
                     break;
             }
@@ -278,6 +278,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
+    private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        fragment.deviceHasUltraWideCamera((boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
+    }
+
     private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
@@ -329,30 +337,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean getMinZoomRatio(CallbackContext callbackContext) {
+    private boolean switchToUltraWideCamera(String device, CallbackContext callbackContext) {
         if (fragment == null) {
-            callbackContext.error("Camera is closed, cannot get minimum zoom ratio.");
-            return true;
-        }
-        try {
-            float minZoomRatio = fragment.getMinZoomRatio();
-            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, minZoomRatio);
-            callbackContext.sendPluginResult(pluginResult);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean setZoomRatio(float zoomRatio, CallbackContext callbackContext) {
-        if (fragment == null) {
-            callbackContext.error("Camera is closed, cannot set zoom ratio");
+            callbackContext.error("Camera is closed, cannot switch camera");
             return true;
         }
 
-        fragment.setZoomRatio(zoomRatio, (Exception err) -> {
+        fragment.switchToUltraWideCamera(device, (Exception err) -> {
             if (err == null) {
                 callbackContext.success();
             } else {

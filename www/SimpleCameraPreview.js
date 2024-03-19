@@ -42,14 +42,4 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
-SimpleCameraPreview.getMinZoomRatio = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "getMinZoomRatio", []);
-};
-
-SimpleCameraPreview.setZoomRatio = function (options, onSuccess, onError) {
-  options = options || {};
-  options.zoomRatio = options.zoomRatio || 1;
-  exec(onSuccess, onError, PLUGIN_NAME, "setZoomRatio", [options.zoomRatio]);
-};
-
 module.exports = SimpleCameraPreview;
