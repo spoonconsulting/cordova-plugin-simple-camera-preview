@@ -64,7 +64,7 @@ interface HasFlashCallback {
 }
 
 interface CameraSwitchedCallback {
-    void onSwitch(Exception err);
+    void onSwitch(boolean result);
 }
 
 interface HasUltraWideCameraCallback {
@@ -385,7 +385,7 @@ public class CameraPreviewFragment extends Fragment {
                 } catch (ExecutionException | InterruptedException e) {
                     Log.e(TAG, "startCamera: " + e.getMessage());
                     e.printStackTrace();
-                    cameraSwitchedCallback.onSwitch(new Exception("Unable to start camera"));
+                    cameraSwitchedCallback.onSwitch(false);
                     return;
                 }
 
@@ -453,8 +453,8 @@ public class CameraPreviewFragment extends Fragment {
                 }
 
                 preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+                cameraSwitchedCallback.onSwitch(true);
             }
         });
-        cameraSwitchedCallback.onSwitch(null);
     }
 }

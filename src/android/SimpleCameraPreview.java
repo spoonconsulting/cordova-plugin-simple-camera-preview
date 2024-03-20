@@ -343,12 +343,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        fragment.switchToUltraWideCamera(device, (Exception err) -> {
-            if (err == null) {
-                callbackContext.success();
-            } else {
-                callbackContext.error(err.getMessage());
-            }
+        fragment.switchToUltraWideCamera(device, (boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
         });
         return true;
     }
