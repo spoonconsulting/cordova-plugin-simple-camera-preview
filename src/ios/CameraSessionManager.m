@@ -54,7 +54,16 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
-                AVCaptureDevice *videoDevice = [self cameraWithPosition: self.defaultCamera];
+                AVCaptureDevice *videoDevice;
+                videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                if ([options[@"captureDevice"] isEqual: @"wide-angle"]) {
+                    if ([self deviceHasUltraWideCamera]) {
+                        if (@available(iOS 13.0, *)) {
+                            videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                        }
+                    }
+
+                }
                 
                 if ([videoDevice hasFlash]) {
                     if ([videoDevice lockForConfiguration:&error]) {
@@ -167,6 +176,71 @@
     }
 }
 
+- (void)switchToUltraWideCamera:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
+    if (![self deviceHasUltraWideCamera]) {
+        if (completion) {
+            completion(NO);
+        }
+        return;
+    }
+
+    dispatch_async(self.sessionQueue, ^{
+        BOOL cameraSwitched = FALSE;
+        if (@available(iOS 13.0, *)) {
+            AVCaptureDevice *ultraWideCamera;
+            if([cameraMode isEqualToString:@"wide-angle"]) {
+                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+            } else {
+                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            }
+            if (ultraWideCamera) {
+                // Remove the current input
+                [self.session removeInput:self.videoDeviceInput];
+                
+                // Create a new input with the ultra-wide camera
+                NSError *error = nil;
+                AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
+                
+                if (!error) {
+                    // Add the new input to the session
+                    if ([self.session canAddInput:ultraWideVideoDeviceInput]) {
+                        [self.session addInput:ultraWideVideoDeviceInput];
+                        self.videoDeviceInput = ultraWideVideoDeviceInput;
+                        __block AVCaptureVideoOrientation orientation;
+                        dispatch_sync(dispatch_get_main_queue(), ^{
+                            orientation = [self getCurrentOrientation];
+                        });
+                        [self updateOrientation:orientation];
+                        cameraSwitched = TRUE;
+                    } else {
+                        NSLog(@"Failed to add ultra-wide input to session");
+                    }
+                } else {
+                    NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
+                }
+            } else {
+                NSLog(@"Ultra-wide camera not found");
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+        
+        completion ? completion(cameraSwitched): NULL;
+    });
+}
+
+- (BOOL)deviceHasUltraWideCamera {
+    NSArray *devices;
+    if (@available(iOS 13.0, *)) {
+        AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInUltraWideCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+        devices = discoverySession.devices;
+    } else {
+        // Fallback on earlier versions
+    }
+    
+    return devices.count > 0;
+}
+
 - (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
     NSError *error = nil;
     // Let's save the setting even if we can't set it up on this camera.
@@ -186,8 +260,8 @@
     }
 }
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
-- (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position {
-    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:self.defaultCamera];
+- (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position captureDeviceType:(AVCaptureDeviceType) captureDeviceType {
+    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ captureDeviceType] mediaType:AVMediaTypeVideo position:self.defaultCamera];
     NSArray *devices = [captureDeviceDiscoverySession devices];
     for (AVCaptureDevice *device in devices){
         if ([device position] == position)
