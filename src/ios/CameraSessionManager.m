@@ -185,12 +185,13 @@
     }
 
     dispatch_async(self.sessionQueue, ^{
+        BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
             AVCaptureDevice *ultraWideCamera;
-            if([cameraMode isEqualToString:@"default"]) {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
-            } else {
+            if([cameraMode isEqualToString:@"wide-angle"]) {
                 ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+            } else {
+                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             }
             if (ultraWideCamera) {
                 // Remove the current input
@@ -210,33 +211,21 @@
                             orientation = [self getCurrentOrientation];
                         });
                         [self updateOrientation:orientation];
-                        if (completion) {
-                            completion(YES);
-                        }
+                        cameraSwitched = TRUE;
                     } else {
                         NSLog(@"Failed to add ultra-wide input to session");
-                        if (completion) {
-                            completion(NO);
-                        }
                     }
                 } else {
                     NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
-                    if (completion) {
-                        completion(NO);
-                    }
                 }
             } else {
                 NSLog(@"Ultra-wide camera not found");
-                if (completion) {
-                    completion(NO);
-                }
             }
         } else {
             // Fallback on earlier versions
-            if (completion) {
-                completion(NO);
-            }
         }
+        
+        completion ? completion(cameraSwitched): NULL;
     });
 }
 
