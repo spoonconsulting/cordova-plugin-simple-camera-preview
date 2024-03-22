@@ -183,7 +183,7 @@ public class CameraPreviewFragment extends Fragment {
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
-            Log.e(TAG, "startCamera: " + e.getMessage());
+            Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
             e.printStackTrace();
             return;
         }
@@ -204,8 +204,7 @@ public class CameraPreviewFragment extends Fragment {
         for (Camera2CameraInfoImpl backCamera : backCameras) {
             if (backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] >= 2.4) {
                 defaultCamera = true;
-            } else if( backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] < 2.4 ||
-                    backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] >= 1.0) {
+            } else if( backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] < 2.4) {
                 ultraWideCamera = true;
             }
         }
@@ -383,7 +382,7 @@ public class CameraPreviewFragment extends Fragment {
                 try {
                     cameraProvider = cameraProviderFuture.get();
                 } catch (ExecutionException | InterruptedException e) {
-                    Log.e(TAG, "startCamera: " + e.getMessage());
+                    Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
                     e.printStackTrace();
                     cameraSwitchedCallback.onSwitch(false);
                     return;
