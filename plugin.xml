@@ -19,7 +19,7 @@
    <framework src="androidx.camera:camera-camera2:1.1.0" />
    <framework src="androidx.camera:camera-lifecycle:1.1.0" />
    <framework src="androidx.camera:camera-view:1.1.0" />
-      <framework src="androidx.camera:camera-video:1.1.0" />
+   <framework src="androidx.camera:camera-video:1.1.0" />
 
     <source-file src="src/android/CameraPreviewFragment.java" target-dir="src/com/spoon/simplecamerapreview" />
     <source-file src="src/android/SimpleCameraPreview.java" target-dir="src/com/spoon/simplecamerapreview" />
