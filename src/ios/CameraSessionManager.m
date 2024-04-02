@@ -56,7 +56,7 @@
                 
                 AVCaptureDevice *videoDevice;
                 videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                if ([options[@"captureDevice"] isEqual: @"wide-angle"]) {
+                if ([options[@"captureDevice"] isEqual: @"ultra-wide-angle"]) {
                     if ([self deviceHasUltraWideCamera]) {
                         if (@available(iOS 13.0, *)) {
                             videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
@@ -188,7 +188,7 @@
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
             AVCaptureDevice *ultraWideCamera;
-            if([cameraMode isEqualToString:@"wide-angle"]) {
+            if([cameraMode isEqualToString:@"ultra-wide-angle"]) {
                 ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
             } else {
                 ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];

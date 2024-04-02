@@ -388,11 +388,7 @@ public class CameraPreviewFragment extends Fragment {
                     return;
                 }
 
-                if (device.equals("default")) {
-                    cameraSelector = new CameraSelector.Builder()
-                            .requireLensFacing(direction)
-                            .build();
-                } else {
+                if (device.equals("ultra-wide-angle")) {
                     cameraSelector = new CameraSelector.Builder()
                             .addCameraFilter(cameraInfos -> {
                                 List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
@@ -417,6 +413,10 @@ public class CameraPreviewFragment extends Fragment {
                                     return cameraInfos;
                                 }
                             })
+                            .build();
+                } else {
+                    cameraSelector = new CameraSelector.Builder()
+                            .requireLensFacing(direction)
                             .build();
                 }
 
