@@ -370,7 +370,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
-    public void switchToUltraWideCamera(String device, CameraSwitchedCallback cameraSwitchedCallback) {
+    public void switchCameraTo(String device, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(new Runnable() {
             @SuppressLint("RestrictedApi")

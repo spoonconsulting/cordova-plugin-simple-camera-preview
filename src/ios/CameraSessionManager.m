@@ -176,7 +176,7 @@
     }
 }
 
-- (void)switchToUltraWideCamera:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
+- (void)switchCameraTo:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
     if (![self deviceHasUltraWideCamera]) {
         if (completion) {
             completion(NO);
@@ -221,8 +221,6 @@
             } else {
                 NSLog(@"Ultra-wide camera not found");
             }
-        } else {
-            // Fallback on earlier versions
         }
         
         completion ? completion(cameraSwitched): NULL;

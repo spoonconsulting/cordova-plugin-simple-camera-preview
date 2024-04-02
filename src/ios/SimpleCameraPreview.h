@@ -16,7 +16,7 @@
 - (void) capture:(CDVInvokedUrlCommand*)command;
 - (void) setSize:(CDVInvokedUrlCommand*)command;
 - (void) torchSwitch: (CDVInvokedUrlCommand*)command;
-- (void) switchToUltraWideCamera: (CDVInvokedUrlCommand*) command;
+- (void) switchCameraTo: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasUltraWideCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;
 @property (nonatomic) CameraSessionManager *sessionManager;
