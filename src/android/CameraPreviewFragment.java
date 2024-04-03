@@ -19,7 +19,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -126,38 +125,6 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
-//    public void startCamera() {
-//        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-//        cameraProviderFuture.addListener(() -> {
-//            try {
-//                // Used to bind the lifecycle of cameras to the lifecycle owner
-//                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-//
-//                Recorder recorder = new Recorder.Builder()
-//                        .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-//                        .build();
-//                videoCapture = VideoCapture.withOutput(recorder);
-//                imageCapture = new ImageCapture.Builder().build();
-//
-//                // Select back camera as a default
-//                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-//                try {
-//                    // Unbind use cases before rebinding
-//                    cameraProvider.unbindAll();
-//                    // Bind use cases to camera
-//                    cameraProvider.bindToLifecycle(
-//                            this, cameraSelector, preview, imageCapture, videoCapture);
-//                } catch (Exception exc) {
-//                    Log.e(TAG, "Use case binding failed", exc);
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }, ContextCompat.getMainExecutor(this.getContext()));
-//        if (startCameraCallback != null) {
-//            startCameraCallback.onCameraStarted(null);
-//        }
-//    }
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
@@ -180,7 +147,7 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         Recorder recorder = new Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HD))
+                .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
 
@@ -304,8 +271,6 @@ public class CameraPreviewFragment extends Fragment {
            camera.getCameraControl().enableTorch(useFlash);
        }
         if (recording != null) {
-            Toast.makeText(this.getContext(), "Video not null" , Toast.LENGTH_LONG).show();
-
             recording.stop();
             return;
         }
@@ -332,10 +297,7 @@ public class CameraPreviewFragment extends Fragment {
                 .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
                     if (videoRecordEvent instanceof VideoRecordEvent.Start) {
                         videoCallback.onStart(null,true, null);
-                        Toast.makeText(this.getContext(), "Video start" , Toast.LENGTH_LONG).show();
-
                     } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        Toast.makeText(this.getContext(), "Video fin" , Toast.LENGTH_LONG).show();
                         VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
                         if (finalizeEvent.hasError()) {
                             // Handle the error
@@ -347,7 +309,6 @@ public class CameraPreviewFragment extends Fragment {
                             videoCallback.onStop(null, false, Uri.fromFile(videoFile).toString());
                             Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
                             Log.d(TAG, "Video saved to: " + savedUri);
-                            Toast.makeText(this.getContext(), "Video stop" + savedUri, Toast.LENGTH_LONG).show();
                             recording = null;
                         }
                     }
