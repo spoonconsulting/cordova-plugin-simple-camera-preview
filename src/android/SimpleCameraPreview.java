@@ -152,9 +152,24 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
+        String captureDevice = "";
+        try {
+            if (options.getString("captureDevice") != null && !options.getString("captureDevice").equals("null")) {
+                captureDevice = options.getString("captureDevice");
+            }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+
         JSONObject cameraPreviewOptions = new JSONObject();
         try {
             cameraPreviewOptions.put("targetSize", targetSize);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            cameraPreviewOptions.put("captureDevice", captureDevice);
         } catch (JSONException e) {
             e.printStackTrace();
         }

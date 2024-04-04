@@ -85,8 +85,7 @@ public class CameraPreviewFragment extends Fragment {
 
     private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
-    private float minZoomRatio;
-    private float maxZoomRatio;
+    private String captureDevice;
 
     public CameraPreviewFragment() {
 
@@ -97,6 +96,11 @@ public class CameraPreviewFragment extends Fragment {
         this.direction = cameraDirection;
         try {
             this.targetSize = options.getInt("targetSize");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        try {
+            this.captureDevice = options.getString("captureDevice");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -132,10 +136,7 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(direction)
-                .build();
+        CameraSelector cameraSelector = getCameraSelector(captureDevice);
 
         Size targetResolution = null;
         if (targetSize > 0) {
@@ -372,88 +373,88 @@ public class CameraPreviewFragment extends Fragment {
 
     public void switchCameraTo(String device, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
-            @SuppressLint("RestrictedApi")
-            @Override
-            public void run() {
-                ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-                ProcessCameraProvider cameraProvider = null;
-                CameraSelector cameraSelector;
-                try {
-                    cameraProvider = cameraProviderFuture.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-                    e.printStackTrace();
-                    cameraSwitchedCallback.onSwitch(false);
-                    return;
-                }
-
-                if (device.equals("ultra-wide-angle")) {
-                    cameraSelector = new CameraSelector.Builder()
-                            .addCameraFilter(cameraInfos -> {
-                                List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
-                                for (CameraInfo cameraInfo : cameraInfos) {
-                                    if (cameraInfo instanceof Camera2CameraInfoImpl) {
-                                        Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
-                                        if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
-                                            backCameras.add(camera2CameraInfo);
-                                        }
-                                    }
-                                }
-
-                                Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
-                                    Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                                    Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                                    return Float.compare(focalLength1, focalLength2);
-                                });
-
-                                if (selectedCamera != null) {
-                                    return Collections.singletonList(selectedCamera);
-                                } else {
-                                    return cameraInfos;
-                                }
-                            })
-                            .build();
-                } else {
-                    cameraSelector = new CameraSelector.Builder()
-                            .requireLensFacing(direction)
-                            .build();
-                }
-
-                Size targetResolution = null;
-                if (targetSize > 0) {
-                    targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
-                }
-
-                preview = new Preview.Builder().build();
-                imageCapture = new ImageCapture.Builder()
-                        .setTargetResolution(targetResolution)
-                        .build();
-
-                cameraProvider.unbindAll();
-                try {
-                    camera = cameraProvider.bindToLifecycle(
-                            getActivity(),
-                            cameraSelector,
-                            preview,
-                            imageCapture
-                    );
-                } catch (IllegalArgumentException e) {
-                    // Error with result in capturing image with default resolution
-                    e.printStackTrace();
-                    imageCapture = new ImageCapture.Builder()
-                            .build();
-                    camera = cameraProvider.bindToLifecycle(
-                            getActivity(),
-                            cameraSelector,
-                            preview,
-                            imageCapture
-                    );
-                }
-
-                preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
-                cameraSwitchedCallback.onSwitch(true);
+        mainHandler.post(() -> {
+            ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
+                e.printStackTrace();
+                cameraSwitchedCallback.onSwitch(false);
+                return;
             }
+
+            CameraSelector cameraSelector = getCameraSelector(device);
+
+            Size targetResolution = null;
+            if (targetSize > 0) {
+                targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
+            }
+
+            preview = new Preview.Builder().build();
+            imageCapture = new ImageCapture.Builder()
+                    .setTargetResolution(targetResolution)
+                    .build();
+
+            cameraProvider.unbindAll();
+            try {
+                camera = cameraProvider.bindToLifecycle(
+                        getActivity(),
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                );
+            } catch (IllegalArgumentException e) {
+                // Error with result in capturing image with default resolution
+                e.printStackTrace();
+                imageCapture = new ImageCapture.Builder()
+                        .build();
+                camera = cameraProvider.bindToLifecycle(
+                        getActivity(),
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                );
+            }
+
+            preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+            cameraSwitchedCallback.onSwitch(true);
         });
+    }
+    
+    @SuppressLint("RestrictedApi")
+    public CameraSelector getCameraSelector(String captureDevice) {
+        if (captureDevice.equals("ultra-wide-angle")) {
+            return new CameraSelector.Builder()
+                    .addCameraFilter(cameraInfos -> {
+                        List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
+                        for (CameraInfo cameraInfo : cameraInfos) {
+                            if (cameraInfo instanceof Camera2CameraInfoImpl) {
+                                Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
+                                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
+                                    backCameras.add(camera2CameraInfo);
+                                }
+                            }
+                        }
+
+                        Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
+                            Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                            Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                            return Float.compare(focalLength1, focalLength2);
+                        });
+
+                        if (selectedCamera != null) {
+                            return Collections.singletonList(selectedCamera);
+                        } else {
+                            return cameraInfos;
+                        }
+                    })
+                    .build();
+        } else {
+            return new CameraSelector.Builder()
+                    .requireLensFacing(direction)
+                    .build();
+        }
     }
 }
