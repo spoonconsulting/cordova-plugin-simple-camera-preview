@@ -74,7 +74,7 @@ BOOL torchActivated = false;
                 [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
             }
             NSString *captureDevice = config[@"captureDevice"];
-            if (captureDevice != [NSNull null] && ![captureDevice isEqual: @""]) {
+            if (captureDevice && [captureDevice length] > 0) {
                 [setupSessionOptions setValue:captureDevice forKey:@"captureDevice"];
             }
         } @catch(NSException *exception) {
@@ -82,15 +82,13 @@ BOOL torchActivated = false;
         }
     }
     
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    NSDictionary *immutableSetupSessionOptions = [setupSessionOptions copy];
-    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:true];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
-    } options:immutableSetupSessionOptions photoSettings:self.photoSettings];
+    } options:setupSessionOptions photoSettings:self.photoSettings];
 }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {

@@ -136,38 +136,7 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        CameraSelector cameraSelector = getCameraSelector(captureDevice);
-
-        Size targetResolution = null;
-        if (targetSize > 0) {
-            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
-        }
-
-        preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution)
-                .build();
-
-        cameraProvider.unbindAll();
-        try {
-            camera = cameraProvider.bindToLifecycle(
-                    this,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-        } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
-            e.printStackTrace();
-            imageCapture = new ImageCapture.Builder()
-                    .build();
-            camera = cameraProvider.bindToLifecycle(
-                    this,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-        }
+        setUpCamera(captureDevice,cameraProvider);
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -385,38 +354,7 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
 
-            CameraSelector cameraSelector = getCameraSelector(device);
-
-            Size targetResolution = null;
-            if (targetSize > 0) {
-                targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
-            }
-
-            preview = new Preview.Builder().build();
-            imageCapture = new ImageCapture.Builder()
-                    .setTargetResolution(targetResolution)
-                    .build();
-
-            cameraProvider.unbindAll();
-            try {
-                camera = cameraProvider.bindToLifecycle(
-                        getActivity(),
-                        cameraSelector,
-                        preview,
-                        imageCapture
-                );
-            } catch (IllegalArgumentException e) {
-                // Error with result in capturing image with default resolution
-                e.printStackTrace();
-                imageCapture = new ImageCapture.Builder()
-                        .build();
-                camera = cameraProvider.bindToLifecycle(
-                        getActivity(),
-                        cameraSelector,
-                        preview,
-                        imageCapture
-                );
-            }
+            setUpCamera(device,cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
@@ -424,9 +362,10 @@ public class CameraPreviewFragment extends Fragment {
     }
     
     @SuppressLint("RestrictedApi")
-    public CameraSelector getCameraSelector(String captureDevice) {
+    public void setUpCamera(String captureDevice, ProcessCameraProvider cameraProvider) {
+        CameraSelector cameraSelector;
         if (captureDevice.equals("ultra-wide-angle")) {
-            return new CameraSelector.Builder()
+            cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
                         for (CameraInfo cameraInfo : cameraInfos) {
@@ -452,9 +391,41 @@ public class CameraPreviewFragment extends Fragment {
                     })
                     .build();
         } else {
-            return new CameraSelector.Builder()
+            cameraSelector = new CameraSelector.Builder()
                     .requireLensFacing(direction)
                     .build();
         }
+
+        Size targetResolution = null;
+        if (targetSize > 0) {
+            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
+        }
+
+        preview = new Preview.Builder().build();
+        imageCapture = new ImageCapture.Builder()
+                .setTargetResolution(targetResolution)
+                .build();
+
+        cameraProvider.unbindAll();
+        try {
+            camera = cameraProvider.bindToLifecycle(
+                    getActivity(),
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        } catch (IllegalArgumentException e) {
+            // Error with result in capturing image with default resolution
+            e.printStackTrace();
+            imageCapture = new ImageCapture.Builder()
+                    .build();
+            camera = cameraProvider.bindToLifecycle(
+                    getActivity(),
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
+        }
+
     }
 }
