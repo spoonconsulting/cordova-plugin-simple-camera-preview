@@ -211,6 +211,7 @@
                             orientation = [self getCurrentOrientation];
                         });
                         [self updateOrientation:orientation];
+                        self.device = ultraWideCamera;
                         cameraSwitched = TRUE;
                     } else {
                         NSLog(@"Failed to add ultra-wide input to session");
