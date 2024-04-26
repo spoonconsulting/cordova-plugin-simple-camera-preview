@@ -155,6 +155,7 @@ public class CameraPreviewFragment extends Fragment {
         } catch (ExecutionException | InterruptedException e) {
             Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
             e.printStackTrace();
+            hasUltraWideCameraCallback.onResult(false);
             return;
         }
         List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
@@ -179,11 +180,7 @@ public class CameraPreviewFragment extends Fragment {
             }
         }
 
-        if (defaultCamera == true && ultraWideCamera == true) {
-            hasUltraWideCameraCallback.onResult(true);
-        } else {
-            hasUltraWideCameraCallback.onResult(false);
-        }
+        hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
     public static Size calculateResolution(Context context, int targetSize) {
