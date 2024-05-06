@@ -55,14 +55,11 @@
                 }
                 
                 AVCaptureDevice *videoDevice;
-                videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                if ([options[@"captureDevice"] isEqual: @"ultra-wide-angle"]) {
-                    if ([self deviceHasUltraWideCamera]) {
-                        if (@available(iOS 13.0, *)) {
-                            videoDevice = [self cameraWithPosition: self.defaultCamera captureDeviceType: AVCaptureDeviceTypeBuiltInUltraWideCamera];
-                        }
+                videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                if ([options[@"captureDevice"] isEqual:@"ultra-wide-angle"] && [self deviceHasUltraWideCamera]) {
+                    if (@available(iOS 13.0, *)) {
+                        videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
                     }
-
                 }
                 
                 if ([videoDevice hasFlash]) {
@@ -229,15 +226,12 @@
 }
 
 - (BOOL)deviceHasUltraWideCamera {
-    NSArray *devices;
     if (@available(iOS 13.0, *)) {
         AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInUltraWideCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-        devices = discoverySession.devices;
+        return discoverySession.devices.count > 0;
     } else {
-        // Fallback on earlier versions
+        return NO;
     }
-    
-    return devices.count > 0;
 }
 
 - (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {

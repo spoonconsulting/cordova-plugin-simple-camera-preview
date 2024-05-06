@@ -152,7 +152,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        String captureDevice = "";
+        String captureDevice = "default";
         try {
             if (options.getString("captureDevice") != null && !options.getString("captureDevice").equals("null")) {
                 captureDevice = options.getString("captureDevice");
