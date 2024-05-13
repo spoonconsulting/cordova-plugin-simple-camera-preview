@@ -28,8 +28,18 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
 
+SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
+  options = options || {};
+  options.captureDevice = options.captureDevice || "default";
+  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.captureDevice]);
+};
+
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
+};
+
+SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
 module.exports = SimpleCameraPreview;
