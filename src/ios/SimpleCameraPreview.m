@@ -82,7 +82,7 @@ BOOL torchActivated = false;
         }
     }
     
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeHEVC}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:true];
@@ -203,7 +203,7 @@ BOOL torchActivated = false;
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
         useFlash = false;
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeHEVC}];
     if (self.sessionManager != nil)
         [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings];
 
@@ -259,9 +259,9 @@ BOOL torchActivated = false;
     if (!isnan(altitude)){
         if (altitude < 0) {
             altitude = -altitude;
-            [gps setObject:@"1" forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
+            [gps setObject:[NSNumber numberWithInt:1] forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
         } else {
-            [gps setObject:@"0" forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
+            [gps setObject:[NSNumber numberWithInt:0] forKey:(NSString *)kCGImagePropertyGPSAltitudeRef];
         }
         [gps setObject:[NSNumber numberWithFloat:altitude] forKey:(NSString *)kCGImagePropertyGPSAltitude];
     }
@@ -301,7 +301,7 @@ BOOL torchActivated = false;
         CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) imageData, NULL);
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
-        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
+        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.heic",[[NSUUID UUID] UUIDString]];
         NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
         CFStringRef UTI = CGImageSourceGetType(source);
         CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)  [NSURL URLWithString:dataPath], UTI, 1, NULL);
