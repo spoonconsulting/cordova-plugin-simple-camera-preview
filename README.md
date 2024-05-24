@@ -99,3 +99,46 @@ SimpleCameraPreview.setSize(size, () => {
   console.log("Camera frame size set");
 });
 ```
+
+### deviceHasUltraWideCamera(successCallback, errorCallback)
+
+Check if device has ultra-wide camera
+<br>
+
+```javascript
+
+SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
+  console.log("Device has ultra-wide camera?: ", value);
+});
+```
+
+### switchCameraTo(option, successCallback, errorCallback)
+
+Switch camera between ultra-wide or default
+
+The variable captureDevice can take two values:
+```javascript
+  "ultra-wide-angle"
+
+  or
+
+  "default"
+```
+<br>
+
+```javascript
+
+const params = {
+  captureDevice: "ultra-wide-angle",
+}
+
+SimpleCameraPreview.switchCameraTo(
+  params, 
+  (value: unknown) => {
+    return (typeof value === "boolean" ? value : false);
+  },
+  (e: unknown) => {
+    console.log("cannot switch camera: ", e);
+  }
+);
+```

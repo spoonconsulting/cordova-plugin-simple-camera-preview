@@ -77,6 +77,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
+
+                case "deviceHasUltraWideCamera":
+                    return deviceHasUltraWideCamera(callbackContext);
+
+                case "switchCameraTo":
+                    return switchCameraTo(args.getString(0), callbackContext);
                 default:
                     break;
             }
@@ -149,9 +155,24 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
+        String captureDevice = "default";
+        try {
+            if (options.getString("captureDevice") != null && !options.getString("captureDevice").equals("null")) {
+                captureDevice = options.getString("captureDevice");
+            }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+
         JSONObject cameraPreviewOptions = new JSONObject();
         try {
             cameraPreviewOptions.put("targetSize", targetSize);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            cameraPreviewOptions.put("captureDevice", captureDevice);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -318,6 +339,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
+    private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        fragment.deviceHasUltraWideCamera((boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
+    }
+
     private boolean torchSwitch(boolean torchState, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch " + torchState + " torch");
@@ -367,6 +396,19 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
+    }
+
+    private boolean switchCameraTo(String device, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot switch camera");
+            return true;
+        }
+
+        fragment.switchCameraTo(device, (boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
     }
 
     public boolean hasAllPermissions() {
@@ -441,6 +483,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
         }
     }
+    
 
     @Override
     public void onDestroy() {

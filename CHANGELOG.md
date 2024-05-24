@@ -1,3 +1,10 @@
+## [2.0.18](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.17...v2.0.18) (2024-05-12)
+
+* **iOS:** Added a method "switchCameraTo" to help switch between ultra-wide camera and default camera. ([#68](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/68))
+* **Android:** Added a method "switchCameraTo" to help switch between ultra-wide camera and default camera. ([#68](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/68))
+* **iOS:** Added a method "deviceHasUltraWideCamera" to check if device has ultra-wide camera. ([#68](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/68))
+* **Android:** Added a method "deviceHasUltraWideCamera" to check if device has ultra-wide camera. ([#68](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/68))
+
 ## [2.0.17](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.16...v2.0.17) (2023-07-04)
 
 * **iOS:** Use interfaceOrientation for ios 13+. ([#67](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/67))

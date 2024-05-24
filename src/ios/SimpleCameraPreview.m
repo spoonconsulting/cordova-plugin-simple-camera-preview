@@ -65,22 +65,24 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
-    NSDictionary *setupSessionOptions;
+    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
             if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-                setupSessionOptions = @{ @"targetSize" : [NSNumber numberWithInteger:targetSize] };
+                [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
+            }
+            NSString *captureDevice = config[@"captureDevice"];
+            if (captureDevice && [captureDevice length] > 0) {
+                [setupSessionOptions setValue:captureDevice forKey:@"captureDevice"];
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
     }
     
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    
-    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:true];
@@ -152,6 +154,33 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) switchCameraTo:(CDVInvokedUrlCommand*)command{
+    NSString *device = [command.arguments objectAtIndex:0];
+    BOOL cameraSwitched = FALSE;
+    if (self.sessionManager != nil) {
+        [self.sessionManager switchCameraTo: device completion:^(BOOL success) {
+            if (success) {
+                NSLog(@"Camera switched successfully");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:TRUE];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                NSLog(@"Failed to switch camera");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:FALSE];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        }];
+    }
+}
+
+- (void) deviceHasUltraWideCamera:(CDVInvokedUrlCommand *)command{
+    BOOL hasUltraWideCamera = NO;
+    if (self.sessionManager != nil) {
+        hasUltraWideCamera = [self.sessionManager deviceHasUltraWideCamera];
+    }
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasUltraWideCamera];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) deviceHasFlash:(CDVInvokedUrlCommand*)command{
     AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
                                           mediaType:AVMediaTypeVideo
@@ -187,7 +216,6 @@ BOOL torchActivated = false;
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
-
 
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)
