@@ -34,7 +34,6 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FileOutputOptions;
-import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.Quality;
 import androidx.camera.video.QualitySelector;
 import androidx.camera.video.Recorder;
@@ -142,7 +141,6 @@ public class CameraPreviewFragment extends Fragment {
         viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(viewFinder);
         startCamera();
-
         return containerView;
     }
 
@@ -204,7 +202,6 @@ public class CameraPreviewFragment extends Fragment {
 
         });
         setUpCamera(captureDevice,cameraProvider);
-
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
@@ -326,11 +323,11 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void captureVideo(boolean useFlash, VideoCallback videoCallback) {
-       if (torchActivated) {
-           useFlash = true;
-       } else {
-           camera.getCameraControl().enableTorch(useFlash);
-       }
+        if (torchActivated) {
+            useFlash = true;
+        } else {
+            camera.getCameraControl().enableTorch(useFlash);
+        }
         if (recording != null) {
             recording.stop();
             return;
@@ -340,7 +337,6 @@ public class CameraPreviewFragment extends Fragment {
         String filename = uuid.toString() + ".mp4";
         ContentValues contentValues = new ContentValues();
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
-// 2. Configure Recorder and Start recording to the mediaStoreOutput.
         if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
         }
@@ -349,7 +345,6 @@ public class CameraPreviewFragment extends Fragment {
                 filename
         );
 
-// Configure the recorder to save the video to the specified file
         FileOutputOptions outputOptions = new FileOutputOptions.Builder(videoFile).build();
 
         recording = videoCapture.getOutput()
@@ -357,7 +352,7 @@ public class CameraPreviewFragment extends Fragment {
                 .withAudioEnabled()
                 .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
                     if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        videoCallback.onStart(null,true, null);
+                        videoCallback.onStart(null, true, null);
                     } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
                         VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
                         if (finalizeEvent.hasError()) {

@@ -276,7 +276,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        fragment.captureVideo( useFlash, new VideoCallback() {
+        fragment.captureVideo(useFlash, new VideoCallback() {
             public void onStart(Exception err, Boolean recording, String nativePath) {
                 JSONObject data = new JSONObject();
                 if (recording) {
