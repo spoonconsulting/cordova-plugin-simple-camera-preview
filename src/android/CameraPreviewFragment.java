@@ -144,7 +144,6 @@ public class CameraPreviewFragment extends Fragment {
         return containerView;
     }
 
-
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
@@ -481,27 +480,27 @@ public class CameraPreviewFragment extends Fragment {
         imageCapture = new ImageCapture.Builder()
                 .setTargetResolution(targetResolution)
                 .build();
-                cameraProvider.unbindAll();
-            try {
-                camera = cameraProvider.bindToLifecycle(
-                        getActivity(),
-                        cameraSelector,
-                        preview,
-                        imageCapture,
-                        videoCapture
-                );
-            } catch (IllegalArgumentException e) {
-                // Error with result in capturing image with default resolution
-                e.printStackTrace();
-                imageCapture = new ImageCapture.Builder()
-                        .build();
-                camera = cameraProvider.bindToLifecycle(
-                        getActivity(),
-                        cameraSelector,
-                        preview,
-                        imageCapture,
-                        videoCapture
-                );
-            }
+        cameraProvider.unbindAll();
+        try {
+            camera = cameraProvider.bindToLifecycle(
+                    getActivity(),
+                    cameraSelector,
+                    preview,
+                    imageCapture,
+                    videoCapture
+            );
+        } catch (IllegalArgumentException e) {
+            // Error with result in capturing image with default resolution
+            e.printStackTrace();
+            imageCapture = new ImageCapture.Builder()
+                    .build();
+            camera = cameraProvider.bindToLifecycle(
+                    getActivity(),
+                    cameraSelector,
+                    preview,
+                    imageCapture,
+                    videoCapture
+            );
+        }
     }
 }
