@@ -157,50 +157,6 @@ public class CameraPreviewFragment extends Fragment {
             return;
         }
 
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(direction)
-                .build();
-
-        Size targetResolution = null;
-        if (targetSize > 0) {
-            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
-        }
-
-        Recorder recorder = new Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.LOWEST))
-                .build();
-        videoCapture = VideoCapture.withOutput(recorder);
-
-
-        preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution)
-                .build();
-        this.getActivity().runOnUiThread(() -> {
-            try {
-                cameraProvider.unbindAll();
-                camera = cameraProvider.bindToLifecycle(
-                        this,
-                        cameraSelector,
-                        preview,
-                        imageCapture,
-                        videoCapture
-                );
-            } catch (IllegalArgumentException e) {
-                // Error with result in capturing image with default resolution
-                e.printStackTrace();
-            imageCapture = new ImageCapture.Builder()
-                    .build();
-            camera = cameraProvider.bindToLifecycle(
-                    this,
-                    cameraSelector,
-                    preview,
-                    imageCapture,
-                    videoCapture
-            );
-            }
-
-        });
         setUpCamera(captureDevice,cameraProvider);
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -515,31 +471,37 @@ public class CameraPreviewFragment extends Fragment {
             targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
         }
 
+        Recorder recorder = new Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.LOWEST))
+                .build();
+        videoCapture = VideoCapture.withOutput(recorder);
+
+
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
                 .setTargetResolution(targetResolution)
                 .build();
-
-        cameraProvider.unbindAll();
-        try {
-            camera = cameraProvider.bindToLifecycle(
-                    getActivity(),
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-        } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
-            e.printStackTrace();
-            imageCapture = new ImageCapture.Builder()
-                    .build();
-            camera = cameraProvider.bindToLifecycle(
-                    getActivity(),
-                    cameraSelector,
-                    preview,
-                    imageCapture
-            );
-        }
-
+                cameraProvider.unbindAll();
+            try {
+                camera = cameraProvider.bindToLifecycle(
+                        getActivity(),
+                        cameraSelector,
+                        preview,
+                        imageCapture,
+                        videoCapture
+                );
+            } catch (IllegalArgumentException e) {
+                // Error with result in capturing image with default resolution
+                e.printStackTrace();
+                imageCapture = new ImageCapture.Builder()
+                        .build();
+                camera = cameraProvider.bindToLifecycle(
+                        getActivity(),
+                        cameraSelector,
+                        preview,
+                        imageCapture,
+                        videoCapture
+                );
+            }
     }
 }
