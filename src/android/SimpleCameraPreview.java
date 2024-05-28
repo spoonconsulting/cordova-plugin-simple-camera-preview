@@ -73,7 +73,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
                 case "captureVideo":
-                    return captureVideo(args.getBoolean(0), callbackContext);
+                    return captureVideo(callbackContext);
 
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
@@ -270,14 +270,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean captureVideo(boolean useFlash, CallbackContext callbackContext) {
+    private boolean captureVideo(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
         }
 
-        fragment.captureVideo(useFlash, new VideoCallback() {
-            public void onStart(Exception err, Boolean recording, String nativePath) {
+        fragment.captureVideo(new VideoCallback() {
+            public void onStart(Boolean recording, String nativePath) {
                 JSONObject data = new JSONObject();
                 if (recording) {
                     try {
@@ -295,7 +295,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 }
             }
 
-            public void onStop(Exception err, Boolean started, String nativePath) {
+            public void onStop(Boolean recording, String nativePath) {
                 JSONObject data = new JSONObject();
                 try {
                     data.put("recording", false);
