@@ -20,10 +20,8 @@ SimpleCameraPreview.capture = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
 };
 
-SimpleCameraPreview.captureVideo = function (options, onSuccess, onError) {
-  options = options || {};
-  options.flash = options.flash || false;
-  exec(onSuccess, onError, PLUGIN_NAME, "captureVideo", [options.flash]);
+SimpleCameraPreview.captureVideo = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "captureVideo");
 };
 
 SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
