@@ -280,18 +280,17 @@ public class CameraPreviewFragment extends Fragment {
     public void captureVideo(VideoCallback videoCallback) {
         if (recording != null) {
             recording.stop();
+            recording = null;
             return;
         }
         UUID uuid = UUID.randomUUID();
 
         String filename = uuid.toString() + ".mp4";
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
         if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
         }
         File videoFile = new File(
-                getContext().getApplicationContext().getFilesDir(),
+                getContext().getFilesDir(),
                 filename
         );
 
@@ -315,8 +314,8 @@ public class CameraPreviewFragment extends Fragment {
                             videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
                             Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
                             Log.i(TAG, "Video saved to: " + savedUri);
-                            recording = null;
                         }
+                        recording = null;
                     }
                     // Other event types can be handled if needed
                 });
