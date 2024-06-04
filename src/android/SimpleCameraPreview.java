@@ -43,11 +43,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
 
+    private CallbackContext videoCallback;
+
     private static final int containerViewId = 20;
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
+
 
     public SimpleCameraPreview() {
         super();
@@ -74,6 +77,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "captureVideo":
                     return captureVideo(callbackContext);
+
+                case "stopCaptureVideo":
+                    this.videoStopCallback = callbackContext;
+                    return stopCaptureVideo(callbackContext);
 
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
@@ -270,6 +277,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    CallbackContext videoStopCallback;
+
+    private boolean stopCaptureVideo(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+        fragment.stopCaptureVideo();
+        return true;
+    }
     private boolean captureVideo(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
@@ -290,7 +307,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     }
 
                     PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                    pluginResult.setKeepCallback(true);
+//                    pluginResult.setKeepCallback(true);
                     callbackContext.sendPluginResult(pluginResult);
                 }
             }
@@ -306,7 +323,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return;
                 }
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                pluginResult.setKeepCallback(true);
+//                pluginResult.setKeepCallback(true);
+                if (videoStopCallback != null) {
+                    videoStopCallback.sendPluginResult(pluginResult);
+                    videoStopCallback = null;
+                    return;
+                }
                 callbackContext.sendPluginResult(pluginResult);
             }
         });

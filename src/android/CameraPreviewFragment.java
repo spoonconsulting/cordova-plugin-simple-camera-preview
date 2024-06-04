@@ -277,6 +277,13 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
+    public void stopCaptureVideo() {
+        if (recording != null) {
+            recording.stop();
+            recording = null;
+        }
+    }
+
     public void captureVideo(VideoCallback videoCallback) {
         if (recording != null) {
             recording.stop();
