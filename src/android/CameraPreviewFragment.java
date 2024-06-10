@@ -64,9 +64,12 @@ interface CameraCallback {
     void onCompleted(Exception err, String nativePath);
 }
 
-interface VideoCallback {
-    void onStart(Boolean recording, String nativePath);
-    void onStop(Boolean recording, String nativePath);
+interface StartVideoCallback {
+    void onStartVideo(Exception err, Boolean recording);
+}
+
+interface StopVideoCallback {
+    void onStopVideo(Exception err, String nativePath);
 }
 
 interface CameraStartedCallback {
@@ -107,6 +110,9 @@ public class CameraPreviewFragment extends Fragment {
     private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
     private String captureDevice;
+    private String filename;
+    private File videoFile;
+    private VideoRecordEvent videoRecordEvent;
 
     public CameraPreviewFragment() {
 
@@ -277,19 +283,18 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
-    public void captureVideo(VideoCallback videoCallback) {
+    public void startCaptureVideo(StartVideoCallback startVideoCallback) {
         if (recording != null) {
-            recording.stop();
             recording = null;
             return;
         }
         UUID uuid = UUID.randomUUID();
 
-        String filename = uuid.toString() + ".mp4";
+        this.filename = uuid.toString() + ".mp4";
         if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
         }
-        File videoFile = new File(
+        this.videoFile = new File(
                 getContext().getFilesDir(),
                 filename
         );
@@ -300,28 +305,29 @@ public class CameraPreviewFragment extends Fragment {
                 .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
                 .withAudioEnabled()
                 .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
+                    this.videoRecordEvent = videoRecordEvent;
                     if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        videoCallback.onStart(true, null);
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
-                        if (finalizeEvent.hasError()) {
-                            // Handle the error
-                            int errorCode = finalizeEvent.getError();
-                            Throwable errorCause = finalizeEvent.getCause();
-                            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
-                        } else {
-                            // Handle video saved
-                            videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
-                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
-                            Log.i(TAG, "Video saved to: " + savedUri);
-                        }
-                        recording = null;
+                        startVideoCallback.onStartVideo(null, true);
                     }
                     // Other event types can be handled if needed
                 });
-
     }
 
+    public void stopCaptureVideo(StopVideoCallback stopVideoCallback) {
+        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) this.videoRecordEvent;
+        if (finalizeEvent.hasError()) {
+            // Handle the error
+            int errorCode = finalizeEvent.getError();
+            Throwable errorCause = finalizeEvent.getCause();
+            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
+        } else {
+            // Handle video saved
+            stopVideoCallback.onStopVideo(null, Uri.fromFile(videoFile).toString());
+            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+            Log.i(TAG, "Video saved to: " + savedUri);
+        }
+        recording = null;
+    }
 
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {

@@ -72,9 +72,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "torchSwitch":
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
-                case "captureVideo":
-                    return captureVideo(callbackContext);
-
+                case "startCaptureVideo":
+                    return startVideoCapture(callbackContext);
+                case "stopCaptureVideo":
+                    return stopVideoCapture(callbackContext);
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
 
@@ -270,44 +271,34 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean captureVideo(CallbackContext callbackContext) {
+    private boolean startVideoCapture(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
         }
 
-        fragment.captureVideo(new VideoCallback() {
-            public void onStart(Boolean recording, String nativePath) {
-                JSONObject data = new JSONObject();
-                if (recording) {
-                    try {
-                        data.put("recording", true);
-                        data.put("nativePath", null);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        callbackContext.error("Cannot send recording data");
-                        return;
-                    }
-
-                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                    pluginResult.setKeepCallback(true);
-                    callbackContext.sendPluginResult(pluginResult);
-                }
-            }
-
-            public void onStop(Boolean recording, String nativePath) {
-                JSONObject data = new JSONObject();
-                try {
-                    data.put("recording", false);
-                    data.put("nativePath", nativePath);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    callbackContext.error("Cannot send recording data");
-                    return;
-                }
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                pluginResult.setKeepCallback(true);
+        fragment.startCaptureVideo((Exception err, Boolean recording) -> {
+            if (err == null) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, recording);
                 callbackContext.sendPluginResult(pluginResult);
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return true;
+    }
+
+    private boolean stopVideoCapture(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+        fragment.stopCaptureVideo((Exception err, String nativePath) -> {
+            if (err == null) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, nativePath);
+                callbackContext.sendPluginResult(pluginResult);
+            } else {
+                callbackContext.error(err.getMessage());
             }
         });
         return true;
