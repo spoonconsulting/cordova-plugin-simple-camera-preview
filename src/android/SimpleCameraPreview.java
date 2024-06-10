@@ -74,7 +74,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "startCaptureVideo":
                     return startVideoCapture(callbackContext);
-                case "stopCaptureVideo":
+                case "stopVideoCapture":
                     return stopVideoCapture(callbackContext);
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);

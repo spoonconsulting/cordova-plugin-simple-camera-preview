@@ -24,8 +24,8 @@ SimpleCameraPreview.startCaptureVideo = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "startCaptureVideo");
 };
 
-SimpleCameraPreview.stopCaptureVideo = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "stopCaptureVideo");
+SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCapture");
 };
 
 SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
