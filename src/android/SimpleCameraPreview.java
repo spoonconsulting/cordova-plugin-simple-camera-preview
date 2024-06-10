@@ -72,6 +72,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "torchSwitch":
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
+                case "startCaptureVideo":
+                    return startVideoCapture(callbackContext);
+                case "stopVideoCapture":
+                    return stopVideoCapture(callbackContext);
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
 
@@ -265,6 +269,39 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
             locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 0, 0, mLocationCallback);
         }
+    }
+
+    private boolean startVideoCapture(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        fragment.startCaptureVideo((Exception err, Boolean recording) -> {
+            if (err == null) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, recording);
+                callbackContext.sendPluginResult(pluginResult);
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return true;
+    }
+
+    private boolean stopVideoCapture(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+        fragment.stopCaptureVideo((Exception err, String nativePath) -> {
+            if (err == null) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, nativePath);
+                callbackContext.sendPluginResult(pluginResult);
+            } else {
+                callbackContext.error(err.getMessage());
+            }
+        });
+        return true;
     }
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
