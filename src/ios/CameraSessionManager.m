@@ -94,6 +94,18 @@
                     self.videoDeviceInput = videoDeviceInput;
                 }
                 
+                AVCaptureDeviceInput *videoInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
+                self.captureSession = [[AVCaptureSession alloc] init];
+                if ([self.captureSession canAddInput:videoInput]) {
+                    [self.captureSession addInput:videoInput];
+                }
+
+                
+                self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+                if ([self.captureSession canAddOutput:self.movieFileOutput]) {
+                    [self.captureSession addOutput:self.movieFileOutput];
+                }
+                
                 AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
                 if ([self.session canAddOutput:imageOutput]) {
                     [self.session addOutput:imageOutput];

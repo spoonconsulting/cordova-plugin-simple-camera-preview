@@ -10,6 +10,7 @@
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
+BOOL recording = false;
 
 - (void) setOptions:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
@@ -154,6 +155,34 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) startVideo:(CDVInvokedUrlCommand *)command{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+    NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+    NSString* uniqueFileName = [NSString stringWithFormat:@"%@.mov",[[NSUUID UUID] UUIDString]];
+    NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
+
+    if (self.sessionManager != nil) {
+        [self.sessionManager.movieFileOutput startRecordingToOutputFileURL:dataPath recordingDelegate:self];
+    }
+    NSDictionary *result = @{
+        @"recording": @TRUE,
+        @"nativePath": dataPath
+    };
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)stopVideo: (CDVInvokedUrlCommand *)command {
+    // Stop recording
+    [self.sessionManager.movieFileOutput stopRecording];
+    NSDictionary *result = @{
+        @"recording": @FALSE
+    };
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) switchCameraTo:(CDVInvokedUrlCommand*)command{
     NSString *device = [command.arguments objectAtIndex:0];
     BOOL cameraSwitched = FALSE;
@@ -280,6 +309,10 @@ BOOL torchActivated = false;
     
     return gps;
 }
+
+//-(void)captureOutput:(AVCaptureFileOutput *)captureOutput didFinishRecordingToOutputFileAtURL:(nonnull NSURL *)outputFileURL fromConnections:(nonnull NSArray<AVCaptureConnection *> *)connections error:(nullable NSError *)error:(nonnull AVCapturePhoto *)photo error:(nullable NSError *)error {
+//
+//}
 
 -(void)captureOutput:(AVCapturePhotoOutput *)captureOutput didFinishProcessingPhoto:(nonnull AVCapturePhoto *)photo error:(nullable NSError *)error {
     if (error) {
