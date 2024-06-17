@@ -1,3 +1,7 @@
+## [2.0.19](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.18...v2.0.19) (2024-06-17)
+
+* **iOS:** Release unused memory after capture
+
 ## [2.0.18](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.17...v2.0.18) (2024-05-12)
 
 * **iOS:** Added a method "switchCameraTo" to help switch between ultra-wide camera and default camera. ([#68](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/pull/68))
