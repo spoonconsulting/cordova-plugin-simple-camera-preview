@@ -310,6 +310,8 @@ BOOL torchActivated = false;
         CFRelease(source);
         CFRelease(destination);
         CFRelease(metaDict);
+        CFRelease(imageSource);
+        CFRelease(UTI);
         CFRelease(mutableDict);
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
         [pluginResult setKeepCallbackAsBool:true];
