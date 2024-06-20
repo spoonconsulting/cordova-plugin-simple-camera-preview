@@ -5,7 +5,7 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
-@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate>{
+@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, AVCaptureFileOutputRecordingDelegate,CLLocationManagerDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
 }
@@ -14,6 +14,8 @@
 - (void) enable:(CDVInvokedUrlCommand*)command;
 - (void) disable:(CDVInvokedUrlCommand*)command;
 - (void) capture:(CDVInvokedUrlCommand*)command;
+- (void) startVideo:(CDVInvokedUrlCommand*)command;
+- (void) stopVideo:(CDVInvokedUrlCommand*)command;
 - (void) setSize:(CDVInvokedUrlCommand*)command;
 - (void) torchSwitch: (CDVInvokedUrlCommand*)command;
 - (void) switchCameraTo: (CDVInvokedUrlCommand*) command;
@@ -22,6 +24,7 @@
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
+@property (nonatomic) NSString *onVideoRecordedHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
 

@@ -24,6 +24,14 @@ SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
 };
 
+SimpleCameraPreview.startVideo = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideo", []);
+};
+
+SimpleCameraPreview.stopVideo = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "stopVideo", []);
+};
+
 SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
 };
