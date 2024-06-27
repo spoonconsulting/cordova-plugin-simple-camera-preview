@@ -10,7 +10,6 @@
 - (void) torchSwitch:(NSInteger)torchState;
 - (void) switchCameraTo:(NSString *)cameraMode completion:(void (^)(BOOL success))completion;
 - (BOOL) deviceHasUltraWideCamera;
-- (void) deallocSession;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
