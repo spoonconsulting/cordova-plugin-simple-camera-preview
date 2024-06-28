@@ -272,4 +272,18 @@
     }
 }
 
+- (void)deallocSession {
+  if (self.session.running) {
+    [self.session stopRunning];
+  }
+  self.session = nil;
+  self.videoDeviceInput = nil;
+  self.imageOutput = nil;
+  self.dataOutput = nil;
+  self.filterLock = nil;
+  if (self.sessionQueue) {
+    self.sessionQueue = nil;
+  }
+}
+
 @end
