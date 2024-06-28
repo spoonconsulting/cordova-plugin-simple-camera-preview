@@ -59,7 +59,7 @@ BOOL torchActivated = false;
     self.cameraRenderController.sessionManager = self.sessionManager;
     [self _setSize:command];
     [self.viewController addChildViewController:self.cameraRenderController];
-    [self.webView.superview addSubview:self.cameraRenderController.view];
+    [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
     [self.cameraRenderController didMoveToParentViewController:self.viewController];
     self.viewController.view.backgroundColor = [UIColor blackColor];
     

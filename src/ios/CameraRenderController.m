@@ -43,8 +43,8 @@
 
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    //    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
-    //    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
@@ -58,19 +58,12 @@
 
 - (void) viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    //    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
-    //    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-//    dispatch_async(self.sessionManager.sessionQueue, ^{
-//        NSLog(@"Stopping session");
-//        [self.sessionManager.session stopRunning];
-//    });
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
     [self.view removeFromSuperview];
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
-    if (_renderBuffer) {
-        glDeleteRenderbuffers(1, &_renderBuffer);
-        _renderBuffer = 0;
-    }
+    [self deallocateRenderMemory];
     self.ciContext = nil;
 }
 
@@ -91,10 +84,7 @@
     [self.view removeFromSuperview];
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
-    if (_renderBuffer) {
-        glDeleteRenderbuffers(1, &_renderBuffer);
-        _renderBuffer = 0;
-    }
+    [self deallocateRenderMemory];
     self.ciContext = nil;
 }
 
@@ -172,20 +162,14 @@
     
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
-    if (_renderBuffer) {
-        glDeleteRenderbuffers(1, &_renderBuffer);
-        _renderBuffer = 0;
-    }
+    [self deallocateRenderMemory];
     self.ciContext = nil;
 }
 
 - (void)dealloc {
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
-    if (_renderBuffer) {
-        glDeleteRenderbuffers(1, &_renderBuffer);
-        _renderBuffer = 0;
-    }
+    [self deallocateRenderMemory];
     self.ciContext = nil;
 }
 
@@ -193,15 +177,27 @@
     return YES;
 }
 
-//-(void) viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-//    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-//    __block UIInterfaceOrientation toInterfaceOrientation;
-//    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
-//        toInterfaceOrientation = [self.sessionManager getOrientation];
-//
-//    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
-//        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
-//    }];
-//}
+-(void) viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    __block UIInterfaceOrientation toInterfaceOrientation;
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        toInterfaceOrientation = [self.sessionManager getOrientation];
+
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+    }];
+}
+
+-(void) deallocateRenderMemory {
+    if (_renderBuffer) {
+        glDeleteRenderbuffers(1, &_renderBuffer);
+        _renderBuffer = 0;
+    }
+    if (_videoTextureCache) {
+        CVOpenGLESTextureCacheFlush(_videoTextureCache, 0);
+        CFRelease(_videoTextureCache);
+        _videoTextureCache = nil;
+    }
+}
 
 @end
