@@ -164,6 +164,8 @@
     self.context = nil;
     [self deallocateRenderMemory];
     self.ciContext = nil;
+    CVBufferRelease(_pixelBuffer);
+    _pixelBuffer = nil;
 }
 
 - (void)dealloc {
