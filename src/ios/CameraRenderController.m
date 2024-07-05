@@ -21,7 +21,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
     if (!self.context)
         NSLog(@"Failed to create ES context");
     
@@ -33,7 +33,7 @@
     
     GLKView *view = (GLKView *)self.view;
     view.context = self.context;
-    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormatNone;
     view.contentMode = UIViewContentModeScaleToFill;
     
     glGenRenderbuffers(1, &_renderBuffer);
@@ -60,6 +60,11 @@
     [super viewWillDisappear:animated];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    [self.view removeFromSuperview];
+    [EAGLContext setCurrentContext:nil];
+    self.context = nil;
+    [self deallocateRenderMemory];
+    self.ciContext = nil;
 }
 
 - (void) appplicationIsActive:(NSNotification *)notification {
@@ -72,16 +77,21 @@
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {
-    // dispatch_async(self.sessionManager.sessionQueue, ^{
-    //     NSLog(@"Stopping session");
-    //     [self.sessionManager.session stopRunning];
-    // });
+//    dispatch_async(self.sessionManager.sessionQueue, ^{
+//        NSLog(@"Stopping session");
+//        [self.sessionManager.session stopRunning];
+//    });
+    [self.view removeFromSuperview];
+    [EAGLContext setCurrentContext:nil];
+    self.context = nil;
+    [self deallocateRenderMemory];
+    self.ciContext = nil;
 }
 
 -(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
     if ([self.renderLock tryLock]) {
-        CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
-        CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+        _pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
+        CIImage *image = [CIImage imageWithCVPixelBuffer:_pixelBuffer];
         
         __block CGRect frame;
         dispatch_sync(dispatch_get_main_queue(), ^{
@@ -150,17 +160,19 @@
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     
-    if ([EAGLContext currentContext] == self.context) {
-        [EAGLContext setCurrentContext:nil];
-    }
+    [EAGLContext setCurrentContext:nil];
     self.context = nil;
+    [self deallocateRenderMemory];
+    self.ciContext = nil;
+    CVBufferRelease(_pixelBuffer);
+    _pixelBuffer = nil;
 }
 
 - (void)dealloc {
-    if ([EAGLContext currentContext] == self.context) {
-        [EAGLContext setCurrentContext:nil];
-    }
+    [EAGLContext setCurrentContext:nil];
     self.context = nil;
+    [self deallocateRenderMemory];
+    self.ciContext = nil;
 }
 
 - (BOOL)shouldAutorotate {
@@ -172,10 +184,22 @@
     __block UIInterfaceOrientation toInterfaceOrientation;
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         toInterfaceOrientation = [self.sessionManager getOrientation];
-        
+
     } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
     }];
+}
+
+-(void) deallocateRenderMemory {
+    if (_renderBuffer) {
+        glDeleteRenderbuffers(1, &_renderBuffer);
+        _renderBuffer = 0;
+    }
+    if (_videoTextureCache) {
+        CVOpenGLESTextureCacheFlush(_videoTextureCache, 0);
+        CFRelease(_videoTextureCache);
+        _videoTextureCache = nil;
+    }
 }
 
 @end
