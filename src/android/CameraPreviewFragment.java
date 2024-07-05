@@ -361,7 +361,7 @@ public class CameraPreviewFragment extends Fragment {
     @SuppressLint("RestrictedApi")
     public void setUpCamera(String captureDevice, ProcessCameraProvider cameraProvider) {
         CameraSelector cameraSelector;
-        if (captureDevice.equals("ultra-wide-angle")) {
+        if (captureDevice != null && captureDevice.equals("ultra-wide-angle")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
