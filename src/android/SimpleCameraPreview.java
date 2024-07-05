@@ -42,6 +42,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
+    private CallbackContext videoCallbackContext;
+
 
     private static final int containerViewId = 20;
     private static final int DIRECTION_FRONT = 0;
@@ -72,6 +74,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "torchSwitch":
                     return torchSwitch(args.getBoolean(0), callbackContext);
 
+                case "initVideoCallback":
+                    return initVideoCallback(callbackContext);
+
+                case "startVideoCapture":
+                    return startVideoCapture(callbackContext);
+
+                case "stopVideoCapture":
+                    return stopVideoCapture(callbackContext);
+
                 case "deviceHasFlash":
                     return deviceHasFlash(callbackContext);
 
@@ -90,6 +101,77 @@ public class SimpleCameraPreview extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
+    }
+
+    private boolean initVideoCallback(CallbackContext callbackContext) {
+        this.videoCallbackContext = callbackContext;
+        PluginResult result = new PluginResult(PluginResult.Status.OK, "video cb initialized");
+        result.setKeepCallback(true);
+        this.videoCallbackContext.sendPluginResult(result);
+        return true;
+    }
+
+    private boolean startVideoCapture(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        // Example of sending an update to the JavaScript callback
+        if (this.videoCallbackContext != null) {
+            fragment.startVideoCapture(new VideoCallback() {
+                public void onStart(Boolean recording, String nativePath) {
+                    JSONObject data = new JSONObject();
+                    if (recording) {
+                        try {
+                            data.put("recording", true);
+                            data.put("nativePath", null);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            videoCallbackContext.error("Cannot send recording data");
+                            return;
+                        }
+
+                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
+                        pluginResult.setKeepCallback(true);
+                        videoCallbackContext.sendPluginResult(pluginResult);
+                    }
+                }
+
+                public void onStop(Boolean recording, String nativePath) {
+                    JSONObject data = new JSONObject();
+                    try {
+                        data.put("recording", false);
+                        data.put("nativePath", nativePath);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        videoCallbackContext.error("Cannot send recording data");
+                        return;
+                    }
+                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
+                    pluginResult.setKeepCallback(true);
+                    videoCallbackContext.sendPluginResult(pluginResult);
+                }
+            });
+        }
+        callbackContext.success();
+        return true;
+    }
+
+
+    private boolean stopVideoCapture(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        // Example of sending an update to the JavaScript callback
+        if (this.videoCallbackContext != null) {
+            fragment.stopVideoCapture();
+        }
+
+        callbackContext.success();
+        return true;
     }
 
     private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
@@ -266,6 +348,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
             locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 0, 0, mLocationCallback);
         }
     }
+
+
+
+
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {
