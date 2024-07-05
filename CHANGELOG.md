@@ -1,3 +1,6 @@
+## [2.0.20](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.19...v2.0.20) (2024-07-05)
+* **Android:** Null check
+
 ## [2.0.19](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.18...v2.0.19) (2024-06-17)
 
 * **iOS:** Release unused memory after capture
