@@ -64,12 +64,9 @@ interface CameraCallback {
     void onCompleted(Exception err, String nativePath);
 }
 
-interface StartVideoCallback {
-    void onStartVideo(Exception err, Boolean recording);
-}
-
-interface StopVideoCallback {
-    void onStopVideo(Exception err, String nativePath);
+interface VideoCallback {
+    void onStart(Boolean recording, String nativePath);
+    void onStop(Boolean recording, String nativePath);
 }
 
 interface CameraStartedCallback {
@@ -283,18 +280,19 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
-    public void startCaptureVideo(StartVideoCallback startVideoCallback) {
+    public void startVideoCapture(VideoCallback videoCallback) {
         if (recording != null) {
+            recording.stop();
             recording = null;
             return;
         }
         UUID uuid = UUID.randomUUID();
 
-        this.filename = uuid.toString() + ".mp4";
+        String filename = uuid.toString() + ".mp4";
         if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
         }
-        this.videoFile = new File(
+        File videoFile = new File(
                 getContext().getFilesDir(),
                 filename
         );
@@ -305,29 +303,34 @@ public class CameraPreviewFragment extends Fragment {
                 .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
                 .withAudioEnabled()
                 .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
-                    this.videoRecordEvent = videoRecordEvent;
                     if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        startVideoCallback.onStartVideo(null, true);
+                        videoCallback.onStart(true, null);
+                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                        if (finalizeEvent.hasError()) {
+                            // Handle the error
+                            int errorCode = finalizeEvent.getError();
+                            Throwable errorCause = finalizeEvent.getCause();
+                            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
+                        } else {
+                            // Handle video saved
+                            videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
+                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+                            Log.i(TAG, "Video saved to: " + savedUri);
+                        }
+                        recording = null;
                     }
                     // Other event types can be handled if needed
                 });
+
+    }
+    public void stopVideoCapture() {
+        if (recording !=null) {
+            recording.stop();
+            recording = null;
+        }
     }
 
-    public void stopCaptureVideo(StopVideoCallback stopVideoCallback) {
-        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) this.videoRecordEvent;
-        if (finalizeEvent.hasError()) {
-            // Handle the error
-            int errorCode = finalizeEvent.getError();
-            Throwable errorCause = finalizeEvent.getCause();
-            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
-        } else {
-            // Handle video saved
-            stopVideoCallback.onStopVideo(null, Uri.fromFile(videoFile).toString());
-            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
-            Log.i(TAG, "Video saved to: " + savedUri);
-        }
-        recording = null;
-    }
 
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
@@ -433,7 +436,7 @@ public class CameraPreviewFragment extends Fragment {
     @SuppressLint("RestrictedApi")
     public void setUpCamera(String captureDevice, ProcessCameraProvider cameraProvider) {
         CameraSelector cameraSelector;
-        if (captureDevice != null && captureDevice.equals("ultra-wide-angle")) {
+        if (captureDevice.equals("ultra-wide-angle")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();

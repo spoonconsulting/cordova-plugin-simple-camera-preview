@@ -1,53 +1,79 @@
-var exec = require("cordova/exec");
-var PLUGIN_NAME = "SimpleCameraPreview";
-var SimpleCameraPreview = function () {};
+cordova.define("@spoonconsulting/cordova-plugin-simple-camera-preview.SimpleCameraPreview", function(require, exports, module) {
+  var exec = require("cordova/exec");
+  var PLUGIN_NAME = "SimpleCameraPreview";
+  var SimpleCameraPreview = function () {};
 
-SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "setOptions", [options]);
-};
+  SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "setOptions", [options]);
+  };
 
-SimpleCameraPreview.enable = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
-};
+  SimpleCameraPreview.enable = function (options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
+  };
 
-SimpleCameraPreview.disable = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
-};
+  SimpleCameraPreview.disable = function (onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
+  };
 
-SimpleCameraPreview.capture = function (options, onSuccess, onError) {
-  options = options || {};
-  options.flash = options.flash || false;
-  exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
-};
+  SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
+    if (!SimpleCameraPreview.videoCallback) {
+      console.error("Call setVideoCallback first");
+      onError("Call setVideoCallback first");
+      return;
+    }
 
-SimpleCameraPreview.startCaptureVideo = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "startCaptureVideo");
-};
+    if (!SimpleCameraPreview.videoInitialized) {
+      exec(
+          (info) => {
+            SimpleCameraPreview.videoInitialized = true;
+            this.videoCallback(info);
+          } ,
+           (err) => {
+              console.log("Error initializing video callback", err);
+          },
+          "SimpleCameraPreview",
+          "initVideoCallback",
+          []
+      );
+    }
+    exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
+  };
 
-SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCapture");
-};
+  SimpleCameraPreview.setVideoCallback = function (callback) {
+    this.videoCallback = callback;
+  }
 
-SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
-};
+  SimpleCameraPreview.capture = function (options, onSuccess, onError) {
+    options = options || {};
+    options.flash = options.flash || false;
+    exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
+  };
 
-SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
-};
+  SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCapture");
+  };
 
-SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
-  options = options || {};
-  options.captureDevice = options.captureDevice || "default";
-  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.captureDevice]);
-};
+  SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
+  };
 
-SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
-};
+  SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "torchSwitch", [options]);
+  };
 
-SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
-};
+  SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
+    options = options || {};
+    options.captureDevice = options.captureDevice || "default";
+    exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.captureDevice]);
+  };
 
-module.exports = SimpleCameraPreview;
+  SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
+  };
+
+  SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
+    exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
+  };
+
+  module.exports = SimpleCameraPreview;
+});
