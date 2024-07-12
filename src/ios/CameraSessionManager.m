@@ -284,6 +284,7 @@
   if (self.sessionQueue) {
     self.sessionQueue = nil;
   }
+  self.device = nil;
 }
 
 @end
