@@ -113,14 +113,14 @@ BOOL torchActivated = false;
             for(AVCaptureOutput *output in self.sessionManager.session.outputs) {
                 [self.sessionManager.session removeOutput:output];
             }
+            self.sessionManager.delegate = nil;
             [self.sessionManager deallocSession];
             self.sessionManager = nil;
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self.cameraRenderController willMoveToParentViewController:nil];
                 [self.cameraRenderController.view removeFromSuperview];
-                if(self.viewController.parentViewController != nil) {
-                    [self.cameraRenderController removeFromParentViewController];
-                }
+                [self.cameraRenderController removeFromParentViewController];
+                [self.cameraRenderController deallocateRenderMemory];
                 self.cameraRenderController = nil;
                 [self deallocateMemory];
                 [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
@@ -236,6 +236,7 @@ BOOL torchActivated = false;
     [gps setObject:[formatter stringFromDate:location.timestamp] forKey:(NSString *)kCGImagePropertyGPSTimeStamp];
     [formatter setDateFormat:@"yyyy:MM:dd"];
     [gps setObject:[formatter stringFromDate:location.timestamp] forKey:(NSString *)kCGImagePropertyGPSDateStamp];
+    formatter = nil;
     
     // Latitude
     CGFloat latitude = location.coordinate.latitude;

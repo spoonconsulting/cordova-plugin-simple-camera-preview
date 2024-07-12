@@ -56,17 +56,6 @@
     });
 }
 
-- (void) viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-    [self.view removeFromSuperview];
-    [EAGLContext setCurrentContext:nil];
-    self.context = nil;
-    [self deallocateRenderMemory];
-    self.ciContext = nil;
-}
-
 - (void) appplicationIsActive:(NSNotification *)notification {
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
@@ -77,10 +66,6 @@
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {
-//    dispatch_async(self.sessionManager.sessionQueue, ^{
-//        NSLog(@"Stopping session");
-//        [self.sessionManager.session stopRunning];
-//    });
     [self.view removeFromSuperview];
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
@@ -157,24 +142,6 @@
     }
 }
 
-- (void)viewDidDisappear:(BOOL)animated {
-    [super viewDidDisappear:animated];
-    
-    [EAGLContext setCurrentContext:nil];
-    self.context = nil;
-    [self deallocateRenderMemory];
-    self.ciContext = nil;
-    CVBufferRelease(_pixelBuffer);
-    _pixelBuffer = nil;
-}
-
-- (void)dealloc {
-    [EAGLContext setCurrentContext:nil];
-    self.context = nil;
-    [self deallocateRenderMemory];
-    self.ciContext = nil;
-}
-
 - (BOOL)shouldAutorotate {
     return YES;
 }
@@ -200,6 +167,17 @@
         CFRelease(_videoTextureCache);
         _videoTextureCache = nil;
     }
+    if(_lumaTexture) {
+        CVOpenGLESTextureCacheFlush(_lumaTexture, 0);
+        CFRelease(_lumaTexture);
+        _lumaTexture = nil;
+    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    [self.view removeFromSuperview];
+    [EAGLContext setCurrentContext:nil];
+    self.context = nil;
+    self.ciContext = nil;
 }
 
 @end
