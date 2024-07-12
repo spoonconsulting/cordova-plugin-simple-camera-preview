@@ -56,18 +56,6 @@
     });
 }
 
-//- (void) viewWillDisappear:(BOOL)animated {
-//    NSLog(@"HELLO 12");
-//    [super viewWillDisappear:animated];
-//    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
-//    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-//    [self.view removeFromSuperview];
-//    [EAGLContext setCurrentContext:nil];
-//    self.context = nil;
-//    [self deallocateRenderMemory];
-//    self.ciContext = nil;
-//}
-
 - (void) appplicationIsActive:(NSNotification *)notification {
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
@@ -78,10 +66,6 @@
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {
-//    dispatch_async(self.sessionManager.sessionQueue, ^{
-//        NSLog(@"Stopping session");
-//        [self.sessionManager.session stopRunning];
-//    });
     [self.view removeFromSuperview];
     [EAGLContext setCurrentContext:nil];
     self.context = nil;
@@ -157,26 +141,6 @@
         [self.renderLock unlock];
     }
 }
-
-//- (void)viewDidDisappear:(BOOL)animated {
-//    [super viewDidDisappear:animated];
-//    NSLog(@"HELLO 14");
-//    [self.view removeFromSuperview];
-//    [EAGLContext setCurrentContext:nil];
-//    self.context = nil;
-//    [self deallocateRenderMemory];
-//    self.ciContext = nil;
-//    CVBufferRelease(_pixelBuffer);
-//    _pixelBuffer = nil;
-//}
-
-//- (void)dealloc {
-//    NSLog(@"HELLO 15");
-//    [EAGLContext setCurrentContext:nil];
-//    self.context = nil;
-//    [self deallocateRenderMemory];
-//    self.ciContext = nil;
-//}
 
 - (BOOL)shouldAutorotate {
     return YES;
