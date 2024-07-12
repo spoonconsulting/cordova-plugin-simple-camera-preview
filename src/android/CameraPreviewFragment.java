@@ -85,7 +85,7 @@ public class CameraPreviewFragment extends Fragment {
 
     private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
-    private String captureDevice;
+    private String lens;
 
     public CameraPreviewFragment() {
 
@@ -100,7 +100,7 @@ public class CameraPreviewFragment extends Fragment {
             e.printStackTrace();
         }
         try {
-            this.captureDevice = options.getString("captureDevice");
+            this.lens = options.getString("lens");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -136,7 +136,7 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        setUpCamera(captureDevice,cameraProvider);
+        setUpCamera(lens,cameraProvider);
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -359,9 +359,9 @@ public class CameraPreviewFragment extends Fragment {
     }
     
     @SuppressLint("RestrictedApi")
-    public void setUpCamera(String captureDevice, ProcessCameraProvider cameraProvider) {
+    public void setUpCamera(String lens, ProcessCameraProvider cameraProvider) {
         CameraSelector cameraSelector;
-        if (captureDevice != null && captureDevice.equals("wide")) {
+        if (lens != null && lens.equals("wide")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
