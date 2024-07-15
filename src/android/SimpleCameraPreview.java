@@ -213,7 +213,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
             );
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
+            fetchLocation();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
+    }
 
+    private int getIntegerFromOptions(JSONObject options, String key) {
+        try {
+            return options.getInt(key);
+        } catch (JSONException error) {
+            return 0;
+        }
+    }
+
+    public void fetchLocation() {
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLocationCallback = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
@@ -237,25 +255,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 }
             };
-            fetchLocation();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
-    }
-
-    private int getIntegerFromOptions(JSONObject options, String key) {
-        try {
-            return options.getInt(key);
-        } catch (JSONException error) {
-            return 0;
-        }
-    }
-
-    public void fetchLocation() {
-        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
             if (locationManager == null) {
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
             }
