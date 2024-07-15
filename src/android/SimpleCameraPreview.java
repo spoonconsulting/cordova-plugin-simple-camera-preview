@@ -47,7 +47,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
-    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
+    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA};
 
     public SimpleCameraPreview() {
         super();
