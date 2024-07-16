@@ -1,3 +1,6 @@
+## [2.0.22](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.21...v2.0.22) (2024-07-12)
+* **iOS:** Release memory when exiting capture preview
+
 ## [2.0.21](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.20...v2.0.21) (2024-07-05)
 * **iOS:** Release memory consumption
 
