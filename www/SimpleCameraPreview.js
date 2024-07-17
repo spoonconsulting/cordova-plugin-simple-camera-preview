@@ -1,4 +1,3 @@
-cordova.define("@spoonconsulting/cordova-plugin-simple-camera-preview.SimpleCameraPreview", function(require, exports, module) {
   var exec = require("cordova/exec");
   var PLUGIN_NAME = "SimpleCameraPreview";
   var SimpleCameraPreview = function () {};
@@ -79,6 +78,4 @@ cordova.define("@spoonconsulting/cordova-plugin-simple-camera-preview.SimpleCame
   };
   
   module.exports = SimpleCameraPreview;
-  
-  });
   
