@@ -296,6 +296,14 @@ public class CameraPreviewFragment extends Fragment {
 
         FileOutputOptions outputOptions = new FileOutputOptions.Builder(videoFile).build();
 
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                recording.stop();
+            }
+        }, 30000);
+
         recording = videoCapture.getOutput()
                 .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
                 .withAudioEnabled()
@@ -304,6 +312,7 @@ public class CameraPreviewFragment extends Fragment {
                         videoCallback.onStart(true, null);
                     } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
                         VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                        handler.removeCallbacksAndMessages(null);
                         if (finalizeEvent.hasError()) {
                             // Handle the error
                             int errorCode = finalizeEvent.getError();
