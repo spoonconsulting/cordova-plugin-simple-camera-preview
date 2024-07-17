@@ -114,22 +114,22 @@ SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
 
 ### switchCameraTo(option, successCallback, errorCallback)
 
-Switch camera between ultra-wide or default
+Switch camera between wide or auto
 
-The variable captureDevice can take two values:
+The variable lens can take two values:
 ```javascript
-  "ultra-wide-angle"
+  "wide"
 
   or
 
-  "default"
+  "auto"
 ```
 <br>
 
 ```javascript
 
 const params = {
-  captureDevice: "ultra-wide-angle",
+  lens: "wide",
 }
 
 SimpleCameraPreview.switchCameraTo(
