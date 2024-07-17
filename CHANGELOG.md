@@ -1,3 +1,7 @@
+## [2.0.23](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.22...v2.0.23) (2024-07-17)
+* **Android:** Use parameter lens with values wide or default
+* **iOS:** Use parameter lens with values wide or default
+
 ## [2.0.22](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.21...v2.0.22) (2024-07-12)
 * **iOS:** Release memory when exiting capture preview
 
