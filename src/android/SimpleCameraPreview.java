@@ -152,6 +152,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     pluginResult.setKeepCallback(true);
                     videoCallbackContext.sendPluginResult(pluginResult);
                 }
+
+                @Override
+                public void onError(String errMessage) {
+                    videoCallbackContext.error(errMessage);
+                }
             });
         }
         callbackContext.success();

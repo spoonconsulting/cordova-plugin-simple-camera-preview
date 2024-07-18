@@ -67,6 +67,7 @@ interface CameraCallback {
 interface VideoCallback {
     void onStart(Boolean recording, String nativePath);
     void onStop(Boolean recording, String nativePath);
+    void onError(String errMessage);
 }
 
 interface CameraStartedCallback {
@@ -300,10 +301,7 @@ public class CameraPreviewFragment extends Fragment {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (recording != null) {
-                    recording.stop();
-                    recording = null;
-                }
+                stopVideoCapture();
             }
         }, 30000);
 
@@ -320,12 +318,11 @@ public class CameraPreviewFragment extends Fragment {
                             // Handle the error
                             int errorCode = finalizeEvent.getError();
                             Throwable errorCause = finalizeEvent.getCause();
-                            Log.e(TAG, "Video recording error: " + errorCode, errorCause);
+                            videoCallback.onError(errorCode + " " + errorCause);
                         } else {
                             // Handle video saved
                             videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
                             Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
-                            Log.i(TAG, "Video saved to: " + savedUri);
                         }
                         recording = null;
                     }
