@@ -300,7 +300,10 @@ public class CameraPreviewFragment extends Fragment {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                recording.stop();
+                if (recording != null) {
+                    recording.stop();
+                    recording = null;
+                }
             }
         }, 30000);
 
@@ -319,7 +322,6 @@ public class CameraPreviewFragment extends Fragment {
                             Throwable errorCause = finalizeEvent.getCause();
                             Log.e(TAG, "Video recording error: " + errorCode, errorCause);
                         } else {
-                            Log.d("video", "stopping in vre");
                             // Handle video saved
                             videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
                             Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
@@ -333,7 +335,6 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void stopVideoCapture() {
-        Log.d("video", "stopping in cpf");
         if (recording != null) {
             recording.stop();
             recording = null;
