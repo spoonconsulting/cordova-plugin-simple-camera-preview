@@ -16,10 +16,10 @@
       exec(
           (info) => {
             SimpleCameraPreview.videoInitialized = true;
-            this.videoCallback(info);
+            this.videoCallback(info, null);
           } ,
            (err) => {
-              console.log("Error initializing video callback", err);
+              this.videoCallback(null, err);
           },
           "SimpleCameraPreview",
           "initVideoCallback",
