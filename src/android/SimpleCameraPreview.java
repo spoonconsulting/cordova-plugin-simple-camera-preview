@@ -117,7 +117,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        // Example of sending an update to the JavaScript callback
         if (this.videoCallbackContext != null) {
             fragment.startVideoCapture(new VideoCallback() {
                 public void onStart(Boolean recording, String nativePath) {
@@ -179,7 +178,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        // Example of sending an update to the JavaScript callback
         if (this.videoCallbackContext != null) {
             fragment.stopVideoCapture();
         }
@@ -362,10 +360,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
             locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 0, 0, mLocationCallback);
         }
     }
-
-
-
-
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {

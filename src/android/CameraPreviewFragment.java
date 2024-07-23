@@ -279,17 +279,19 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void startVideoCapture(VideoCallback videoCallback) {
+        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
+        }
+
         if (recording != null) {
             recording.stop();
             recording = null;
             return;
         }
-        UUID uuid = UUID.randomUUID();
 
+        UUID uuid = UUID.randomUUID();
         String filename = uuid.toString() + ".mp4";
-        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
-        }
+
         File videoFile = new File(
                 getContext().getFilesDir(),
                 filename
@@ -315,18 +317,15 @@ public class CameraPreviewFragment extends Fragment {
                         VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
                         handler.removeCallbacksAndMessages(null);
                         if (finalizeEvent.hasError()) {
-                            // Handle the error
                             int errorCode = finalizeEvent.getError();
                             Throwable errorCause = finalizeEvent.getCause();
                             videoCallback.onError(errorCode + " " + errorCause);
                         } else {
-                            // Handle video saved
                             videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
                             Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
                         }
                         recording = null;
                     }
-                    // Other event types can be handled if needed
                 });
 
     }
