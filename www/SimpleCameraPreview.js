@@ -16,17 +16,17 @@ SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
     exec(
         (info) => {
           SimpleCameraPreview.videoInitialized = true;
-          this.videoCallback(info);
+          onSuccess(info);
         } ,
-          (err) => {
-            this.videoCallback(null, err);
+        (err) => {
+          this.videoCallback(null, err);
         },
-        "SimpleCameraPreview",
+        PLUGIN_NAME,
         "initVideoCallback",
         []
     );
   }
-  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
+  exec(() => {}, onError, PLUGIN_NAME, "startVideoCapture");
 };
 
 SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
@@ -78,4 +78,3 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
 };
 
 module.exports = SimpleCameraPreview;
-

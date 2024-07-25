@@ -105,7 +105,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean initVideoCallback(CallbackContext callbackContext) {
         this.videoCallbackContext = callbackContext;
-        PluginResult result = new PluginResult(PluginResult.Status.OK, "video cb initialized");
+        PluginResult result = new PluginResult(PluginResult.Status.OK, "video callback initialized");
         result.setKeepCallback(true);
         this.videoCallbackContext.sendPluginResult(result);
         return true;
