@@ -152,10 +152,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        String captureDevice = "default";
+        String lens = "default";
         try {
-            if (options.getString("captureDevice") != null && !options.getString("captureDevice").equals("null")) {
-                captureDevice = options.getString("captureDevice");
+            if (options.getString("lens") != null && !options.getString("lens").equals("null")) {
+                lens = options.getString("lens");
             }
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
@@ -169,7 +169,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
 
         try {
-            cameraPreviewOptions.put("captureDevice", captureDevice);
+            cameraPreviewOptions.put("lens", lens);
         } catch (JSONException e) {
             e.printStackTrace();
         }

@@ -30,8 +30,8 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
 
 SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
   options = options || {};
-  options.captureDevice = options.captureDevice || "default";
-  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.captureDevice]);
+  options.lens = options.lens || "default";
+  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.lens]);
 };
 
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
