@@ -366,7 +366,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
 
     public void requestPermissions() {
-        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, {REQUIRED_PERMISSION});
+        String[] permissions = {REQUIRED_PERMISSION};
+        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, permissions);
     }
 
     public boolean permissionsGranted(int[] grantResults) {
