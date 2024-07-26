@@ -47,7 +47,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
-    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA};
+    private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
 
     public SimpleCameraPreview() {
         super();
@@ -123,7 +123,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         webView.getView().setBackgroundColor(0x00000000);
         // Request focus on webView as page needs to be clicked/tapped to get focus on page events
         webView.getView().requestFocus();
-        if (!this.hasAllPermissions()) {
+        if (!PermissionHelper.hasPermission(this, REQUIRED_PERMISSION)) {
             this.enableCallbackContext = callbackContext;
             this.options = options;
             this.requestPermissions();
@@ -364,17 +364,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    public boolean hasAllPermissions() {
-        for(String p : REQUIRED_PERMISSIONS) {
-            if(!PermissionHelper.hasPermission(this, p)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     public void requestPermissions() {
-        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, {REQUIRED_PERMISSION});
     }
 
     public boolean permissionsGranted(int[] grantResults) {
