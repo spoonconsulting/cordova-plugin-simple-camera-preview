@@ -1,3 +1,6 @@
+## [2.0.24](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.23...v2.0.24) (2024-07-29)
+* **Android:** Remove ACCESS_FINE_LOCATION as a required permission
+
 ## [2.0.23](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.22...v2.0.23) (2024-07-17)
 * **Android:** Use parameter lens with values wide or default
 * **iOS:** Use parameter lens with values wide or default
