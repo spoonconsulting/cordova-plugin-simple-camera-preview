@@ -49,7 +49,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
-    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION};
+    private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
 
     public SimpleCameraPreview() {
         super();
@@ -217,7 +217,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         webView.getView().setBackgroundColor(0x00000000);
         // Request focus on webView as page needs to be clicked/tapped to get focus on page events
         webView.getView().requestFocus();
-        if (!this.hasAllPermissions()) {
+        if (!PermissionHelper.hasPermission(this, REQUIRED_PERMISSION)) {
             this.enableCallbackContext = callbackContext;
             this.options = options;
             this.requestPermissions();
@@ -307,7 +307,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
             );
             cordova.getActivity().runOnUiThread(addViewTask);
             addViewTask.get();
+            fetchLocation();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+            return false;
+        }
+    }
 
+    private int getIntegerFromOptions(JSONObject options, String key) {
+        try {
+            return options.getInt(key);
+        } catch (JSONException error) {
+            return 0;
+        }
+    }
+
+    public void fetchLocation() {
+        if (ContextCompat.checkSelfPermission(cordova.getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLocationCallback = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
@@ -331,25 +349,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 }
             };
-            fetchLocation();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
-    }
-
-    private int getIntegerFromOptions(JSONObject options, String key) {
-        try {
-            return options.getInt(key);
-        } catch (JSONException error) {
-            return 0;
-        }
-    }
-
-    public void fetchLocation() {
-        if (ContextCompat.checkSelfPermission(cordova.getActivity(), REQUIRED_PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED) {
             if (locationManager == null) {
                 locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
             }
@@ -459,17 +458,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    public boolean hasAllPermissions() {
-        for(String p : REQUIRED_PERMISSIONS) {
-            if(!PermissionHelper.hasPermission(this, p)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     public void requestPermissions() {
-        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS);
+        String[] permissions = {REQUIRED_PERMISSION};
+        PermissionHelper.requestPermissions(this, REQUEST_CODE_PERMISSIONS, permissions);
     }
 
     public boolean permissionsGranted(int[] grantResults) {
