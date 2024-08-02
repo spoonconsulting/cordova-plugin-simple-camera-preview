@@ -16,7 +16,7 @@ SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
     exec(
         (info) => {
           SimpleCameraPreview.videoInitialized = true;
-          onSuccess(info);
+          this.videoCallback({ tvideoCallback: true });
         } ,
         (err) => {
           this.videoCallback(null, err);
