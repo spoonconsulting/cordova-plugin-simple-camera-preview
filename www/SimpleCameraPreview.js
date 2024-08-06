@@ -26,7 +26,7 @@ SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
         []
     );
   }
-  exec(() => {}, onError, PLUGIN_NAME, "startVideoCapture");
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
 };
 
 SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
