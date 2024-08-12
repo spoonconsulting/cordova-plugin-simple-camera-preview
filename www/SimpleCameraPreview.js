@@ -7,24 +7,15 @@ SimpleCameraPreview.videoCallback = null;
 
 SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
   if (!SimpleCameraPreview.videoCallback) {
-    console.error("Call setVideoCallback first");
-    onError("Call setVideoCallback first");
+    console.error("Call initVideoCallback first");
+    onError("Call initVideoCallback first");
     return;
   }
 
   if (!SimpleCameraPreview.videoInitialized) {
-    exec(
-        (info) => {
-          SimpleCameraPreview.videoInitialized = true;
-          this.videoCallback({ videoCallbackInitialized: true });
-        } ,
-        (err) => {
-          this.videoCallback(null, err);
-        },
-        PLUGIN_NAME,
-        "initVideoCallback",
-        []
-    );
+    console.error("videoCallback not initialized");
+    onError("videoCallback not initialized");
+    return;
   }
   exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
 };
@@ -33,8 +24,23 @@ SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCapture");
 };
 
-SimpleCameraPreview.setVideoCallback = function (callback) {
+SimpleCameraPreview.initVideoCallback = function (onSuccess, onError, callback) {
     this.videoCallback = callback;
+    exec(
+            (info) => {
+              if (info.videoCallbackInitialized) {
+                SimpleCameraPreview.videoInitialized = true;
+                onSuccess();
+              }
+              this.videoCallback(info);
+            } ,
+            (err) => {
+              onError(err);
+            },
+            PLUGIN_NAME,
+            "initVideoCallback",
+            []
+        );
 }
 
 SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
