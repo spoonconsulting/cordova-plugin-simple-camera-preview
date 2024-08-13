@@ -34,7 +34,7 @@ SimpleCameraPreview.initVideoCallback = function (onSuccess, onError, callback) 
               }
               this.videoCallback(info);
             } ,
-            onError
+            onError,
             PLUGIN_NAME,
             "initVideoCallback",
             []
