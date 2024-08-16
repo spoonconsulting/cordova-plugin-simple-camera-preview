@@ -1,3 +1,6 @@
+## [2.0.25](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.24...v2.0.25) (2024-08-16)
+* **Android:** Add video recording ability for Android
+
 ## [2.0.24](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.23...v2.0.24) (2024-07-29)
 * **Android:** Remove ACCESS_FINE_LOCATION as a required permission
 
