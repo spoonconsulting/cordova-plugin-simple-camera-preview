@@ -2,6 +2,45 @@ var exec = require("cordova/exec");
 var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function () {};
 
+SimpleCameraPreview.videoInitialized = false;
+SimpleCameraPreview.videoCallback = null;
+
+SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
+  if (!SimpleCameraPreview.videoCallback) {
+    console.error("Call initVideoCallback first");
+    onError("Call initVideoCallback first");
+    return;
+  }
+
+  if (!SimpleCameraPreview.videoInitialized) {
+    console.error("videoCallback not initialized");
+    onError("videoCallback not initialized");
+    return;
+  }
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
+};
+
+SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCapture");
+};
+
+SimpleCameraPreview.initVideoCallback = function (onSuccess, onError, callback) {
+    this.videoCallback = callback;
+    exec(
+            (info) => {
+              if (info.videoCallbackInitialized) {
+                SimpleCameraPreview.videoInitialized = true;
+                onSuccess();
+              }
+              this.videoCallback(info);
+            } ,
+            onError,
+            PLUGIN_NAME,
+            "initVideoCallback",
+            []
+        );
+}
+
 SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "setOptions", [options]);
 };
