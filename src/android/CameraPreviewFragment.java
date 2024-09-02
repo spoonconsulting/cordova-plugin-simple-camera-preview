@@ -278,11 +278,7 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
-    public void startVideoCapture(VideoCallback videoCallback) {
-        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
-        }
-
+    public void startVideoCapture(VideoCallback videoCallback, boolean recordWithAudio) {
         if (recording != null) {
             recording.stop();
             recording = null;
@@ -307,27 +303,32 @@ public class CameraPreviewFragment extends Fragment {
             }
         }, 30000);
 
-        recording = videoCapture.getOutput()
-                .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
-                .withAudioEnabled()
-                .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
-                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        videoCallback.onStart(true, null);
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
-                        handler.removeCallbacksAndMessages(null);
-                        if (finalizeEvent.hasError()) {
-                            int errorCode = finalizeEvent.getError();
-                            Throwable errorCause = finalizeEvent.getCause();
-                            videoCallback.onError(errorCode + " " + errorCause);
-                        } else {
-                            videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
-                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
-                        }
-                        recording = null;
-                    }
-                });
-
+        PendingRecording pendingRecording = videoCapture.getOutput()
+                .prepareRecording(this.getContext().getApplicationContext(), outputOptions);
+        if (recordWithAudio) {
+            try {
+                pendingRecording.withAudioEnabled();
+            } catch (SecurityException e) {
+                videoCallback.onError(e.getMessage());
+            }
+        }
+        recording = pendingRecording.start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
+            if (videoRecordEvent instanceof VideoRecordEvent.Start) {
+                videoCallback.onStart(true, null);
+            } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                handler.removeCallbacksAndMessages(null);
+                if (finalizeEvent.hasError()) {
+                    int errorCode = finalizeEvent.getError();
+                    Throwable errorCause = finalizeEvent.getCause();
+                    videoCallback.onError(errorCode + " " + errorCause);
+                } else {
+                    videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
+                    Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+                }
+                recording = null;
+            }
+        });
     }
 
     public void stopVideoCapture() {

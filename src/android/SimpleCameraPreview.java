@@ -78,7 +78,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return initVideoCallback(callbackContext);
 
                 case "startVideoCapture":
-                    return startVideoCapture(callbackContext);
+                    return startVideoCapture(args.getBoolean(0), callbackContext);
 
                 case "stopVideoCapture":
                     return stopVideoCapture(callbackContext);
@@ -119,9 +119,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean startVideoCapture(CallbackContext callbackContext) {
+    private boolean startVideoCapture(boolean recordWithAudio, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        if (recordWithAudio && !PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
+            String[] permissions = {Manifest.permission.RECORD_AUDIO};
+            PermissionHelper.requestPermissions(this, 200, permissions);
+            callbackContext.success();
             return true;
         }
 
@@ -173,7 +180,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     pluginResult.setKeepCallback(true);
                     videoCallbackContext.sendPluginResult(pluginResult);
                 }
-            });
+            }, recordWithAudio);
         }
         callbackContext.success();
         return true;
@@ -529,6 +536,23 @@ public class SimpleCameraPreview extends CordovaPlugin {
             } else {
                 enable(this.options, this.enableCallbackContext);
             }
+        }
+        if (requestCode == 200 && this.videoCallbackContext != null) {
+            if (grantResults.length < 1) { return; }
+
+            boolean permissionsGranted = this.permissionsGranted(grantResults);
+            JSONObject data = new JSONObject();
+            try {
+                data.put("restartVideoCaptureWithAudio", permissionsGranted);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                videoCallbackContext.error("Cannot start video");
+                return;
+            }
+            
+            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+            result.setKeepCallback(true);
+            this.videoCallbackContext.sendPluginResult(result);
         }
     }
     
