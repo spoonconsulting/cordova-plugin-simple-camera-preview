@@ -49,6 +49,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
+    private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
 
     public SimpleCameraPreview() {
@@ -127,7 +128,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         if (recordWithAudio && !PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
             String[] permissions = {Manifest.permission.RECORD_AUDIO};
-            PermissionHelper.requestPermissions(this, 200, permissions);
+            PermissionHelper.requestPermissions(this, VIDEO_REQUEST_CODE_PERMISSIONS, permissions);
             callbackContext.success();
             return true;
         }
@@ -537,7 +538,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 enable(this.options, this.enableCallbackContext);
             }
         }
-        if (requestCode == 200 && this.videoCallbackContext != null) {
+        if (requestCode == VIDEO_REQUEST_CODE_PERMISSIONS && this.videoCallbackContext != null) {
             if (grantResults.length < 1) { return; }
 
             boolean permissionsGranted = this.permissionsGranted(grantResults);
