@@ -1,26 +1,26 @@
-## [2.0.26](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.25...v2.0.26) (2024-09-04)
+## [2.0.26](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.25...2.0.26) (2024-09-04)
 * **Android:** Fix Android permission RECORD_AUDIO on startVideoCapture
 
-## [2.0.25](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.24...v2.0.25) (2024-08-16)
+## [2.0.25](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.24...2.0.25) (2024-08-16)
 * **Android:** Add video recording ability for Android
 
-## [2.0.24](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.23...v2.0.24) (2024-07-29)
+## [2.0.24](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.23...2.0.24) (2024-07-29)
 * **Android:** Remove ACCESS_FINE_LOCATION as a required permission
 
-## [2.0.23](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.22...v2.0.23) (2024-07-17)
+## [2.0.23](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.22...2.0.23) (2024-07-17)
 * **Android:** Use parameter lens with values wide or default
 * **iOS:** Use parameter lens with values wide or default
 
-## [2.0.22](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.21...v2.0.22) (2024-07-12)
+## [2.0.22](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.21...2.0.22) (2024-07-12)
 * **iOS:** Release memory when exiting capture preview
 
-## [2.0.21](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.20...v2.0.21) (2024-07-05)
+## [2.0.21](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.20...2.0.21) (2024-07-05)
 * **iOS:** Release memory consumption
 
-## [2.0.20](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.19...v2.0.20) (2024-07-05)
+## [2.0.20](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.19...2.0.20) (2024-07-05)
 * **Android:** Null check
 
-## [2.0.19](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.18...v2.0.19) (2024-06-17)
+## [2.0.19](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.18...2.0.19) (2024-06-17)
 
 * **iOS:** Release unused memory after capture
 
