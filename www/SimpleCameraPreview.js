@@ -5,7 +5,7 @@ var SimpleCameraPreview = function () {};
 SimpleCameraPreview.videoInitialized = false;
 SimpleCameraPreview.videoCallback = null;
 
-SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
+SimpleCameraPreview.startVideoCapture = function (options, onSuccess, onError) {
   if (!SimpleCameraPreview.videoCallback) {
     console.error("Call initVideoCallback first");
     onError("Call initVideoCallback first");
@@ -17,7 +17,10 @@ SimpleCameraPreview.startVideoCapture = function (onSuccess, onError) {
     onError("videoCallback not initialized");
     return;
   }
-  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture");
+  
+  options = options || {};
+  options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture", [options.recordWithAudio]);
 };
 
 SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {

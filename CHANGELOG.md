@@ -1,3 +1,6 @@
+## [2.0.26](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.25...v2.0.26) (2024-09-04)
+* **Android:** Fix Android permission RECORD_AUDIO on startVideoCapture
+
 ## [2.0.25](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/v2.0.24...v2.0.25) (2024-08-16)
 * **Android:** Add video recording ability for Android
 
