@@ -390,6 +390,48 @@ BOOL torchActivated = false;
     }
 }
 
+- (NSString*)generateThumbnailForVideoAtURL:(NSURL *)videoURL {
+    AVAsset *asset = [AVAsset assetWithURL:videoURL];
+    AVAssetImageGenerator *imageGenerator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
+    imageGenerator.appliesPreferredTrackTransform = YES;
+    CMTime time = CMTimeMakeWithSeconds(1.0, 600);
+    NSError *error = nil;
+    CMTime actualTime;
+        CGImageRef imageRef = [imageGenerator copyCGImageAtTime:time actualTime:&actualTime error:&error];
+
+    if (error) {
+        NSLog(@"Error generating thumbnail: %@", error.localizedDescription);
+    }
+
+    UIImage *thumbnail = [[UIImage alloc] initWithCGImage:imageRef];
+        CGImageRelease(imageRef);
+
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+    NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+
+    NSError *directoryError = nil;
+    if (![[NSFileManager defaultManager] fileExistsAtPath:libraryDirectory]) {
+        [[NSFileManager defaultManager] createDirectoryAtPath:libraryDirectory withIntermediateDirectories:YES attributes:nil error:&directoryError];
+
+        if (directoryError) {
+            NSLog(@"Error creating NoCloud directory: %@", directoryError.localizedDescription);
+        }
+    }
+
+    NSString *uniqueFileName = [NSString stringWithFormat:@"video_thumb_%@.jpg", [[NSUUID UUID] UUIDString]];
+    NSString *filePath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+
+    NSData *jpegData = UIImageJPEGRepresentation(thumbnail, 1.0);
+
+    if ([jpegData writeToFile:filePath atomically:YES]) {
+        NSLog(@"Thumbnail saved successfully at path: %@", filePath);
+    } else {
+        NSLog(@"Failed to save thumbnail.");
+    }
+    return filePath;
+}
+
+
 - (void)captureOutput:(AVCaptureFileOutput *)output didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections {
     NSDictionary *result = @{@"recording": @TRUE};
     
@@ -401,11 +443,13 @@ BOOL torchActivated = false;
 - (void)captureOutput:(AVCaptureFileOutput *)output didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray *)connections error:(NSError *)error {
     if (error) {
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     } else {
+        NSString *thumbnail = [self generateThumbnailForVideoAtURL:outputFileURL];
         NSString *filePath = [outputFileURL path];
-        NSDictionary *result = @{@"nativePath": filePath};
+        NSDictionary *result = @{@"nativePath": filePath, @"thumbnail": thumbnail};
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
