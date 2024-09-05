@@ -67,7 +67,7 @@ interface CameraCallback {
 
 interface VideoCallback {
     void onStart(Boolean recording, String nativePath);
-    void onStop(Boolean recording, String nativePath);
+    void onStop(Boolean recording, String nativePath, String thumbnail);
     void onError(String errMessage);
 }
 
@@ -324,7 +324,7 @@ public class CameraPreviewFragment extends Fragment {
                     Throwable errorCause = finalizeEvent.getCause();
                     videoCallback.onError(errorCode + " " + errorCause);
                 } else {
-                    videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
+                    videoCallback.onStop(false, Uri.fromFile(videoFile).toString(), generateVideoThumbnail(videoFile));
                     Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
                 }
                 recording = null;
@@ -337,6 +337,11 @@ public class CameraPreviewFragment extends Fragment {
             recording.stop();
             recording = null;
         }
+    }
+
+    public String generateVideoThumbnail(File videoFile) {
+        String thumbnailUri = "";
+        return thumbnailUri;
     }
 
 
