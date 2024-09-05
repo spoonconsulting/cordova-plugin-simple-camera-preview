@@ -351,6 +351,14 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
+    public Bitmap generateColoredBitmap(Size size, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(color);
+
+        return bitmap;
+    }
+
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {
         if (torchActivated) {
