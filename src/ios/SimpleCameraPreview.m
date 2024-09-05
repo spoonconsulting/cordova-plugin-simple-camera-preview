@@ -369,25 +369,24 @@ BOOL torchActivated = false;
 
 - (void)startVideoCapture:(CDVInvokedUrlCommand*)command {
     if (self.sessionManager != nil && !self.sessionManager.movieFileOutput.isRecording) {
-        NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4", [[NSUUID UUID] UUIDString]]];
-        NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+        NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.mp4",[[NSUUID UUID] UUIDString]];
+        NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+        NSURL *fileURL = [NSURL fileURLWithPath:dataPath];
         [self.sessionManager startRecordingToOutputFileURL:fileURL recordingDelegate:self];
-//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:filePath];
-//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } else {
-//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
-//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+       CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
+       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
 
 - (void)stopVideoCapture:(CDVInvokedUrlCommand*)command {
     if (self.sessionManager != nil && self.sessionManager.movieFileOutput.isRecording) {
         [self.sessionManager stopRecording];
-//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } else {
-//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
-//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+       CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
+       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
 
@@ -404,7 +403,7 @@ BOOL torchActivated = false;
     if (error) {
         NSLog(@"Error recording movie: %@", error.localizedDescription);
     } else {
-        NSString *filePath = [outputFileURL path]; // or use absoluteString if needed
+        NSString *filePath = [outputFileURL path];
         NSDictionary *result = @{@"nativePath": filePath};
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
         [pluginResult setKeepCallbackAsBool:true];
