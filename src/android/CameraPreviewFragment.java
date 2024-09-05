@@ -347,6 +347,40 @@ public class CameraPreviewFragment extends Fragment {
 
     public String generateVideoThumbnail(File videoFile) {
         String thumbnailUri = "";
+        if (getContext() == null) { return thumbnailUri; }
+
+        String filename = "video_thumb_" + UUID.randomUUID().toString() + ".jpg";
+        File thumbnail = new File(getContext().getFilesDir(), filename);
+        Bitmap bitmap = null;
+        Size size = null;
+
+        if (this.targetSize > 0) {
+            size = calculateResolution(getContext(), this.targetSize);
+        } else {
+            ResolutionInfo info = imageCapture.getResolutionInfo();
+            if (info == null) { return thumbnailUri; }
+            
+            size = info.getResolution();
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            try {
+                bitmap = ThumbnailUtils.createVideoThumbnail(videoFile, size, null);
+            } catch (IOException e) {
+                bitmap = generateColoredBitmap(size, Color.WHITE);
+            }
+        } else {
+            bitmap = generateColoredBitmap(size, Color.WHITE);
+        }
+
+        try (FileOutputStream out = new FileOutputStream(thumbnail)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
+            out.flush();
+        } catch (Exception e) {
+            return thumbnailUri;
+        }
+
+        thumbnailUri = Uri.fromFile(thumbnail).toString();
         return thumbnailUri;
     }
 
