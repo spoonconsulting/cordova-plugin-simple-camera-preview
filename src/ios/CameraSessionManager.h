@@ -12,6 +12,8 @@
 - (BOOL) deviceHasUltraWideCamera;
 - (void) deallocSession;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
+- (void) startRecordingToOutputFileURL:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate;
+- (void) stopRecording;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
 - (UIInterfaceOrientation) getOrientation;
@@ -27,4 +29,5 @@
 @property (nonatomic) AVCapturePhotoOutput *imageOutput;
 @property (nonatomic) AVCaptureVideoDataOutput *dataOutput;
 @property (nonatomic, weak) id delegate;
+@property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @end

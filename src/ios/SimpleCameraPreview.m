@@ -358,4 +358,59 @@ BOOL torchActivated = false;
     locationManager = nil;
 }
 
+- (void) initVideoCallback:(CDVInvokedUrlCommand*)command {
+    self.videoCallbackContext = command;
+    NSDictionary *data = @{ @"videoCallbackInitialized" : @true };
+    
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:data];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)startVideoCapture:(CDVInvokedUrlCommand*)command {
+    if (self.sessionManager != nil && !self.sessionManager.movieFileOutput.isRecording) {
+        NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4", [[NSUUID UUID] UUIDString]]];
+        NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+        [self.sessionManager startRecordingToOutputFileURL:fileURL recordingDelegate:self];
+//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:filePath];
+//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
+//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
+//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+}
+
+- (void)stopVideoCapture:(CDVInvokedUrlCommand*)command {
+    if (self.sessionManager != nil && self.sessionManager.movieFileOutput.isRecording) {
+        [self.sessionManager stopRecording];
+//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
+//        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
+//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+}
+
+- (void)captureOutput:(AVCaptureFileOutput *)output didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections {
+    NSLog(@"Started recording to %@", fileURL);
+    NSDictionary *result = @{@"recording": @TRUE};
+    
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
+}
+
+- (void)captureOutput:(AVCaptureFileOutput *)output didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray *)connections error:(NSError *)error {
+    if (error) {
+        NSLog(@"Error recording movie: %@", error.localizedDescription);
+    } else {
+        NSString *filePath = [outputFileURL path]; // or use absoluteString if needed
+        NSDictionary *result = @{@"nativePath": filePath};
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+        [pluginResult setKeepCallbackAsBool:true];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
+        NSLog(@"Successfully recorded movie to %@", filePath);
+    }
+}
+
 @end

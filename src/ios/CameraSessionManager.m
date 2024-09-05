@@ -10,6 +10,7 @@
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
         self.filterLock = [[NSLock alloc] init];
+        self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
     }
     return self;
 }
@@ -101,6 +102,9 @@
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
+                if ([self.session canAddOutput:self.movieFileOutput]) {
+                    [self.session addOutput:self.movieFileOutput];
+                }
                 if ([self.session canAddOutput:dataOutput]) {
                     self.dataOutput = dataOutput;
                     [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
@@ -223,6 +227,22 @@
         
         completion ? completion(cameraSwitched): NULL;
     });
+}
+
+- (void)startRecordingToOutputFileURL:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate {
+    if (!self.movieFileOutput.isRecording) {
+        AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([connection isVideoOrientationSupported]) {
+            connection.videoOrientation = [self getCurrentOrientation];
+        }
+        [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
+    }
+}
+
+- (void)stopRecording {
+    if (self.movieFileOutput.isRecording) {
+        [self.movieFileOutput stopRecording];
+    }
 }
 
 - (BOOL)deviceHasUltraWideCamera {
