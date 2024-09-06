@@ -367,10 +367,10 @@ public class CameraPreviewFragment extends Fragment {
             try {
                 bitmap = ThumbnailUtils.createVideoThumbnail(videoFile, size, null);
             } catch (IOException e) {
-                bitmap = generateColoredBitmap(new Size(500, 500), Color.WHITE);
+                bitmap = generateColoredBitmap(new Size(500, 500), Color.DKGRAY);
             }
         } else {
-            bitmap = generateColoredBitmap(new Size(500, 500), Color.WHITE);
+            bitmap = generateColoredBitmap(new Size(500, 500), Color.DKGRAY);
         }
 
         try (FileOutputStream out = new FileOutputStream(thumbnail)) {
