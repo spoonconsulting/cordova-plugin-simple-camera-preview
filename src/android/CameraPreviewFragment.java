@@ -72,7 +72,7 @@ interface CameraCallback {
 }
 
 interface VideoCallback {
-    void onStart(Boolean recording, String nativePath);
+    void onStart(Boolean recording);
     void onStop(Boolean recording, String nativePath, String thumbnail);
     void onError(String errMessage);
 }
@@ -321,7 +321,7 @@ public class CameraPreviewFragment extends Fragment {
         }
         recording = pendingRecording.start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
             if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                videoCallback.onStart(true, null);
+                videoCallback.onStart(true);
             } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
                 VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
                 handler.removeCallbacksAndMessages(null);
