@@ -135,12 +135,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         if (this.videoCallbackContext != null) {
             fragment.startVideoCapture(new VideoCallback() {
-                public void onStart(Boolean recording, String nativePath) {
+                public void onStart(Boolean recording) {
                     JSONObject data = new JSONObject();
                     if (recording) {
                         try {
                             data.put("recording", true);
-                            data.put("nativePath", null);
                         } catch (JSONException e) {
                             e.printStackTrace();
                             videoCallbackContext.error("Cannot send recording data");
@@ -153,11 +152,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     }
                 }
 
-                public void onStop(Boolean recording, String nativePath) {
+                public void onStop(Boolean recording, String nativePath, String thumbnail) {
                     JSONObject data = new JSONObject();
                     try {
                         data.put("recording", false);
                         data.put("nativePath", nativePath);
+                        data.put("thumbnail", thumbnail);
                     } catch (JSONException e) {
                         e.printStackTrace();
                         videoCallbackContext.error("Cannot send recording data");
