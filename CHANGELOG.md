@@ -1,4 +1,4 @@
-## [2.0.26](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.26...2.0.27) (2024-09-10)
+## [2.0.27](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.26...2.0.27) (2024-09-10)
 * **Android:** Generate and return thumbnail path when capturing video
 
 ## [2.0.26](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.25...2.0.26) (2024-09-04)
