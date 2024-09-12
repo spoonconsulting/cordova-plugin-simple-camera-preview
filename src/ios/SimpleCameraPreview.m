@@ -453,7 +453,6 @@ BOOL torchActivated = false;
         NSDictionary *result = @{@"nativePath": filePath, @"thumbnail": thumbnail};
 
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
-
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
