@@ -401,7 +401,7 @@ BOOL torchActivated = false;
 
     if (error) {
         NSLog(@"Error generating thumbnail: %@", error.localizedDescription);
-        return null;
+        return nil;
     }
 
     UIImage *thumbnail = [[UIImage alloc] initWithCGImage:imageRef];
@@ -416,7 +416,7 @@ BOOL torchActivated = false;
 
         if (directoryError) {
             NSLog(@"Error creating NoCloud directory: %@", directoryError.localizedDescription);
-            return null;
+            return nil;
         }
     }
 
@@ -429,7 +429,7 @@ BOOL torchActivated = false;
         NSLog(@"Thumbnail saved successfully at path: %@", filePath);
     } else {
         NSLog(@"Failed to save thumbnail.");
-        return null;
+        return nil;
     }
     return filePath;
 }
