@@ -397,14 +397,15 @@ BOOL torchActivated = false;
     CMTime time = CMTimeMakeWithSeconds(1.0, 600);
     NSError *error = nil;
     CMTime actualTime;
-        CGImageRef imageRef = [imageGenerator copyCGImageAtTime:time actualTime:&actualTime error:&error];
+    CGImageRef imageRef = [imageGenerator copyCGImageAtTime:time actualTime:&actualTime error:&error];
 
     if (error) {
         NSLog(@"Error generating thumbnail: %@", error.localizedDescription);
+        return null;
     }
 
     UIImage *thumbnail = [[UIImage alloc] initWithCGImage:imageRef];
-        CGImageRelease(imageRef);
+    CGImageRelease(imageRef);
 
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
     NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
@@ -415,6 +416,7 @@ BOOL torchActivated = false;
 
         if (directoryError) {
             NSLog(@"Error creating NoCloud directory: %@", directoryError.localizedDescription);
+            return null;
         }
     }
 
@@ -427,6 +429,7 @@ BOOL torchActivated = false;
         NSLog(@"Thumbnail saved successfully at path: %@", filePath);
     } else {
         NSLog(@"Failed to save thumbnail.");
+        return null;
     }
     return filePath;
 }
@@ -448,6 +451,7 @@ BOOL torchActivated = false;
         NSString *thumbnail = [self generateThumbnailForVideoAtURL:outputFileURL];
         NSString *filePath = [outputFileURL path];
         NSDictionary *result = @{@"nativePath": filePath, @"thumbnail": thumbnail};
+
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
 
         [pluginResult setKeepCallbackAsBool:true];
