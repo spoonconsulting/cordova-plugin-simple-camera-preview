@@ -6,9 +6,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -32,8 +36,10 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ResolutionInfo;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.PendingRecording;
 import androidx.camera.video.Quality;
 import androidx.camera.video.QualitySelector;
 import androidx.camera.video.Recorder;
@@ -53,6 +59,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,8 +72,8 @@ interface CameraCallback {
 }
 
 interface VideoCallback {
-    void onStart(Boolean recording, String nativePath);
-    void onStop(Boolean recording, String nativePath);
+    void onStart(Boolean recording);
+    void onStop(Boolean recording, String nativePath, String thumbnail);
     void onError(String errMessage);
 }
 
@@ -278,11 +285,7 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
-    public void startVideoCapture(VideoCallback videoCallback) {
-        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this.getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 200);
-        }
-
+    public void startVideoCapture(VideoCallback videoCallback, boolean recordWithAudio) {
         if (recording != null) {
             recording.stop();
             recording = null;
@@ -307,27 +310,32 @@ public class CameraPreviewFragment extends Fragment {
             }
         }, 30000);
 
-        recording = videoCapture.getOutput()
-                .prepareRecording(this.getContext().getApplicationContext(), outputOptions)
-                .withAudioEnabled()
-                .start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
-                    if (videoRecordEvent instanceof VideoRecordEvent.Start) {
-                        videoCallback.onStart(true, null);
-                    } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
-                        handler.removeCallbacksAndMessages(null);
-                        if (finalizeEvent.hasError()) {
-                            int errorCode = finalizeEvent.getError();
-                            Throwable errorCause = finalizeEvent.getCause();
-                            videoCallback.onError(errorCode + " " + errorCause);
-                        } else {
-                            videoCallback.onStop(false, Uri.fromFile(videoFile).toString());
-                            Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
-                        }
-                        recording = null;
-                    }
-                });
-
+        PendingRecording pendingRecording = videoCapture.getOutput()
+                .prepareRecording(this.getContext().getApplicationContext(), outputOptions);
+        if (recordWithAudio) {
+            try {
+                pendingRecording.withAudioEnabled();
+            } catch (SecurityException e) {
+                videoCallback.onError(e.getMessage());
+            }
+        }
+        recording = pendingRecording.start(ContextCompat.getMainExecutor(this.getContext()), videoRecordEvent -> {
+            if (videoRecordEvent instanceof VideoRecordEvent.Start) {
+                videoCallback.onStart(true);
+            } else if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                handler.removeCallbacksAndMessages(null);
+                if (finalizeEvent.hasError()) {
+                    int errorCode = finalizeEvent.getError();
+                    Throwable errorCause = finalizeEvent.getCause();
+                    videoCallback.onError(errorCode + " " + errorCause);
+                } else {
+                    videoCallback.onStop(false, Uri.fromFile(videoFile).toString(), generateVideoThumbnail(videoFile));
+                    Uri savedUri = finalizeEvent.getOutputResults().getOutputUri();
+                }
+                recording = null;
+            }
+        });
     }
 
     public void stopVideoCapture() {
@@ -337,6 +345,53 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
+    public String generateVideoThumbnail(File videoFile) {
+        String thumbnailUri = "";
+        if (getContext() == null) { return thumbnailUri; }
+
+        String filename = "video_thumb_" + UUID.randomUUID().toString() + ".jpg";
+        File thumbnail = new File(getContext().getFilesDir(), filename);
+        Bitmap bitmap = null;
+        Size size = null;
+
+        if (this.targetSize > 0) {
+            size = calculateResolution(getContext(), this.targetSize);
+        } else {
+            ResolutionInfo info = imageCapture.getResolutionInfo();
+            if (info == null) { return thumbnailUri; }
+            
+            size = info.getResolution();
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            try {
+                bitmap = ThumbnailUtils.createVideoThumbnail(videoFile, size, null);
+            } catch (IOException e) {
+                bitmap = generateColoredBitmap(new Size(500, 500), Color.DKGRAY);
+            }
+        } else {
+            bitmap = generateColoredBitmap(new Size(500, 500), Color.DKGRAY);
+        }
+
+        try (FileOutputStream out = new FileOutputStream(thumbnail)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
+            out.flush();
+        } catch (Exception e) {
+            return thumbnailUri;
+        }
+
+        thumbnailUri = Uri.fromFile(thumbnail).toString();
+        return thumbnailUri;
+    }
+
+
+    public Bitmap generateColoredBitmap(Size size, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(size.getWidth(), size.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(color);
+
+        return bitmap;
+    }
 
 
     public void takePicture(boolean useFlash, CameraCallback takePictureCallback) {

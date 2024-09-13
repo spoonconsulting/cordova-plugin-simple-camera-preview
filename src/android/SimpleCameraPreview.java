@@ -49,6 +49,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int DIRECTION_FRONT = 0;
     private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
+    private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
 
     public SimpleCameraPreview() {
@@ -78,7 +79,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return initVideoCallback(callbackContext);
 
                 case "startVideoCapture":
-                    return startVideoCapture(callbackContext);
+                    return startVideoCapture(args.getBoolean(0), callbackContext);
 
                 case "stopVideoCapture":
                     return stopVideoCapture(callbackContext);
@@ -119,20 +120,26 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean startVideoCapture(CallbackContext callbackContext) {
+    private boolean startVideoCapture(boolean recordWithAudio, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
         }
 
+        if (recordWithAudio && !PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
+            String[] permissions = {Manifest.permission.RECORD_AUDIO};
+            PermissionHelper.requestPermissions(this, VIDEO_REQUEST_CODE_PERMISSIONS, permissions);
+            callbackContext.success();
+            return true;
+        }
+
         if (this.videoCallbackContext != null) {
             fragment.startVideoCapture(new VideoCallback() {
-                public void onStart(Boolean recording, String nativePath) {
+                public void onStart(Boolean recording) {
                     JSONObject data = new JSONObject();
                     if (recording) {
                         try {
                             data.put("recording", true);
-                            data.put("nativePath", null);
                         } catch (JSONException e) {
                             e.printStackTrace();
                             videoCallbackContext.error("Cannot send recording data");
@@ -145,11 +152,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     }
                 }
 
-                public void onStop(Boolean recording, String nativePath) {
+                public void onStop(Boolean recording, String nativePath, String thumbnail) {
                     JSONObject data = new JSONObject();
                     try {
                         data.put("recording", false);
                         data.put("nativePath", nativePath);
+                        data.put("thumbnail", thumbnail);
                     } catch (JSONException e) {
                         e.printStackTrace();
                         videoCallbackContext.error("Cannot send recording data");
@@ -173,7 +181,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     pluginResult.setKeepCallback(true);
                     videoCallbackContext.sendPluginResult(pluginResult);
                 }
-            });
+            }, recordWithAudio);
         }
         callbackContext.success();
         return true;
@@ -529,6 +537,23 @@ public class SimpleCameraPreview extends CordovaPlugin {
             } else {
                 enable(this.options, this.enableCallbackContext);
             }
+        }
+        if (requestCode == VIDEO_REQUEST_CODE_PERMISSIONS && this.videoCallbackContext != null) {
+            if (grantResults.length < 1) { return; }
+
+            boolean permissionsGranted = this.permissionsGranted(grantResults);
+            JSONObject data = new JSONObject();
+            try {
+                data.put("restartVideoCaptureWithAudio", permissionsGranted);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                videoCallbackContext.error("Cannot start video");
+                return;
+            }
+            
+            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+            result.setKeepCallback(true);
+            this.videoCallbackContext.sendPluginResult(result);
         }
     }
     
