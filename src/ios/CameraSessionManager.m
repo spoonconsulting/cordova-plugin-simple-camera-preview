@@ -239,7 +239,7 @@
     });
 }
 
-- (void)startRecordingToOutputFileURL:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate {
+- (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate {
     if (!self.movieFileOutput.isRecording) {
         AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([connection isVideoOrientationSupported]) {
