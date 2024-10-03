@@ -10,6 +10,7 @@
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
         self.filterLock = [[NSLock alloc] init];
+        self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
     }
     return self;
 }
@@ -101,6 +102,19 @@
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
+                
+                AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+                NSError *audioError = nil;
+                AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
+                if (audioInput && [self.session canAddInput:audioInput]) {
+                    [self.session addInput:audioInput];
+                } else {
+                    NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                }
+
+                if ([self.session canAddOutput:self.movieFileOutput]) {
+                    [self.session addOutput:self.movieFileOutput];
+                }
                 if ([self.session canAddOutput:dataOutput]) {
                     self.dataOutput = dataOutput;
                     [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
@@ -223,6 +237,22 @@
         
         completion ? completion(cameraSwitched): NULL;
     });
+}
+
+- (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate {
+    if (!self.movieFileOutput.isRecording) {
+        AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([connection isVideoOrientationSupported]) {
+            connection.videoOrientation = [self getCurrentOrientation];
+        }
+        [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
+    }
+}
+
+- (void)stopRecording {
+    if (self.movieFileOutput.isRecording) {
+        [self.movieFileOutput stopRecording];
+    }
 }
 
 - (BOOL)deviceHasUltraWideCamera {

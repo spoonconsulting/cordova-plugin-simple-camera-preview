@@ -5,7 +5,7 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
-@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate>{
+@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
 }
@@ -19,6 +19,7 @@
 - (void) switchCameraTo: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasUltraWideCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;
+@property (nonatomic) CDVInvokedUrlCommand *videoCallbackContext;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
