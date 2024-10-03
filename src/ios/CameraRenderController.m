@@ -45,6 +45,7 @@
     [super viewWillAppear:animated];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAppWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
     
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
@@ -55,6 +56,13 @@
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation: orientation]];
     });
 }
+
+- (void)onAppWillResignActive {
+    if (!self.sessionManager.session.running){
+      [self.sessionManager stopRecording];
+    }
+}
+
 
 - (void) appplicationIsActive:(NSNotification *)notification {
     dispatch_async(self.sessionManager.sessionQueue, ^{
