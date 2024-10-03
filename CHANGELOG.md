@@ -1,5 +1,5 @@
 ## [2.0.28](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.27...2.0.28) (2024-09-10)
-* **Android:** Add video ability for iOS
+* **iOS:** Add video ability for iOS
 
 ## [2.0.27](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.26...2.0.27) (2024-09-10)
 * **Android:** Generate and return thumbnail path when capturing video
