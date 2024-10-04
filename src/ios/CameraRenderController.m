@@ -58,7 +58,7 @@
 }
 
 - (void)onAppWillResignActive {
-    if (!self.sessionManager.session.running){
+    if (self.sessionManager.session.running){
       [self.sessionManager stopRecording];
     }
 }
