@@ -374,7 +374,7 @@ BOOL torchActivated = false;
         NSString* uniqueFileName = [NSString stringWithFormat:@"%@.mp4",[[NSUUID UUID] UUIDString]];
         NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
         NSURL *fileURL = [NSURL fileURLWithPath:dataPath];
-        [self.sessionManager startRecordingToOutputFileURL:fileURL recordingDelegate:self];
+        [self.sessionManager startRecording:fileURL recordingDelegate:self];
     } else {
        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
