@@ -245,7 +245,7 @@
         if ([connection isVideoOrientationSupported]) {
             connection.videoOrientation = [self getCurrentOrientation];
         }
-        [self.movieFileOutput startRecordingL:fileURL recordingDelegate:recordingDelegate];
+        [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
     }
 }
 
