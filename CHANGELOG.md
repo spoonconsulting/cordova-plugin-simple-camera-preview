@@ -1,3 +1,6 @@
+## [2.0.29](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.28...2.0.29) (2024-09-10)
+* **iOS:** StartRecording
+
 ## [2.0.28](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.27...2.0.28) (2024-09-10)
 * **iOS:** Add video ability for iOS
 
