@@ -1,3 +1,6 @@
+## [2.0.30](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.29...2.0.30) (2024-09-10)
+* **iOS:** Pause video on when app is in background
+
 ## [2.0.29](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.28...2.0.29) (2024-09-10)
 * **iOS:** StartRecording
 
