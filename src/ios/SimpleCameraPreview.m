@@ -367,26 +367,37 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+NSTimer *captureTimer;
 - (void)startVideoCapture:(CDVInvokedUrlCommand*)command {
-    if (self.sessionManager != nil && !self.sessionManager.movieFileOutput.isRecording) {
+    if (self.sessionManager == nil || self.sessionManager.movieFileOutput.isRecording) {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
         NSString* uniqueFileName = [NSString stringWithFormat:@"%@.mp4",[[NSUUID UUID] UUIDString]];
         NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
         NSURL *fileURL = [NSURL fileURLWithPath:dataPath];
+
         [self.sessionManager startRecording:fileURL recordingDelegate:self];
-    } else {
-       CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
-       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        captureTimer = [NSTimer scheduledTimerWithTimeInterval:30.0
+                                                        target:self
+                                                      selector:@selector(stopVideoCapture:)
+                                                      userInfo:nil
+                                                       repeats:NO];
     }
 }
 
 - (void)stopVideoCapture:(CDVInvokedUrlCommand*)command {
-    if (self.sessionManager != nil && self.sessionManager.movieFileOutput.isRecording) {
-        [self.sessionManager stopRecording];
+    if (self.sessionManager == nil || !self.sessionManager.movieFileOutput.isRecording) {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } else {
-       CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
-       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self.sessionManager stopRecording];
+        if (captureTimer != nil) {
+            [captureTimer invalidate];
+            captureTimer = nil;
+        }
     }
 }
 
