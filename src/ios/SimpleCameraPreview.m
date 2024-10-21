@@ -400,19 +400,6 @@ NSTimer *captureTimer;
     }
 }
 
-- (void)stopVideoCapture:(CDVInvokedUrlCommand*)command {
-    if (self.sessionManager == nil || !self.sessionManager.movieFileOutput.isRecording) {
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or not recording"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    } else {
-        [self.sessionManager stopRecording];
-        if (captureTimer != nil) {
-            [captureTimer invalidate];
-            captureTimer = nil;
-        }
-    }
-}
-
 - (NSString*)generateThumbnailForVideoAtURL:(NSURL *)videoURL {
     AVAsset *asset = [AVAsset assetWithURL:videoURL];
     AVAssetImageGenerator *imageGenerator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
