@@ -246,12 +246,21 @@
             connection.videoOrientation = [self getCurrentOrientation];
         }
         [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
+        _videoTimer = [NSTimer scheduledTimerWithTimeInterval:30.0
+                                        target:self
+                                        selector:@selector(stopRecording)
+                                        userInfo:nil
+                                        repeats:NO];
     }
 }
 
 - (void)stopRecording {
     if (self.movieFileOutput.isRecording) {
         [self.movieFileOutput stopRecording];
+    }
+    if (_videoTimer != nil) {
+        [_videoTimer invalidate];
+        _videoTimer = nil;
     }
 }
 
