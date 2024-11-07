@@ -239,14 +239,16 @@
     });
 }
 
-- (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate {
+- (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDurationMs {
     if (!self.movieFileOutput.isRecording) {
         AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([connection isVideoOrientationSupported]) {
             connection.videoOrientation = [self getCurrentOrientation];
         }
         [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
-        _videoTimer = [NSTimer scheduledTimerWithTimeInterval:30.0
+        
+        NSInteger videoDurationInSec = videoDurationMs / 1000;
+        _videoTimer = [NSTimer scheduledTimerWithTimeInterval:videoDurationInSec
                                         target:self
                                         selector:@selector(stopRecording)
                                         userInfo:nil

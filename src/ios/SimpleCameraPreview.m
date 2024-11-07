@@ -368,13 +368,16 @@ BOOL torchActivated = false;
 }
 
 - (void)startVideoCapture:(CDVInvokedUrlCommand*)command {
+    NSDictionary* config = command.arguments[0];
+    NSInteger videoDuration = ((NSNumber*)config[@"videoDurationMs"]).intValue;
+
     if (self.sessionManager != nil && !self.sessionManager.movieFileOutput.isRecording) {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
         NSString* uniqueFileName = [NSString stringWithFormat:@"%@.mp4",[[NSUUID UUID] UUIDString]];
         NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
         NSURL *fileURL = [NSURL fileURLWithPath:dataPath];
-        [self.sessionManager startRecording:fileURL recordingDelegate:self];
+        [self.sessionManager startRecording:fileURL recordingDelegate:self videoDurationMs:videoDuration];
     } else {
        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not initialized or already recording"];
        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
