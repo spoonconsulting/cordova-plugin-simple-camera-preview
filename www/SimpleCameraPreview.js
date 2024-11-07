@@ -20,7 +20,8 @@ SimpleCameraPreview.startVideoCapture = function (options, onSuccess, onError) {
   
   options = options || {};
   options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
-  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture", [options.recordWithAudio]);
+  options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture", [options]);
 };
 
 SimpleCameraPreview.stopVideoCapture = function (onSuccess, onError) {
