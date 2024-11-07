@@ -133,7 +133,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             throw new RuntimeException(e);
         }
 
-        int videoDuration = 3000;
+        int videoDuration;
         try {
             videoDuration = options.getInt("videoDurationMs");
         } catch (JSONException e) {
