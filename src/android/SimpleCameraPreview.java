@@ -126,7 +126,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        boolean recordWithAudio = false;
+        boolean recordWithAudio;
         try {
             recordWithAudio = options.getBoolean("recordWithAudio");
         } catch (JSONException e) {
