@@ -79,7 +79,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return initVideoCallback(callbackContext);
 
                 case "startVideoCapture":
-                    return startVideoCapture(args.getBoolean(0), callbackContext);
+                    return startVideoCapture((JSONObject) args.get(0), callbackContext);
 
                 case "stopVideoCapture":
                     return stopVideoCapture(callbackContext);
@@ -120,10 +120,26 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean startVideoCapture(boolean recordWithAudio, CallbackContext callbackContext) {
+    private boolean startVideoCapture(JSONObject options, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
             return true;
+        }
+
+        boolean recordWithAudio;
+        try {
+            recordWithAudio = options.getBoolean("recordWithAudio");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            recordWithAudio = false;
+        }
+
+        int videoDuration;
+        try {
+            videoDuration = options.getInt("videoDurationMs");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            videoDuration = 3000;
         }
 
         if (recordWithAudio && !PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
@@ -181,7 +197,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     pluginResult.setKeepCallback(true);
                     videoCallbackContext.sendPluginResult(pluginResult);
                 }
-            }, recordWithAudio);
+            }, recordWithAudio, videoDuration);
         }
         callbackContext.success();
         return true;

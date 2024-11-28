@@ -285,7 +285,7 @@ public class CameraPreviewFragment extends Fragment {
         hasFlashCallback.onResult(camera.getCameraInfo().hasFlashUnit());
     }
 
-    public void startVideoCapture(VideoCallback videoCallback, boolean recordWithAudio) {
+    public void startVideoCapture(VideoCallback videoCallback, boolean recordWithAudio, int videoDuration) {
         if (recording != null) {
             recording.stop();
             recording = null;
@@ -308,7 +308,7 @@ public class CameraPreviewFragment extends Fragment {
             public void run() {
                 stopVideoCapture();
             }
-        }, 30000);
+        }, videoDuration);
 
         PendingRecording pendingRecording = videoCapture.getOutput()
                 .prepareRecording(this.getContext().getApplicationContext(), outputOptions);
