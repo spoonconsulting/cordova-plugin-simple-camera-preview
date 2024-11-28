@@ -1,3 +1,7 @@
+## [2.0.32](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.31...2.0.32) (2024-11-28)
+* **Android:** Use videoDuration parameter to configure duration of a video
+* **iOS:** Use videoDuration parameter to configure duration of a video
+
 ## [2.0.31](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.30...2.0.31) (2024-11-04)
 * **iOS:** Automatic stop video after 30s
 
