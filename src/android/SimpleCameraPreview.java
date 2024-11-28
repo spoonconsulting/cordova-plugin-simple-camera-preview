@@ -130,14 +130,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         try {
             recordWithAudio = options.getBoolean("recordWithAudio");
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            recordWithAudio = false;
         }
 
         int videoDuration;
         try {
             videoDuration = options.getInt("videoDurationMs");
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            videoDuration = 3000;
         }
 
         if (recordWithAudio && !PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
