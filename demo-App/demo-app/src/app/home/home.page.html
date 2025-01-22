@@ -1,0 +1,15 @@
+<app-camera (toastMessageEmitter)="handleToastMessage($event)"></app-camera>
+<ion-content [fullscreen]="true">
+  <ion-toast
+    [isOpen]="isToastOpen"
+    [message]="toastMessage"
+    [duration]="5000"
+    (didDismiss)="setToastOpen(false)"
+    [position]="'top'" 
+  ></ion-toast>
+  <div class="button-container">
+    <ion-button id="capturePicture" aria-label="Favorite" shape="round" class="capture-button large-button">
+      <ion-icon name="camera" size="large"></ion-icon>
+    </ion-button>
+  </div>
+</ion-content>
