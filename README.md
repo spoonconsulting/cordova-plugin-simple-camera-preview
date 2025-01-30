@@ -20,6 +20,44 @@ html, body, .ion-app, .ion-content {
 }
 ```
 
+for newer version ionic use the following:
+```css
+html, body, .ion-app, .ion-content {
+ --background: transparent;
+}
+
+```
+
+Make sure to set up the camera size as follows:
+
+```javascript
+const cameraSize = this.getCameraSize();
+
+getCameraSize() {
+    let height;
+    let width;
+    const ratio = 4 / 3;
+    const min = Math.min(window.innerWidth, window.innerHeight);
+
+    [width, height] = [min, Math.round(min * ratio)];
+    if (this.isLandscape()) {
+    [width, height] = [height, width];
+    }
+
+    return {
+    x: (window.innerWidth - width) / 2,
+    y: (window.innerHeight - height) / 2,
+    width,
+    height,
+    };    
+}
+
+isLandscape() {
+    return Math.abs(window.orientation % 180) === 90;
+}
+
+```
+
 
 ### Android
 Uses Google's CameraX API
@@ -34,12 +72,14 @@ Get the ratio for the camera preview instance (4:3, 16:9, ....).
 
 ```javascript
 const params = {
-  targetSize: 1024,
-}
+    targetSize: 1024,
+    ...cameraSize, // use camera size 
+};
 
 SimpleCameraPreview.setOptions(params, (ratio) => {
   console.log(ratio);
 });
+
 ```
 
 ### enable(options, successCallback, errorCallback)
@@ -51,6 +91,7 @@ Starts the camera preview instance.
 const params = {
   targetSize: 1024,
   direction: 'back', // Camera direction (front or back). Default is back.
+  ...cameraSize,
 }
 
 SimpleCameraPreview.enable(params, () => {
