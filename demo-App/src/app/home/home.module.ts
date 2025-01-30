@@ -6,8 +6,6 @@ import { HomePage } from './home.page';
 import { HomePageRoutingModule } from './home-routing.module';
 import { CameraComponent } from "../camera/camera.component";
 
-
-
 @NgModule({
   imports: [
     CommonModule,

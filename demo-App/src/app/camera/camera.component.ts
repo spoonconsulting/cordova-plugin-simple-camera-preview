@@ -107,7 +107,3 @@ export class CameraComponent  implements OnInit {
       return Math.abs(window.orientation % 180) === 90;
     }
 }
-
-
-
-
