@@ -157,64 +157,39 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
-    if (![self deviceHasUltraWideCamera]) {
-        if (completion) {
-            completion(NO);
-        }
+- (void) switchCameraTo:(CDVInvokedUrlCommand*)command {
+    if (command.arguments.count == 0) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No options provided"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    NSString* cameraMode = cameraOptions[@"lens"];
-    NSString* cameraDirection = cameraOptions[@"direction"];
     
-    dispatch_async(self.sessionQueue, ^{
-        BOOL cameraSwitched = FALSE;
-        if ([cameraDirection isEqual:@"front"]) {
-            self.defaultCamera = AVCaptureDevicePositionFront;
-            cameraSwitched = YES;
-        } else {
-             self.defaultCamera = AVCaptureDevicePositionBack;
-            if (@available(iOS 13.0, *)) {
-                AVCaptureDevice *selectedCamera;
-                
-                if ([cameraMode isEqualToString:@"wide"]) {
-                    selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
-                } else {
-                    selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                }
-                if (selectedCamera) {
-                    // Remove the current input
-                    [self.session removeInput:self.videoDeviceInput];
-                    
-                    // Create a new input with the ultra-wide camera
-                    NSError *error = nil;
-                    AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
-                    
-                    if (!error) {
-                        // Add the new input to the session
-                        if ([self.session canAddInput:ultraWideVideoDeviceInput]) {
-                            [self.session addInput:ultraWideVideoDeviceInput];
-                            self.videoDeviceInput = ultraWideVideoDeviceInput;
-                            __block AVCaptureVideoOrientation orientation;
-                            dispatch_sync(dispatch_get_main_queue(), ^{
-                                orientation = [self getCurrentOrientation];
-                            });
-                            [self updateOrientation:orientation];
-                            self.device = selectedCamera;
-                            cameraSwitched = TRUE;
-                        } else {
-                            NSLog(@"Failed to add ultra-wide input to session");
-                        }
-                    } else {
-                        NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
-                    }
-                } else {
-                    NSLog(@"Ultra-wide camera not found");
-                }
+    NSDictionary *options = [command.arguments objectAtIndex:0];
+    NSLog(@"Received options: %@", options);
+    
+    NSString *cameraLens = options[@"lens"];
+    if (cameraLens == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Missing device parameter"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    }
+    
+    if (self.sessionManager != nil) {
+        [self.sessionManager switchCameraTo:options completion:^(BOOL success) {
+            if (success) {
+                NSLog(@"Camera switched successfully");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                NSLog(@"Failed to switch camera");
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
-        }
-        completion ? completion(cameraSwitched): NULL;
-    });
+        }];
+    } else {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is closed, cannot switch camera"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
 }
 
 - (void) deviceHasUltraWideCamera:(CDVInvokedUrlCommand *)command{
