@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -478,6 +479,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
+        Log.d("JATINNNN 3", String.valueOf(options));
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;
@@ -489,7 +491,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         });
         return true;
     }
-
 
 
     public void requestPermissions() {
