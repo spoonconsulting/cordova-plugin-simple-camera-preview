@@ -91,7 +91,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return deviceHasUltraWideCamera(callbackContext);
 
                 case "switchCameraTo":
-                    return switchCameraTo(args.getString(0), callbackContext);
+                    return switchCameraTo((JSONObject) args.get(0), callbackContext);
                 default:
                     break;
             }
@@ -477,13 +477,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean switchCameraTo(String lens, int direction, CallbackContext callbackContext) {
+    private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;
         }
 
-        fragment.switchCameraTo(lens, direction, (boolean result) -> {
+        fragment.switchCameraTo(options, (boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });

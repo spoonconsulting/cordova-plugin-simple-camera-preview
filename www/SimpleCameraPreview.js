@@ -75,7 +75,7 @@ SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
   options = options || {};
   options.lens = options.lens || "default";
   options.direction = options.direction || "back";
-  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options.lens, options.direction]);
+  exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options]);
 };
 
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {

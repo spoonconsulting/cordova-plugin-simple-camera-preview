@@ -473,7 +473,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
-    public void switchCameraTo(String lens, int direction, CameraSwitchedCallback cameraSwitchedCallback) {
+    public void switchCameraTo(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> {
             ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
@@ -487,7 +487,7 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
 
-            setUpCamera(lens, direction, cameraProvider);
+            setUpCamera(options, cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
@@ -495,10 +495,12 @@ public class CameraPreviewFragment extends Fragment {
     }
     
   @SuppressLint("RestrictedApi")
-    public void setUpCamera(String lens, int direction, ProcessCameraProvider cameraProvider) {
+    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider) {
         CameraSelector cameraSelector;
+        String cameraDirection = options.get("direction");
+        String lens = options.get("lens");
 
-        if (direction == CameraSelector.LENS_FACING_FRONT) {
+        if (cameraDirection == CameraSelector.LENS_FACING_FRONT) {
             // Ignore the lens option when using the front camera
             cameraSelector = new CameraSelector.Builder()
                     .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
