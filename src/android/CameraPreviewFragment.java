@@ -473,7 +473,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
-    public void switchCameraTo(String device, CameraSwitchedCallback cameraSwitchedCallback) {
+    public void switchCameraTo(String lens, int direction, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> {
             ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
@@ -487,17 +487,24 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
 
-            setUpCamera(device,cameraProvider);
+            setUpCamera(lens, direction, cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
         });
     }
     
-    @SuppressLint("RestrictedApi")
-    public void setUpCamera(String lens, ProcessCameraProvider cameraProvider) {
+  @SuppressLint("RestrictedApi")
+    public void setUpCamera(String lens, int direction, ProcessCameraProvider cameraProvider) {
         CameraSelector cameraSelector;
-        if (lens != null && lens.equals("wide")) {
+
+        if (direction == CameraSelector.LENS_FACING_FRONT) {
+            // Ignore the lens option when using the front camera
+            cameraSelector = new CameraSelector.Builder()
+                    .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
+                    .build();
+        } else if (lens != null && lens.equals("wide")) {
+            // Handle the wide lens selection for back camera
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
@@ -510,13 +517,17 @@ public class CameraPreviewFragment extends Fragment {
                             }
                         }
 
-                        Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
-                            Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                            Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                            return Float.compare(focalLength1, focalLength2);
-                        });
+                        if (!backCameras.isEmpty()) {
+                            Camera2CameraInfoImpl selectedCamera = Collections.min(
+                                    backCameras,
+                                    (o1, o2) -> {
+                                        Float focalLength1 = o1.getCameraCharacteristicsCompat()
+                                                .get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                                        Float focalLength2 = o2.getCameraCharacteristicsCompat()
+                                                .get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                                        return Float.compare(focalLength1, focalLength2);
+                                    });
 
-                        if (selectedCamera != null) {
                             return Collections.singletonList(selectedCamera);
                         } else {
                             return cameraInfos;
@@ -524,8 +535,9 @@ public class CameraPreviewFragment extends Fragment {
                     })
                     .build();
         } else {
+            // Default to back camera without wide lens
             cameraSelector = new CameraSelector.Builder()
-                    .requireLensFacing(direction)
+                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                     .build();
         }
 
@@ -539,11 +551,11 @@ public class CameraPreviewFragment extends Fragment {
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
 
-
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
                 .setTargetResolution(targetResolution)
                 .build();
+
         cameraProvider.unbindAll();
         try {
             camera = cameraProvider.bindToLifecycle(
@@ -554,10 +566,8 @@ public class CameraPreviewFragment extends Fragment {
                     videoCapture
             );
         } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
             e.printStackTrace();
-            imageCapture = new ImageCapture.Builder()
-                    .build();
+            imageCapture = new ImageCapture.Builder().build();
             camera = cameraProvider.bindToLifecycle(
                     getActivity(),
                     cameraSelector,
@@ -567,6 +577,8 @@ public class CameraPreviewFragment extends Fragment {
             );
         }
     }
+
+
 
     @Override
     public void onPause() {

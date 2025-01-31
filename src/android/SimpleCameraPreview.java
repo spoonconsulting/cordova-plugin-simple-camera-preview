@@ -477,18 +477,19 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private boolean switchCameraTo(String device, CallbackContext callbackContext) {
+    private boolean switchCameraTo(String lens, int direction, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;
         }
 
-        fragment.switchCameraTo(device, (boolean result) -> {
+        fragment.switchCameraTo(lens, direction, (boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });
         return true;
     }
+
 
 
     public void requestPermissions() {
