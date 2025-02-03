@@ -479,7 +479,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
-        Log.d("JATINNNN 3", String.valueOf(options));
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;

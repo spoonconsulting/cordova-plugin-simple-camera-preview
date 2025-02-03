@@ -519,19 +519,19 @@ public class CameraPreviewFragment extends Fragment {
     public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider) throws JSONException {
         CameraSelector cameraSelector;
         String lens = null;
-        String toDirection = null;
+        String cameraDirection = null;
         try {
             lens = options.getString("lens");
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
         try {
-            toDirection = options.getString("direction");
+            cameraDirection = options.getString("direction");
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
 
-        if (toDirection != null && toDirection.equals("front")) {
+        if (cameraDirection != null && cameraDirection.equals("front")) {
             direction = 0;
         } else {
             direction = 1;
