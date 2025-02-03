@@ -190,17 +190,10 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("RestrictedApi")
-    public void deviceHasUltraWideCamera(String cameraDirection, HasUltraWideCameraCallback hasUltraWideCameraCallback) {
+    public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
-        Log.d("Jatin", "direction:"+ cameraDirection);
-
-        if (cameraDirection != null && cameraDirection.equals("front")) {
-            direction = 0;
-        } else {
-            direction = 1;
-        }
-
+        
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
@@ -217,7 +210,7 @@ public class CameraPreviewFragment extends Fragment {
         for (CameraInfo cameraInfo : cameraInfos) {
             if (cameraInfo instanceof Camera2CameraInfoImpl) {
                 Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
-                if (camera2CameraInfo.getLensFacing() == direction) {
+                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
                     backCameras.add(camera2CameraInfo);
                 }
             }

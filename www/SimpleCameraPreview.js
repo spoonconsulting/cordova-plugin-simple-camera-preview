@@ -82,8 +82,8 @@ SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
 };
 
-SimpleCameraPreview.deviceHasUltraWideCamera = function (cameraDirection, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", [cameraDirection]);
+SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
 

@@ -419,8 +419,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean deviceHasUltraWideCamera(String direction, CallbackContext callbackContext) {
-        fragment.deviceHasUltraWideCamera(direction,(boolean result) -> {
+    private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        fragment.deviceHasUltraWideCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });
