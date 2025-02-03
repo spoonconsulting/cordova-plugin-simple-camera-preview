@@ -89,7 +89,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     return deviceHasFlash(callbackContext);
 
                 case "deviceHasUltraWideCamera":
-                    return deviceHasUltraWideCamera(args.getString(0),callbackContext);
+                    return deviceHasUltraWideCamera(callbackContext);
 
                 case "switchCameraTo":
                     return switchCameraTo((JSONObject) args.get(0), callbackContext);
