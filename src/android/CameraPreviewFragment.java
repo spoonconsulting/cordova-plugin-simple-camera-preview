@@ -190,7 +190,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("RestrictedApi")
-    pubpublic void deviceHasUltraWideCamera(String cameraDirection, HasUltraWideCameraCallback hasUltraWideCameraCallback) {
+    public void deviceHasUltraWideCamera(String cameraDirection, HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
         Log.d("Jatin", "direction:"+ cameraDirection);
