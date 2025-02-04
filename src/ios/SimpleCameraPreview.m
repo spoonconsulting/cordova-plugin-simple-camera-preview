@@ -165,8 +165,6 @@ BOOL torchActivated = false;
     }
     
     NSDictionary *options = [command.arguments objectAtIndex:0];
-    NSLog(@"Received options: %@", options);
-    
     NSString *cameraLens = options[@"lens"];
     if (cameraLens == nil) {
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Missing device parameter"];

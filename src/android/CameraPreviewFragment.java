@@ -18,7 +18,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.util.Size;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -26,7 +25,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl;
@@ -49,15 +47,11 @@ import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
-
 import com.google.common.util.concurrent.ListenableFuture;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -193,7 +187,6 @@ public class CameraPreviewFragment extends Fragment {
     public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
-        
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {

@@ -86,5 +86,4 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
-
 module.exports = SimpleCameraPreview;

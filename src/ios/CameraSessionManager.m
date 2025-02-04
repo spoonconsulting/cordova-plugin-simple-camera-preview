@@ -247,7 +247,6 @@
     });
 }
 
-
 - (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDurationMs {
     if (!self.movieFileOutput.isRecording) {
         AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
