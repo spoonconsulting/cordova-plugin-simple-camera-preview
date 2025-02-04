@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.util.Size;
 import android.view.Display;
 import android.view.LayoutInflater;
