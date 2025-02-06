@@ -162,18 +162,19 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        JSONObject options = new JSONObject();
+        JSONObject option = new JSONObject();
         try {
-            options.put("lens", lens);
+            option.put("lens", lens);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            options.put("direction", direction);
+            option.put("direction", direction);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+
 
         setUpCamera(option,cameraProvider);
 
@@ -498,6 +499,11 @@ public class CameraPreviewFragment extends Fragment {
                 cameraSwitchedCallback.onSwitch(false);
                 return;
             }
+            try {
+                direction = options.getString("direction").equals("front") ? 0 : 1;
+            } catch (JSONException e) {
+                direction = 1;
+            }
             setUpCamera(options,cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
@@ -513,11 +519,6 @@ public class CameraPreviewFragment extends Fragment {
             lens = options.getString("lens");
         } catch (JSONException e) {
             lens = "default";
-        }
-        try {
-            direction = options.getString("direction").equals("front") ? 0 : 1;
-        } catch (JSONException e) {
-            direction = 1;
         }
 
         if (lens != null && lens.equals("wide")) {
