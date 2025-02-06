@@ -145,13 +145,13 @@ public class CameraPreviewFragment extends Fragment {
         containerView.addView(viewFinder);
         try {
             startCamera();
-        } catch (JSONException e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
         return containerView;
     }
 
-    public void startCamera() throws JSONException {
+    public void startCamera() throws RuntimeException {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
         try {
@@ -162,15 +162,15 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        JSONObject option = new JSONObject();
+        JSONObject options = new JSONObject();
         try {
-            option.put("lens", lens);
+            options.put("lens", lens);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            option.put("direction", direction);
+            options.put("direction", direction);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -188,6 +188,7 @@ public class CameraPreviewFragment extends Fragment {
     public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
+        
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
@@ -497,12 +498,7 @@ public class CameraPreviewFragment extends Fragment {
                 cameraSwitchedCallback.onSwitch(false);
                 return;
             }
-
-            try {
-                setUpCamera(options,cameraProvider);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
+            setUpCamera(options,cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
@@ -510,26 +506,20 @@ public class CameraPreviewFragment extends Fragment {
     }
     
     @SuppressLint("RestrictedApi")
-    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider) throws JSONException {
+    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
         CameraSelector cameraSelector;
         String lens = null;
-        String cameraDirection = null;
         try {
             lens = options.getString("lens");
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            lens = "default";
         }
         try {
-            cameraDirection = options.getString("direction");
+            direction = options.getString("direction").equals("front") ? 0 : 1;
         } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (cameraDirection != null && cameraDirection.equals("front")) {
-            direction = 0;
-        } else {
             direction = 1;
         }
+
         if (lens != null && lens.equals("wide")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
