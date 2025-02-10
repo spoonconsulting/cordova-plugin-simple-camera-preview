@@ -49,7 +49,7 @@
                 BOOL success = TRUE;
                 
                 NSLog(@"defaultCamera: %@", defaultCamera);
-                if ([defaultCamera isEqual: @"front"]) {
+               if ([defaultCamera isEqual: @"front"] || [options[@"direction"] isEqual: @"front"]) {
                     self.defaultCamera = AVCaptureDevicePositionFront;
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;
@@ -187,14 +187,22 @@
     }
 }
 
-- (void)switchCameraTo:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
+- (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
     if (![self deviceHasUltraWideCamera]) {
         if (completion) {
             completion(NO);
         }
         return;
     }
-
+    NSString* cameraMode = cameraOptions[@"lens"];
+    NSString* cameraDirection = cameraOptions[@"direction"];
+    
+    if ([cameraDirection isEqual:@"front"]) {
+        self.defaultCamera = AVCaptureDevicePositionFront;
+    } else {
+        self.defaultCamera = AVCaptureDevicePositionBack;
+    }
+    
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {

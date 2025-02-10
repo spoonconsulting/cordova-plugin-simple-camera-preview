@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl;
@@ -49,15 +48,11 @@ import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
-
 import com.google.common.util.concurrent.ListenableFuture;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -148,11 +143,15 @@ public class CameraPreviewFragment extends Fragment {
         viewFinder = new PreviewView(getActivity());
         viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(viewFinder);
-        startCamera();
+        try {
+            startCamera();
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
         return containerView;
     }
 
-    public void startCamera() {
+    public void startCamera() throws RuntimeException {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
         try {
@@ -163,7 +162,21 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        setUpCamera(lens,cameraProvider);
+        JSONObject option = new JSONObject();
+        try {
+            option.put("lens", lens);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            option.put("direction", direction);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        setUpCamera(option,cameraProvider);
 
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
@@ -176,7 +189,7 @@ public class CameraPreviewFragment extends Fragment {
     public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
-
+        
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
@@ -473,7 +486,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
 
-    public void switchCameraTo(String device, CameraSwitchedCallback cameraSwitchedCallback) {
+    public void switchCameraTo(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> {
             ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
@@ -486,8 +499,12 @@ public class CameraPreviewFragment extends Fragment {
                 cameraSwitchedCallback.onSwitch(false);
                 return;
             }
-
-            setUpCamera(device,cameraProvider);
+            try {
+                direction = options.getString("direction").equals("front") ? 0 : 1;
+            } catch (JSONException e) {
+                direction = 1;
+            }
+            setUpCamera(options,cameraProvider);
 
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
@@ -495,8 +512,15 @@ public class CameraPreviewFragment extends Fragment {
     }
     
     @SuppressLint("RestrictedApi")
-    public void setUpCamera(String lens, ProcessCameraProvider cameraProvider) {
+    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
         CameraSelector cameraSelector;
+        String lens = null;
+        try {
+            lens = options.getString("lens");
+        } catch (JSONException e) {
+            lens = "default";
+        }
+
         if (lens != null && lens.equals("wide")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
@@ -538,7 +562,6 @@ public class CameraPreviewFragment extends Fragment {
                 .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
-
 
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
