@@ -49,7 +49,7 @@
                 BOOL success = TRUE;
                 
                 NSLog(@"defaultCamera: %@", defaultCamera);
-                if ([defaultCamera isEqual: @"front"]) {
+               if ([defaultCamera isEqual: @"front"] || [options[@"direction"] isEqual: @"front"]) {
                     self.defaultCamera = AVCaptureDevicePositionFront;
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;

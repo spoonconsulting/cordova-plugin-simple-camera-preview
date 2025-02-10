@@ -78,6 +78,10 @@ BOOL torchActivated = false;
             if (captureDevice && [captureDevice length] > 0) {
                 [setupSessionOptions setValue:captureDevice forKey:@"lens"];
             }
+            NSString *direction = config[@"direction"];
+            if (direction && [direction length] > 0) {
+                [setupSessionOptions setValue:direction forKey:@"direction"];
+            }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
