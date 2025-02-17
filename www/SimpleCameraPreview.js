@@ -53,8 +53,8 @@ SimpleCameraPreview.enable = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
-SimpleCameraPreview.enableDualMode = function ( onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", []);
+SimpleCameraPreview.enableDualMode = function (options, onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", [options]);
 };
 
 SimpleCameraPreview.disable = function (onSuccess, onError) {
@@ -88,5 +88,6 @@ SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
 SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
+
 
 module.exports = SimpleCameraPreview;
