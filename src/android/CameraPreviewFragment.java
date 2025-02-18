@@ -143,12 +143,9 @@ public class CameraPreviewFragment extends Fragment {
         viewFinder = new PreviewView(getActivity());
         viewFinder.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         containerView.addView(viewFinder);
-        try {
-            startCamera();
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
+        startCamera();
         return containerView;
+        
     }
 
     public void startCamera() throws RuntimeException {
@@ -166,18 +163,16 @@ public class CameraPreviewFragment extends Fragment {
         try {
             option.put("lens", lens);
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            startCameraCallback.onCameraStarted(new Exception("Unable to set lens option"));
         }
 
         try {
             option.put("direction", direction);
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+             startCameraCallback.onCameraStarted(new Exception("Unable to set Direction"));
         }
 
-
         setUpCamera(option,cameraProvider);
-
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
@@ -500,9 +495,9 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
             try {
-                direction = options.getString("direction").equals("front") ? 0 : 1;
+                direction = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
             } catch (JSONException e) {
-                direction = 1;
+                direction = CameraSelector.LENS_FACING_BACK;
             }
             setUpCamera(options,cameraProvider);
 
