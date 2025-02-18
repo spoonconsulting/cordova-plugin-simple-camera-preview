@@ -197,12 +197,8 @@
     NSString* cameraMode = cameraOptions[@"lens"];
     NSString* cameraDirection = cameraOptions[@"direction"];
     
-    if ([cameraDirection isEqual:@"front"]) {
-        self.defaultCamera = AVCaptureDevicePositionFront;
-    } else {
-        self.defaultCamera = AVCaptureDevicePositionBack;
-    }
-    
+    self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
+
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {

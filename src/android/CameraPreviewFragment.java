@@ -145,7 +145,7 @@ public class CameraPreviewFragment extends Fragment {
         containerView.addView(viewFinder);
         startCamera();
         return containerView;
-        
+
     }
 
     public void startCamera() throws RuntimeException {
@@ -499,8 +499,8 @@ public class CameraPreviewFragment extends Fragment {
             } catch (JSONException e) {
                 direction = CameraSelector.LENS_FACING_BACK;
             }
+            
             setUpCamera(options,cameraProvider);
-
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
         });
