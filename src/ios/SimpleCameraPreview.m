@@ -92,6 +92,86 @@ BOOL torchActivated = false;
     } options:setupSessionOptions photoSettings:self.photoSettings];
 }
 
+- (void)enableDualMode:(CDVInvokedUrlCommand*)command {
+    self.onCameraEnabledHandlerId = command.callbackId;
+    
+    // Set up notifications (same as in enable)
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
+    
+    // Set webView transparent
+    self.webView.opaque = NO;
+    self.webView.backgroundColor = [UIColor clearColor];
+    
+    // Required for GPS EXIF
+    locationManager = [[CLLocationManager alloc] init];
+    locationManager.delegate = self;
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.pausesLocationUpdatesAutomatically = NO;
+    [locationManager requestWhenInUseAuthorization];
+    
+    // Setup session options from command arguments (as in enable)
+    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
+    if (command.arguments.count > 0) {
+        NSDictionary *config = command.arguments[0];
+        @try {
+            if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual:@"null"]) {
+                NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+                [setupSessionOptions setValue:@(targetSize) forKey:@"targetSize"];
+            }
+            NSString *captureDevice = config[@"lens"];
+            if (captureDevice && [captureDevice length] > 0) {
+                [setupSessionOptions setValue:captureDevice forKey:@"lens"];
+            }
+        } @catch(NSException *exception) {
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                                     messageAsString:@"targetSize not well defined"]
+                                        callbackId:command.callbackId];
+        }
+    }
+    
+    // Set background color for the view controller
+    self.viewController.view.backgroundColor = [UIColor blackColor];
+    
+    // Create and setup the multi-cam session manager (for dual mode)
+    self.multiCamSessionManager = [[MultiCamSessionManager alloc] init];
+    if (!self.multiCamSessionManager) {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                           messageAsString:@"MultiCam not supported on this device"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    }
+    
+    [self.multiCamSessionManager setupSessionWithCompletion:^(BOOL success) {
+        if (success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                // Instantiate and set up the new dual-camera render controller.
+                DualCameraRenderController *dualRenderController = [[DualCameraRenderController alloc] init];
+                [dualRenderController setUpWithMultiCamSession:self.multiCamSessionManager.multiCamSession];
+                
+                // Add dualRenderController as a child view controller
+                [self.viewController addChildViewController:dualRenderController];
+                dualRenderController.view.frame = self.webView.superview.bounds;
+                [self.webView.superview insertSubview:dualRenderController.view atIndex:0];
+                [dualRenderController didMoveToParentViewController:self.viewController];
+                
+                // Start the multi-cam session on its background queue
+                [self.multiCamSessionManager startRunning];
+                
+                // Return success to JavaScript
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+                [pluginResult setKeepCallbackAsBool:true];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            });
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                            messageAsString:@"Failed to set up multi camera session"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
+    }];
+}
+
+
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
