@@ -5,10 +5,8 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        // Ensure multi-cam is supported.
         if ([AVCaptureMultiCamSession isMultiCamSupported]) {
             self.multiCamSession = [[AVCaptureMultiCamSession alloc] init];
-            // Choose an appropriate preset.
             if ([self.multiCamSession canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
                 self.multiCamSession.sessionPreset = AVCaptureSessionPresetPhoto;
             }
@@ -29,12 +27,12 @@
         // --- Back Camera Input ---
         AVCaptureDevice *backCamera = [self cameraWithPosition:AVCaptureDevicePositionBack];
         if (backCamera) {
-            self.backCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:backCamera error:&error];
+            AVCaptureDeviceInput *backInput = [AVCaptureDeviceInput deviceInputWithDevice:backCamera error:&error];
             if (error) {
                 NSLog(@"Error creating back camera input: %@", error);
                 success = NO;
-            } else if ([self.multiCamSession canAddInput:self.backCameraInput]) {
-                [self.multiCamSession addInput:self.backCameraInput];
+            } else if ([self.multiCamSession canAddInput:backInput]) {
+                [self.multiCamSession addInput:backInput];
             } else {
                 NSLog(@"Cannot add back camera input");
                 success = NO;
@@ -47,12 +45,12 @@
         // --- Front Camera Input ---
         AVCaptureDevice *frontCamera = [self cameraWithPosition:AVCaptureDevicePositionFront];
         if (frontCamera) {
-            self.frontCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:frontCamera error:&error];
+            AVCaptureDeviceInput *frontInput = [AVCaptureDeviceInput deviceInputWithDevice:frontCamera error:&error];
             if (error) {
                 NSLog(@"Error creating front camera input: %@", error);
                 success = NO;
-            } else if ([self.multiCamSession canAddInput:self.frontCameraInput]) {
-                [self.multiCamSession addInput:self.frontCameraInput];
+            } else if ([self.multiCamSession canAddInput:frontInput]) {
+                [self.multiCamSession addInput:frontInput];
             } else {
                 NSLog(@"Cannot add front camera input");
                 success = NO;
@@ -62,23 +60,7 @@
             success = NO;
         }
         
-        // (Optional) Configure outputs as needed.
-        // Here we add video data outputs for demonstration.
-        self.backVideoOutput = [[AVCaptureVideoDataOutput alloc] init];
-        if ([self.multiCamSession canAddOutput:self.backVideoOutput]) {
-            [self.multiCamSession addOutput:self.backVideoOutput];
-        } else {
-            NSLog(@"Cannot add back video output");
-            success = NO;
-        }
-        
-        self.frontVideoOutput = [[AVCaptureVideoDataOutput alloc] init];
-        if ([self.multiCamSession canAddOutput:self.frontVideoOutput]) {
-            [self.multiCamSession addOutput:self.frontVideoOutput];
-        } else {
-            NSLog(@"Cannot add front video output");
-            success = NO;
-        }
+        // (Optional) You can add outputs here if needed.
         
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completion) {
