@@ -14,7 +14,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;

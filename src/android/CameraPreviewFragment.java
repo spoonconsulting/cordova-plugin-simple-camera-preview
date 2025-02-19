@@ -145,10 +145,9 @@ public class CameraPreviewFragment extends Fragment {
         containerView.addView(viewFinder);
         startCamera();
         return containerView;
-
     }
 
-    public void startCamera(){
+    public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
         try {
@@ -159,20 +158,20 @@ public class CameraPreviewFragment extends Fragment {
             startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
             return;
         }
-        JSONObject option = new JSONObject();
+        JSONObject options = new JSONObject();
         try {
-            option.put("lens", lens);
+            options.put("lens", lens);
         } catch (JSONException e) {
             startCameraCallback.onCameraStarted(new Exception("Unable to set the lens option"));
         }
 
         try {
-            option.put("direction", direction);
+            options.put("direction", direction);
         } catch (JSONException e) {
              startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
         }
 
-        setUpCamera(option,cameraProvider);
+        setUpCamera(options,cameraProvider);
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
@@ -493,6 +492,7 @@ public class CameraPreviewFragment extends Fragment {
                 cameraSwitchedCallback.onSwitch(false);
                 return;
             }
+            
             try {
                 direction = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
             } catch (JSONException e) {
