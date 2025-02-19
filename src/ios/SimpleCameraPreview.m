@@ -189,6 +189,7 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             return;
         } 
+        
          NSLog(@"Failed to switch camera");
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
