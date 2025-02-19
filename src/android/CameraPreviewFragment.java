@@ -148,7 +148,7 @@ public class CameraPreviewFragment extends Fragment {
 
     }
 
-    public void startCamera() throws RuntimeException {
+    public void startCamera(){
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
 
         try {
@@ -163,13 +163,13 @@ public class CameraPreviewFragment extends Fragment {
         try {
             option.put("lens", lens);
         } catch (JSONException e) {
-            startCameraCallback.onCameraStarted(new Exception("Unable to set lens option"));
+            startCameraCallback.onCameraStarted(new Exception("Unable to set the lens option"));
         }
 
         try {
             option.put("direction", direction);
         } catch (JSONException e) {
-             startCameraCallback.onCameraStarted(new Exception("Unable to set Direction"));
+             startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
         }
 
         setUpCamera(option,cameraProvider);
@@ -184,7 +184,6 @@ public class CameraPreviewFragment extends Fragment {
     public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
         ProcessCameraProvider cameraProvider = null;
-        
         try {
             cameraProvider = cameraProviderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
@@ -193,8 +192,8 @@ public class CameraPreviewFragment extends Fragment {
             hasUltraWideCameraCallback.onResult(false);
             return;
         }
+        
         List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
-
         boolean defaultCamera = false;
         boolean ultraWideCamera = false;
         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
