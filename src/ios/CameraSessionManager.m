@@ -194,9 +194,9 @@
         }
         return;
     }
+
     NSString* cameraMode = cameraOptions[@"lens"];
     NSString* cameraDirection = cameraOptions[@"direction"];
-    
     self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
 
     dispatch_async(self.sessionQueue, ^{
