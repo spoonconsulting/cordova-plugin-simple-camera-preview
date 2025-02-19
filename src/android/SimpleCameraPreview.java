@@ -19,6 +19,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -43,11 +44,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
     private CallbackContext videoCallbackContext;
-
-
     private static final int containerViewId = 20;
-    private static final int DIRECTION_FRONT = 0;
-    private static final int DIRECTION_BACK = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
@@ -264,9 +261,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
         int cameraDirection;
 
         try {
-            cameraDirection = options.getString("direction").equals("front") ? SimpleCameraPreview.DIRECTION_FRONT : SimpleCameraPreview.DIRECTION_BACK;
+            cameraDirection = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
         } catch (JSONException e) {
-            cameraDirection = SimpleCameraPreview.DIRECTION_BACK;
+            cameraDirection = CameraSelector.LENS_FACING_BACK;
         }   
 
         int targetSize = 0;
@@ -480,6 +477,18 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
+            return true;
+        }
+        int cameraDirection;
+        try {
+            cameraDirection = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
+        } catch (JSONException e) {
+            cameraDirection = CameraSelector.LENS_FACING_BACK;
+        }
+        try {
+            options.put("direction", cameraDirection);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to set direction in options");
             return true;
         }
 

@@ -164,14 +164,13 @@ public class CameraPreviewFragment extends Fragment {
         } catch (JSONException e) {
             startCameraCallback.onCameraStarted(new Exception("Unable to set the lens option"));
         }
-
         try {
             options.put("direction", direction);
         } catch (JSONException e) {
              startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
         }
 
-        setUpCamera(options,cameraProvider);
+        setUpCamera(options, cameraProvider);
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         if (startCameraCallback != null) {
@@ -478,7 +477,6 @@ public class CameraPreviewFragment extends Fragment {
         }
     }
 
-
     public void switchCameraTo(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> {
@@ -493,13 +491,7 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
             
-            try {
-                direction = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
-            } catch (JSONException e) {
-                direction = CameraSelector.LENS_FACING_BACK;
-            }
-            
-            setUpCamera(options,cameraProvider);
+            setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
         });
@@ -508,11 +500,16 @@ public class CameraPreviewFragment extends Fragment {
     @SuppressLint("RestrictedApi")
     public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
         CameraSelector cameraSelector;
-        String lens = null;
         try {
             lens = options.getString("lens");
         } catch (JSONException e) {
             lens = "default";
+        }
+
+        try {
+            direction = options.getInt("direction");
+        } catch (JSONException e) {
+            direction = CameraSelector.LENS_FACING_BACK;
         }
 
         if (lens != null && lens.equals("wide")) {
