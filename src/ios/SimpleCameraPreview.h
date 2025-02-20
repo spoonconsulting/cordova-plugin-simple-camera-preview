@@ -5,8 +5,6 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
-#import "MultiCamSessionManager.h"
-
 @interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
@@ -27,6 +25,5 @@
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
-@property (nonatomic, strong) MultiCamSessionManager *multiCamSessionManager;
 
 @end
