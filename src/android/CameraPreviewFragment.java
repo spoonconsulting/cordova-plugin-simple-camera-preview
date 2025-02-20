@@ -116,17 +116,24 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     @SuppressLint("ValidFragment")
-    public CameraPreviewFragment(int cameraDirection, CameraStartedCallback cameraStartedCallback, JSONObject options) {
-        this.direction = cameraDirection;
+    public CameraPreviewFragment(JSONObject options, CameraStartedCallback cameraStartedCallback) {
+        try {
+            this.direction = options.getInt("direction");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            this.direction = CameraSelector.LENS_FACING_BACK;
+        }
         try {
             this.targetSize = options.getInt("targetSize");
         } catch (JSONException e) {
             e.printStackTrace();
+            this.targetSize = 0;
         }
         try {
             this.lens = options.getString("lens");
         } catch (JSONException e) {
             e.printStackTrace();
+            this.lens = "default";
         }
         startCameraCallback = cameraStartedCallback;
     }
