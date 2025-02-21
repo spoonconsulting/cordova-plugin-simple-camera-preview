@@ -5,6 +5,8 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
+#import <AVFoundation/AVFoundation.h>
+
 @interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
@@ -25,5 +27,7 @@
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
+@property (nonatomic, strong) NSArray<UIViewController*> *dualPreviewControllers;
+@property (nonatomic, assign) BOOL dualModeEnabled;
 
 @end
