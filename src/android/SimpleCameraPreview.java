@@ -258,14 +258,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        int cameraDirection;
-
-        try {
-            cameraDirection = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
-        } catch (JSONException e) {
-            cameraDirection = CameraSelector.LENS_FACING_BACK;
-        }
-
+        int cameraDirection = getCameraDirection(options);
         int targetSize = 0;
         try {
             if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
@@ -478,17 +471,22 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    public static int getCameraDirection(JSONObject options) {
+        try {
+            return options.getString("direction").equals("front")
+                    ? CameraSelector.LENS_FACING_FRONT
+                    : CameraSelector.LENS_FACING_BACK;
+        } catch (JSONException e) {
+            return CameraSelector.LENS_FACING_BACK;
+        }
+    }
+
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;
         }
-        int cameraDirection;
-        try {
-            cameraDirection = options.getString("direction").equals("front") ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
-        } catch (JSONException e) {
-            cameraDirection = CameraSelector.LENS_FACING_BACK;
-        }
+        int cameraDirection = getCameraDirection(options);
         try {
             options.put("direction", cameraDirection);
         } catch (JSONException e) {
