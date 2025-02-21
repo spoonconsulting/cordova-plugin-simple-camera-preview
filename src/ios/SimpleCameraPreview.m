@@ -87,13 +87,15 @@ BOOL torchActivated = false;
         }
     }
     
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+    [self.sessionManager setupSession:setupSessionOptions
+                           completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-            [pluginResult setKeepCallbackAsBool:true];
+            [pluginResult setKeepCallbackAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
-    } options:setupSessionOptions photoSettings:self.photoSettings];
+    } photoSettings:self.photoSettings];
 }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {
