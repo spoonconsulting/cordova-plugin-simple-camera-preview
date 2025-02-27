@@ -48,8 +48,7 @@
                 NSError *error = nil;
                 BOOL success = TRUE;
                 
-                //NSLog(@"defaultCamera: %@", defaultCamera);
-                if ([options[@"direction"] isEqual: @"front"]) {
+                if (options[@"direction"] != nil && [options[@"direction"] isEqualToString:@"front"]) {
                     self.defaultCamera = AVCaptureDevicePositionFront;
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;

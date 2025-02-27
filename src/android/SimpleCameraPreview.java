@@ -471,7 +471,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    public static int getCameraDirection(JSONObject options) {
+    private static int getCameraDirection(JSONObject options) {
         try {
             return options.getString("direction").equals("front")
                     ? CameraSelector.LENS_FACING_FRONT
