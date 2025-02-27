@@ -155,23 +155,25 @@ SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
 
 ### switchCameraTo(option, successCallback, errorCallback)
 
-Switch camera between wide or auto
+Switch camera between wide or auto and set the camera direction (front or back) dynamically.
 
-The variable lens can take two values:
-```javascript
-  "wide"
+The variable lens and direction can take two values:
+#### Available options:
 
-  or
+- **Lens:**
+  - `"wide"` – Use a wide-angle lens.
+  - `"auto"` – Automatically select the best available lens.
 
-  "auto"
-```
-<br>
+- **Direction:**
+  - `"front"` – Use the front-facing camera.
+  - `"back"` – Use the rear-facing camera.
 
 ```javascript
 
 const params = {
   lens: "wide",
-}
+  direction: "front", // Specify camera direction
+};
 
 SimpleCameraPreview.switchCameraTo(
   params, 
