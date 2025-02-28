@@ -1,3 +1,7 @@
+## [2.0.33](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.32...2.0.33) (2025-02-28)
+* **Android:** Add support for switching to the front camera
+* **iOS:** Add support for switching to the front camera
+
 ## [2.0.32](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.31...2.0.32) (2024-11-28)
 * **Android:** Use videoDuration parameter to configure duration of a video
 * **iOS:** Use videoDuration parameter to configure duration of a video
