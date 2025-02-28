@@ -78,18 +78,24 @@ BOOL torchActivated = false;
             if (captureDevice && [captureDevice length] > 0) {
                 [setupSessionOptions setValue:captureDevice forKey:@"lens"];
             }
+            NSString *direction = config[@"direction"];
+            if (direction && [direction length] > 0) {
+                [setupSessionOptions setValue:direction forKey:@"direction"];
+            }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
     }
     
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];    [self.sessionManager setupSession:@"back" completion:^(BOOL started) {
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+    [self.sessionManager setupSession:setupSessionOptions
+                           completion:^(BOOL started) {
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-            [pluginResult setKeepCallbackAsBool:true];
+            [pluginResult setKeepCallbackAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
-    } options:setupSessionOptions photoSettings:self.photoSettings];
+    } photoSettings:self.photoSettings];
 }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {
@@ -157,22 +163,39 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void) switchCameraTo:(CDVInvokedUrlCommand*)command{
-    NSString *device = [command.arguments objectAtIndex:0];
-    BOOL cameraSwitched = FALSE;
-    if (self.sessionManager != nil) {
-        [self.sessionManager switchCameraTo: device completion:^(BOOL success) {
-            if (success) {
-                NSLog(@"Camera switched successfully");
-                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:TRUE];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            } else {
-                NSLog(@"Failed to switch camera");
-                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:FALSE];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            }
-        }];
+- (void) switchCameraTo:(CDVInvokedUrlCommand*)command {
+    if (command.arguments.count == 0) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No options provided"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
     }
+    
+    NSDictionary *options = [command.arguments objectAtIndex:0];
+    NSString *cameraLens = options[@"lens"];
+    if (cameraLens == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Missing device parameter"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    }
+    
+    if (self.sessionManager == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is closed, cannot switch camera"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    } 
+    
+    [self.sessionManager switchCameraTo:options completion:^(BOOL success) {
+        if (success) {
+            NSLog(@"Camera switched successfully");
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            return;
+        } 
+        
+         NSLog(@"Failed to switch camera");
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
 }
 
 - (void) deviceHasUltraWideCamera:(CDVInvokedUrlCommand *)command{

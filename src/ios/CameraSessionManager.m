@@ -39,7 +39,7 @@
     return orientation;
 }
 
-- (void) setupSession:(NSString *)defaultCamera completion:(void(^)(BOOL started))completion options:(NSDictionary *)options photoSettings:(AVCapturePhotoSettings *) photoSettings {
+- (void)setupSession:(NSDictionary *)options completion:(void(^)(BOOL started))completion photoSettings:(AVCapturePhotoSettings *)photoSettings {
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         NSLog(@"permission callback");
@@ -48,8 +48,7 @@
                 NSError *error = nil;
                 BOOL success = TRUE;
                 
-                NSLog(@"defaultCamera: %@", defaultCamera);
-                if ([defaultCamera isEqual: @"front"]) {
+                if ([options[@"direction"] isEqual: @"front"]) {
                     self.defaultCamera = AVCaptureDevicePositionFront;
                 } else {
                     self.defaultCamera = AVCaptureDevicePositionBack;
@@ -187,13 +186,17 @@
     }
 }
 
-- (void)switchCameraTo:(NSString*)cameraMode completion:(void (^)(BOOL success))completion {
+- (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
     if (![self deviceHasUltraWideCamera]) {
         if (completion) {
             completion(NO);
         }
         return;
     }
+
+    NSString* cameraMode = cameraOptions[@"lens"];
+    NSString* cameraDirection = cameraOptions[@"direction"];
+    self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
 
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
