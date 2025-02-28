@@ -172,7 +172,7 @@ The options variable can take the following keys:
 
 const params = {
   lens: "wide",
-  direction: "front", // Specify camera direction
+  direction: "back", // Specify camera direction
 };
 
 SimpleCameraPreview.switchCameraTo(
