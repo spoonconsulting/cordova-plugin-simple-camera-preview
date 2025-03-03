@@ -21,6 +21,7 @@
 - (void) switchCameraTo: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasUltraWideCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;
+- (void)switchMode:(CDVInvokedUrlCommand*)command;
 @property (nonatomic) CDVInvokedUrlCommand *videoCallbackContext;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
