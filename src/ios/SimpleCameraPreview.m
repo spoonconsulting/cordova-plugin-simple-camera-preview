@@ -138,18 +138,42 @@ BOOL torchActivated = false;
 }
 
 
+// - (void)switchMode:(CDVInvokedUrlCommand*)command {
+//     NSString *mode = command.arguments[0]; // expecting @"dual" or @"normal"
+//     if ([mode isEqualToString:@"dual"]) {
+//         [self switchToDualMode:command];
+//     } else if ([mode isEqualToString:@"normal"]) {
+//         [self switchToNormalMode:command];
+//     } else {
+//         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+//                                                             messageAsString:@"Invalid mode specified"];
+//         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//     }
+// }
+
 - (void)switchMode:(CDVInvokedUrlCommand*)command {
     NSString *mode = command.arguments[0]; // expecting @"dual" or @"normal"
-    if ([mode isEqualToString:@"dual"]) {
-        [self switchToDualMode:command];
-    } else if ([mode isEqualToString:@"normal"]) {
-        [self switchToNormalMode:command];
-    } else {
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                                            messageAsString:@"Invalid mode specified"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([mode isEqualToString:@"dual"]) {
+            if ([[DualModeManager shared] setupDualModeIn:self.webView.superview]) {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode enabled"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to enable dual mode"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        } else if ([mode isEqualToString:@"normal"]) {
+            [[DualModeManager shared] stopDualMode];
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Switched to normal mode"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid mode specified"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
+    });
 }
+
 
 - (void)switchToDualMode:(CDVInvokedUrlCommand*)command {
     // Ensure sessionManager and sessionQueue exist.
