@@ -163,17 +163,9 @@ BOOL torchActivated = false;
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to enable dual mode"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
-        } else if ([mode isEqualToString:@"normal"]) {
-            [[DualModeManager shared] stopDualMode];
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Switched to normal mode"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        } else {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid mode specified"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }
+        } 
     });
 }
-
 
 - (void)switchToDualMode:(CDVInvokedUrlCommand*)command {
     // Ensure sessionManager and sessionQueue exist.
@@ -471,6 +463,15 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
     }];
+}
+
+- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[DualModeManager shared] stopDualMode]; // Calls Swift function to stop preview and disable session
+        
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    });
 }
 
 -(void) setSize:(CDVInvokedUrlCommand*)command {

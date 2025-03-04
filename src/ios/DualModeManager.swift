@@ -6,18 +6,15 @@ import UIKit
     private var session: AVCaptureMultiCamSession?
     private var frontCameraInput: AVCaptureDeviceInput?
     private var backCameraInput: AVCaptureDeviceInput?
-    private var frontVideoOutput: AVCaptureVideoDataOutput?
-    private var backVideoOutput: AVCaptureVideoDataOutput?
     
-    private var previewLayerFront: AVCaptureVideoPreviewLayer?
-    private var previewLayerBack: AVCaptureVideoPreviewLayer?
+    private var backPreviewLayer: AVCaptureVideoPreviewLayer?
+    private var frontPreviewLayer: AVCaptureVideoPreviewLayer?
     
-    private var parentView: UIView?
+    private var previewContainer: UIView?
     
     @objc static let shared = DualModeManager()
     
-    @objc func setupDualMode(in parentView: UIView) -> Bool {
-        self.parentView = parentView
+    @objc func setupDualMode(in webView: UIView) -> Bool {
         
         if !AVCaptureMultiCamSession.isMultiCamSupported {
             print("MultiCam is not supported on this device.")
@@ -28,6 +25,7 @@ import UIKit
         session?.beginConfiguration()
         
         do {
+            // Setup Back Camera
             if let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
                 let backCameraInput = try AVCaptureDeviceInput(device: backCamera)
                 if session!.canAddInput(backCameraInput) {
@@ -36,6 +34,7 @@ import UIKit
                 }
             }
             
+            // Setup Front Camera
             if let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) {
                 let frontCameraInput = try AVCaptureDeviceInput(device: frontCamera)
                 if session!.canAddInput(frontCameraInput) {
@@ -44,18 +43,7 @@ import UIKit
                 }
             }
             
-            frontVideoOutput = AVCaptureVideoDataOutput()
-            backVideoOutput = AVCaptureVideoDataOutput()
-            
-            if let frontVideoOutput = frontVideoOutput, session!.canAddOutput(frontVideoOutput) {
-                session!.addOutput(frontVideoOutput)
-            }
-            
-            if let backVideoOutput = backVideoOutput, session!.canAddOutput(backVideoOutput) {
-                session!.addOutput(backVideoOutput)
-            }
-            
-            setupPreviewLayers()
+            setupPreviewLayers(in: webView)
             
             session?.commitConfiguration()
             session?.startRunning()
@@ -68,31 +56,52 @@ import UIKit
         }
     }
     
-    private func setupPreviewLayers() {
-        guard let parentView = parentView else { return }
+    private func setupPreviewLayers(in webView: UIView) {
+        guard let session = session, let rootView = webView.superview else { return }
         
-        previewLayerBack = AVCaptureVideoPreviewLayer(session: session!)
-        previewLayerBack?.videoGravity = .resizeAspectFill
-        previewLayerBack?.frame = parentView.bounds
-        parentView.layer.addSublayer(previewLayerBack!)
+        // Create a container view behind the web view
+        if previewContainer == nil {
+            previewContainer = UIView(frame: rootView.bounds)
+            previewContainer?.backgroundColor = .black
+            rootView.insertSubview(previewContainer!, belowSubview: webView)
+        }
         
-        let frontFrame = CGRect(x: 10, y: 100, width: 150, height: 200)
+        // Setup Back Camera Preview Layer
+        backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+        backPreviewLayer?.videoGravity = .resizeAspectFill
+        backPreviewLayer?.frame = previewContainer!.bounds
+        previewContainer?.layer.addSublayer(backPreviewLayer!)
+        
+        // Create a smaller front camera preview overlay
+        let frontFrame = CGRect(x: 10, y: 50, width: 150, height: 200)
         let frontView = UIView(frame: frontFrame)
         frontView.backgroundColor = .clear
-        parentView.addSubview(frontView)
+        previewContainer?.addSubview(frontView)
         
-        previewLayerFront = AVCaptureVideoPreviewLayer(session: session!)
-        previewLayerFront?.videoGravity = .resizeAspectFill
-        previewLayerFront?.frame = frontView.bounds
-        previewLayerFront?.cornerRadius = 10
-        previewLayerFront?.masksToBounds = true
-        frontView.layer.addSublayer(previewLayerFront!)
+        frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+        frontPreviewLayer?.videoGravity = .resizeAspectFill
+        frontPreviewLayer?.frame = frontView.bounds
+        frontPreviewLayer?.cornerRadius = 10
+        frontPreviewLayer?.masksToBounds = true
+        frontView.layer.addSublayer(frontPreviewLayer!)
     }
     
     @objc func stopDualMode() {
+        print("Stopping dual mode and disabling session...")
+
+        // Stop the camera session
         session?.stopRunning()
-        session = nil
-        previewLayerFront?.removeFromSuperlayer()
-        previewLayerBack?.removeFromSuperlayer()
+        session = nil  // Completely disable the session
+
+        // Remove preview layers
+        backPreviewLayer?.removeFromSuperlayer()
+        frontPreviewLayer?.removeFromSuperlayer()
+
+        // Remove the preview container
+        previewContainer?.removeFromSuperview()
+        previewContainer = nil
+
+        print("Dual mode fully disabled.")
     }
+
 }
