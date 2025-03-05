@@ -6,6 +6,8 @@
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
+#import "DualModeManager.h"
+
 
 @implementation SimpleCameraPreview
 
@@ -153,10 +155,10 @@ BOOL torchActivated = false;
 
 - (void)switchMode:(CDVInvokedUrlCommand*)command {
     NSString *mode = command.arguments[0]; // expecting @"dual" or @"normal"
-    
+
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([mode isEqualToString:@"dual"]) {
-            if ([[DualModeManager shared] setupDualModeIn:self.webView.superview]) {
+            if ([[DualModeManager shared] setupDualModeIn:self.webView]) {
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode enabled"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             } else {
@@ -164,6 +166,15 @@ BOOL torchActivated = false;
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
         } 
+    });
+}
+
+- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[DualModeManager shared] stopDualMode]; // Calls Swift function to stop preview and disable session
+        
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
 }
 
@@ -463,15 +474,6 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
     }];
-}
-
-- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [[DualModeManager shared] stopDualMode]; // Calls Swift function to stop preview and disable session
-        
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    });
 }
 
 -(void) setSize:(CDVInvokedUrlCommand*)command {
