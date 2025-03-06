@@ -110,7 +110,7 @@ SimpleCameraPreview.torchSwitch = function (options, onSuccess, onError) {
 SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
   options = options || {};
   options.direction = options.direction || "back";
-  options.lens = options.direction === "back" ? options.lens : "default";
+  options.lens = options.direction === "back" ? options.lens : "auto";
   exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options]);
 };
 
