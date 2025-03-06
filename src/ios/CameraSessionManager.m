@@ -235,44 +235,48 @@
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
-            AVCaptureDevice *ultraWideCamera;
-            if([cameraMode isEqualToString:@"wide"]) {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
-            } else {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            AVCaptureDevice *selectedCamera;
+            if ([cameraMode isEqualToString:@"auto"]) {
+                selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+            } else if ([cameraMode isEqualToString:@"wide"] && [cameraDirection isEqualToString:@"front"]) {
+                selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             }
-            if (ultraWideCamera) {
+            else if ([cameraMode isEqualToString:@"wide"] && [self deviceHasUltraWideCamera]) {
+                selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+            }
+            if (selectedCamera) {
                 // Remove the current input
                 [self.session removeInput:self.videoDeviceInput];
-                
-                // Create a new input with the ultra-wide camera
+                // Create a new input with the selected camera
                 NSError *error = nil;
-                AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
+                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:selectedCamera error:&error];
                 
                 if (!error) {
                     // Add the new input to the session
-                    if ([self.session canAddInput:ultraWideVideoDeviceInput]) {
-                        [self.session addInput:ultraWideVideoDeviceInput];
-                        self.videoDeviceInput = ultraWideVideoDeviceInput;
+                    if ([self.session canAddInput:videoDeviceInput]) {
+                        [self.session addInput:videoDeviceInput];
+                        self.videoDeviceInput = videoDeviceInput;                 
                         __block AVCaptureVideoOrientation orientation;
                         dispatch_sync(dispatch_get_main_queue(), ^{
                             orientation = [self getCurrentOrientation];
                         });
                         [self updateOrientation:orientation];
-                        self.device = ultraWideCamera;
+                        self.device = selectedCamera;
                         cameraSwitched = TRUE;
                     } else {
-                        NSLog(@"Failed to add ultra-wide input to session");
+                        NSLog(@"Failed to add camera input to session");
                     }
                 } else {
-                    NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
+                    NSLog(@"Error creating device input: %@", error.localizedDescription);
                 }
             } else {
-                NSLog(@"Ultra-wide camera not found");
+                NSLog(@"Requested camera lens not found");
             }
         }
         
-        completion ? completion(cameraSwitched): NULL;
+        if (completion) {
+            completion(cameraSwitched);
+        }
     });
 }
 
