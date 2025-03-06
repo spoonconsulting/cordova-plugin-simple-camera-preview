@@ -522,17 +522,17 @@ public class CameraPreviewFragment extends Fragment {
         if (lens != null && lens.equals("wide")) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
-                        List<Camera2CameraInfoImpl> cameras = new ArrayList<>();
+                        List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
                         for (CameraInfo cameraInfo : cameraInfos) {
                             if (cameraInfo instanceof Camera2CameraInfoImpl) {
                                 Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
-                                if (camera2CameraInfo.getLensFacing() == direction) {
-                                    cameras.add(camera2CameraInfo);
+                                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
+                                    backCameras.add(camera2CameraInfo);
                                 }
                             }
                         }
 
-                        Camera2CameraInfoImpl selectedCamera = Collections.min(cameras, (o1, o2) -> {
+                        Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
                             Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
                             Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
                             return Float.compare(focalLength1, focalLength2);
