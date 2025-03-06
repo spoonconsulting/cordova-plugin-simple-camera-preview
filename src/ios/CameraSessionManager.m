@@ -56,7 +56,7 @@
                 
                 AVCaptureDevice *videoDevice;
                 videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                if ([options[@"lens"] isEqual:@"wide"] && [self deviceHasUltraWideCamera]) {
+                if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
                         videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
                     }
