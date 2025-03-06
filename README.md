@@ -168,8 +168,11 @@ The options variable can take the following keys:
   - `"front"` – Use the front-facing camera.
   - `"back"` – Use the rear-facing camera.
 
-```javascript
 
+### Note:
+Currently, the wide-angle lens functionality is not supported for the front-facing camera. If the `lens` is set to `"wide"` and the `direction` is set to `"front"`, the camera will default to the `"auto"` lens instead of switching to the wide lens.
+
+```javascript
 const params = {
   lens: "wide",
   direction: "back", // Specify camera direction
