@@ -96,13 +96,8 @@ BOOL torchActivated = false;
     dispatch_async(dispatch_get_main_queue(), ^{
         [[DualModeManager sharedInstance] toggleDualMode:self.webView];
 
-        if ([DualModeManager sharedInstance].session.isRunning) {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode enabled successfully"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        } else {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to enable dual mode"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Toggled dual mode"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
 }
 
