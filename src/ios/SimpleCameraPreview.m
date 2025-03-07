@@ -1,4 +1,3 @@
-
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
@@ -6,7 +5,7 @@
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
-
+#import "DualModeManager.h"
 
 @implementation SimpleCameraPreview
 
@@ -138,39 +137,21 @@ BOOL torchActivated = false;
     [self switchToDualMode:command];
 }
 
-
-// - (void)switchMode:(CDVInvokedUrlCommand*)command {
-//     NSString *mode = command.arguments[0]; // expecting @"dual" or @"normal"
-//     if ([mode isEqualToString:@"dual"]) {
-//         [self switchToDualMode:command];
-//     } else if ([mode isEqualToString:@"normal"]) {
-//         [self switchToNormalMode:command];
-//     } else {
-//         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-//                                                             messageAsString:@"Invalid mode specified"];
-//         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-//     }
-// }
-
 - (void)switchMode:(CDVInvokedUrlCommand*)command {
-    NSString *mode = command.arguments[0]; // expecting @"dual" or @"normal"
-
     dispatch_async(dispatch_get_main_queue(), ^{
-        if ([mode isEqualToString:@"dual"]) {
-            if ([[DualModeManager shared] setupDualModeIn:self.webView]) {
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode enabled"];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            } else {
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to enable dual mode"];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            }
-        } 
+        [[DualModeManager sharedInstance] toggleDualMode:self.webView];
+
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Toggled dual mode"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
 }
 
 - (void)disableDualMode:(CDVInvokedUrlCommand*)command {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[DualModeManager shared] stopDualMode]; // Calls Swift function to stop preview and disable session
+        NSLog(@"[DualMode] Disabling Dual Mode...");
+        
+        [[DualModeManager sharedInstance] stopDualMode];
+        
         
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -805,3 +786,4 @@ BOOL torchActivated = false;
 }
 
 @end
+

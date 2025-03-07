@@ -20,5 +20,3 @@
 - (void)stopDualMode;
 
 @end
-
-
