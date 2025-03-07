@@ -18,10 +18,10 @@
         if (self.session && self.session.isRunning) {
             NSLog(@"[DualModeManager] Stopping Dual Mode...");
             [self stopDualMode];
-            [self setupDualMode:webView]; // Restart Dual Mode
+            [self setupDualMode:webView]; 
         } else {
             NSLog(@"[DualModeManager] Restarting Dual Mode...");
-            self.session = nil; // Ensure old session is fully reset
+            self.session = nil; 
             [self setupDualMode:webView];
         }
     });
@@ -35,12 +35,10 @@
         return NO;
     }
 
-    // Ensure session is always recreated
     self.session = [[AVCaptureMultiCamSession alloc] init];
     [self.session beginConfiguration];
 
     @try {
-        // Remove old inputs before adding new ones
         if (self.frontCameraInput) {
             [self.session removeInput:self.frontCameraInput];
             self.frontCameraInput = nil;
@@ -49,8 +47,6 @@
             [self.session removeInput:self.backCameraInput];
             self.backCameraInput = nil;
         }
-
-        // Setup Back Camera
         AVCaptureDevice *backCamera = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
         if (backCamera) {
             AVCaptureDeviceInput *backCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:backCamera error:nil];
@@ -64,8 +60,6 @@
         } else {
             NSLog(@"[DualModeManager] ERROR: Back camera not found.");
         }
-
-        // Setup Front Camera
         AVCaptureDevice *frontCamera = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
         if (frontCamera) {
             AVCaptureDeviceInput *frontCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:frontCamera error:nil];
@@ -103,22 +97,16 @@
             NSLog(@"[DualModeManager] ERROR: WebView or superview is nil. Aborting setup.");
             return;
         }
-
         UIView *rootView = webView.superview;
-
-        // Remove any existing previewContainer before creating a new one
         [self.previewContainer removeFromSuperview];
         self.previewContainer = [[UIView alloc] initWithFrame:rootView.bounds];
         self.previewContainer.backgroundColor = [UIColor blackColor];
         [rootView insertSubview:self.previewContainer belowSubview:webView];
-
-        // Setup Back Camera Preview Layer
         self.backPreviewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:self.session];
         self.backPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         self.backPreviewLayer.frame = self.previewContainer.bounds;
         [self.previewContainer.layer addSublayer:self.backPreviewLayer];
 
-        // Create a smaller front camera preview overlay
         CGRect frontFrame = CGRectMake(10, 50, 150, 200);
         UIView *frontView = [[UIView alloc] initWithFrame:frontFrame];
         frontView.backgroundColor = [UIColor clearColor];
@@ -141,7 +129,7 @@
 
         if (self.session) {
             [self.session stopRunning];
-            self.session = nil;  // Fully release session
+            self.session = nil;
         }
 
         if (self.backPreviewLayer) {
@@ -171,7 +159,7 @@
 
         if (self.session) {
             [self.session stopRunning];
-            self.session = nil; // Fully release session
+            self.session = nil;
         }
 
         if (self.backPreviewLayer) {
@@ -192,10 +180,4 @@
         NSLog(@"[DualModeManager] Cleanup complete.");
     });
 }
-
-
-
-
-
-
 @end

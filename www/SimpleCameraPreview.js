@@ -57,8 +57,8 @@ SimpleCameraPreview.enableDualMode = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", [options]);
 };
 
-SimpleCameraPreview.switchMode = function (mode, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "switchMode", [mode]);
+SimpleCameraPreview.switchMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "switchMode", []);
 };
 
 SimpleCameraPreview.disable = function (onSuccess, onError) {

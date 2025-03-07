@@ -96,18 +96,20 @@ BOOL torchActivated = false;
     dispatch_async(dispatch_get_main_queue(), ^{
         [[DualModeManager sharedInstance] toggleDualMode:self.webView];
 
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Toggled dual mode"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        if ([DualModeManager sharedInstance].session.isRunning) {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode enabled successfully"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to enable dual mode"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
     });
 }
 
 - (void)disableDualMode:(CDVInvokedUrlCommand*)command {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"[DualMode] Disabling Dual Mode...");
-        
-        [[DualModeManager sharedInstance] stopDualMode];
-        
-        
+        NSLog(@"[DualModeManager] Disabling Dual Mode...");     
+        [[DualModeManager sharedInstance] stopDualMode];  
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
@@ -458,6 +460,7 @@ BOOL torchActivated = false;
     return filePath;
 }
 
+
 - (void)captureOutput:(AVCaptureFileOutput *)output didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections {
     NSDictionary *result = @{@"recording": @TRUE};
     
@@ -482,3 +485,4 @@ BOOL torchActivated = false;
 }
 
 @end
+
