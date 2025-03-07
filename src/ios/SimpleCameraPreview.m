@@ -6,7 +6,6 @@
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
-#import "DualModeManager.h"
 
 
 @implementation SimpleCameraPreview

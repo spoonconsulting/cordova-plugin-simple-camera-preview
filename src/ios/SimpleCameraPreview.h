@@ -4,6 +4,7 @@
 
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
+#import "DualModeManager.h"
 #import <CoreLocation/CoreLocation.h>
 #import <AVFoundation/AVFoundation.h>
 

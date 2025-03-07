@@ -1,21 +1,6 @@
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIKit.h>
-
-@interface DualModeManager : NSObject
-
-@property (nonatomic, strong) AVCaptureMultiCamSession *session;
-@property (nonatomic, strong) AVCaptureDeviceInput *frontCameraInput;
-@property (nonatomic, strong) AVCaptureDeviceInput *backCameraInput;
-@property (nonatomic, strong) AVCaptureVideoPreviewLayer *backPreviewLayer;
-@property (nonatomic, strong) AVCaptureVideoPreviewLayer *frontPreviewLayer;
-@property (nonatomic, strong) UIView *previewContainer;
-
-+ (instancetype)sharedInstance;
-- (void)toggleDualMode:(UIView *)webView;
-- (BOOL)setupDualMode:(UIView *)webView;
-- (void)stopDualMode;
-
-@end
+#import "DualModeManager.h"
 
 @implementation DualModeManager
 
@@ -30,7 +15,7 @@
 
 - (void)toggleDualMode:(UIView *)webView {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.session && self.session.running) {
+        if (self.session && self.session.isRunning) {
             NSLog(@"[DualModeManager] Stopping Dual Mode...");
             [self stopDualMode];
             [self setupDualMode:webView]; // Restart Dual Mode
@@ -55,6 +40,16 @@
     [self.session beginConfiguration];
 
     @try {
+        // Remove old inputs before adding new ones
+        if (self.frontCameraInput) {
+            [self.session removeInput:self.frontCameraInput];
+            self.frontCameraInput = nil;
+        }
+        if (self.backCameraInput) {
+            [self.session removeInput:self.backCameraInput];
+            self.backCameraInput = nil;
+        }
+
         // Setup Back Camera
         AVCaptureDevice *backCamera = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
         if (backCamera) {
@@ -104,8 +99,8 @@
 
 - (void)setupPreviewLayers:(UIView *)webView {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (!self.session || !webView.superview) {
-            NSLog(@"[DualModeManager] ERROR: WebView superview not found.");
+        if (!webView || !webView.superview) {
+            NSLog(@"[DualModeManager] ERROR: WebView or superview is nil. Aborting setup.");
             return;
         }
 
@@ -144,43 +139,63 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"[DualModeManager] Stopping Dual Mode and cleaning up session...");
 
-        [self.session stopRunning];
-        self.session = nil; // Fully release session
+        if (self.session) {
+            [self.session stopRunning];
+            self.session = nil;  // Fully release session
+        }
 
-        // Remove preview layers safely
-        [self.backPreviewLayer removeFromSuperlayer];
-        self.backPreviewLayer = nil;
+        if (self.backPreviewLayer) {
+            [self.backPreviewLayer removeFromSuperlayer];
+            self.backPreviewLayer = nil;
+        }
 
-        [self.frontPreviewLayer removeFromSuperlayer];
-        self.frontPreviewLayer = nil;
+        if (self.frontPreviewLayer) {
+            [self.frontPreviewLayer removeFromSuperlayer];
+            self.frontPreviewLayer = nil;
+        }
 
-        // ✅ Ensure preview container is removed
-        [self.previewContainer removeFromSuperview];
-        self.previewContainer = nil;
+        if (self.previewContainer) {
+            [self.previewContainer removeFromSuperview];
+            self.previewContainer = nil;
+        }
 
         NSLog(@"[DualModeManager] Dual Mode fully disabled.");
     });
 }
 
-/// Cleans up session in case of error
+
+
 - (void)cleanupOnError {
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"[DualModeManager] ERROR: Cleaning up due to failure...");
 
-        [self.session stopRunning];
-        self.session = nil; // Fully release session
+        if (self.session) {
+            [self.session stopRunning];
+            self.session = nil; // Fully release session
+        }
 
-        [self.backPreviewLayer removeFromSuperlayer];
-        self.backPreviewLayer = nil;
+        if (self.backPreviewLayer) {
+            [self.backPreviewLayer removeFromSuperlayer];
+            self.backPreviewLayer = nil;
+        }
 
-        [self.frontPreviewLayer removeFromSuperlayer];
-        self.frontPreviewLayer = nil;
+        if (self.frontPreviewLayer) {
+            [self.frontPreviewLayer removeFromSuperlayer];
+            self.frontPreviewLayer = nil;
+        }
 
-        [self.previewContainer removeFromSuperview];
-        self.previewContainer = nil;
+        if (self.previewContainer) {
+            [self.previewContainer removeFromSuperview];
+            self.previewContainer = nil;
+        }
 
         NSLog(@"[DualModeManager] Cleanup complete.");
     });
 }
+
+
+
+
+
 
 @end
