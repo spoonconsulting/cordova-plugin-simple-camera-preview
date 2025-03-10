@@ -13,10 +13,13 @@
 @property (nonatomic, strong, readwrite) AVCaptureVideoPreviewLayer *backPreviewLayer;
 @property (nonatomic, strong, readwrite) AVCaptureVideoPreviewLayer *frontPreviewLayer;
 @property (nonatomic, strong, readwrite) UIView *previewContainer;
+@property (nonatomic, assign) CGRect frontPreviewFrame;
+
 
 + (instancetype)sharedInstance;
 - (void)toggleDualMode:(UIView *)webView;
 - (BOOL)setupDualMode:(UIView *)webView;
 - (void)stopDualMode;
+- (void)captureDualImageWithCompletion:(void (^)(UIImage *compositeImage))completion;
 
 @end

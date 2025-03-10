@@ -239,7 +239,7 @@ BOOL torchActivated = false;
 }
 
 - (void)captureDual:(CDVInvokedUrlCommand*)command {
-    
+    NSLog(@"Jatin 1 captureDual");
     self.onPictureTakenHandlerId = command.callbackId;
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated) {
