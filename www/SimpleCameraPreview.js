@@ -75,6 +75,12 @@ SimpleCameraPreview.capture = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "capture", [options.flash]);
 };
 
+SimpleCameraPreview.captureDual = function (options, onSuccess, onError) {
+  options = options || {};
+  exec(onSuccess, onError, PLUGIN_NAME, "captureDual", [options.flash]);
+};
+
+
 SimpleCameraPreview.setSize = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "setSize", [options]);
 };

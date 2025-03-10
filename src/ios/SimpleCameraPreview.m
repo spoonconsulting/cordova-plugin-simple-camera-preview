@@ -238,6 +238,54 @@ BOOL torchActivated = false;
     }
 }
 
+- (void)captureDual:(CDVInvokedUrlCommand*)command {
+    
+    self.onPictureTakenHandlerId = command.callbackId;
+    BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
+    if (torchActivated) {
+        useFlash = false;
+    }
+    
+    [[DualModeManager sharedInstance] captureDualImageWithCompletion:^(UIImage *compositeImage) {
+        if (compositeImage) {
+    
+            [self runBlockWithTryCatch:^{
+                
+                NSData *jpegData = UIImageJPEGRepresentation(compositeImage, 1.0);
+                
+               
+                NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+                NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+                if (![[NSFileManager defaultManager] fileExistsAtPath:libraryDirectory]) {
+                    NSError *error;
+                    [[NSFileManager defaultManager] createDirectoryAtPath:libraryDirectory
+                                              withIntermediateDirectories:YES
+                                                               attributes:nil
+                                                                    error:&error];
+                    if (error) {
+                        NSLog(@"Error creating NoCloud directory: %@", error.localizedDescription);
+                    }
+                }
+                
+                NSString *uniqueFileName = [NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]];
+                NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+                
+                // Write the JPEG data to file.
+                if ([jpegData writeToFile:dataPath atomically:YES]) {
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+                } else {
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to write composite image file"];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+                }
+            }];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Composite image capture failed"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+        }
+    }];
+}
+
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)
         return nil;
