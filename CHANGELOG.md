@@ -1,3 +1,7 @@
+## [2.0.34](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.33...2.0.34) (2025-03-13)
+* **Android:** Fix camera direction switching issue with wide front-facing lens
+* **iOS:** Fix camera direction switching issue with wide front-facing lens
+
 ## [2.0.33](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.32...2.0.33) (2025-02-28)
 * **Android:** Add support for switching to the front camera
 * **iOS:** Add support for switching to the front camera
