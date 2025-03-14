@@ -219,15 +219,16 @@
 }
 
 - (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
-    if (![self deviceHasUltraWideCamera]) {
+    NSString* cameraMode = cameraOptions[@"lens"];
+    NSString* cameraDirection = cameraOptions[@"direction"];
+
+    if ([cameraDirection isEqualToString:@"back"] && ![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
         if (completion) {
             completion(NO);
         }
         return;
     }
 
-    NSString* cameraMode = cameraOptions[@"lens"];
-    NSString* cameraDirection = cameraOptions[@"direction"];
     self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
 
     dispatch_async(self.sessionQueue, ^{
