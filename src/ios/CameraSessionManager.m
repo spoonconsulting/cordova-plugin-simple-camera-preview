@@ -222,7 +222,7 @@
     NSString* cameraMode = cameraOptions[@"lens"];
     NSString* cameraDirection = cameraOptions[@"direction"];
 
-    if ([cameraDirection isEqualToString:@"back"] && ![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
+    if (![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
         if (completion) {
             completion(NO);
         }
