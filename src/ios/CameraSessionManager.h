@@ -32,4 +32,5 @@
 @property (nonatomic, weak) id delegate;
 @property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @property (nonatomic) NSTimer *videoTimer;
+
 @end

@@ -31,5 +31,6 @@
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
 @property (nonatomic, strong) NSArray<UIViewController*> *dualPreviewControllers;
 @property (nonatomic, assign) BOOL dualModeEnabled;
+@property (nonatomic, strong) DualModeManager *dualModeManager;
 
 @end

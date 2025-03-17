@@ -50,10 +50,9 @@ BOOL torchActivated = false;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
-    
+    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
-    
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
@@ -66,7 +65,6 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
-    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
@@ -94,8 +92,16 @@ BOOL torchActivated = false;
 
 - (void)switchMode:(CDVInvokedUrlCommand*)command {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[DualModeManager sharedInstance] toggleDualMode:self.webView];
+         //Ensure dualModeManager is initialized
+        if (!self.dualModeManager) {
+            NSLog(@"[Camera Plugin] Initializing DualModeManager...");
+            
+        }
+        self.dualModeManager = [[DualModeManager alloc] init];
+        // Toggle dual mode
+        [self.dualModeManager toggleDualMode:self.webView];
 
+        // Send success result to Cordova
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Toggled dual mode"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
@@ -103,8 +109,9 @@ BOOL torchActivated = false;
 
 - (void)disableDualMode:(CDVInvokedUrlCommand*)command {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"[DualModeManager] Disabling Dual Mode...");     
-        [[DualModeManager sharedInstance] stopDualMode];  
+        NSLog(@"[DualModeManager] Disabling Dual Mode...");
+        [self.dualModeManager stopDualMode];
+        [self.dualModeManager deallocSession];
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     });
@@ -246,7 +253,7 @@ BOOL torchActivated = false;
         useFlash = false;
     }
     
-    [[DualModeManager sharedInstance] captureDualImageWithCompletion:^(UIImage *compositeImage) {
+    [self.dualModeManager captureDualImageWithCompletion:^(UIImage *compositeImage) {
         if (compositeImage) {
     
             [self runBlockWithTryCatch:^{
@@ -528,4 +535,3 @@ BOOL torchActivated = false;
 }
 
 @end
-
