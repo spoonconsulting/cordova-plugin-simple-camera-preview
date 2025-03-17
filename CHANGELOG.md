@@ -1,3 +1,6 @@
+## [2.0.35](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.34...2.0.35) (2025-03-17)
+* **iOS:** Skip Ultra-Wide Availability Check When Switching from Back to Front
+
 ## [2.0.34](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.33...2.0.34) (2025-03-13)
 * **Android:** Fix camera direction switching issue with wide front-facing lens
 * **iOS:** Fix camera direction switching issue with wide front-facing lens
