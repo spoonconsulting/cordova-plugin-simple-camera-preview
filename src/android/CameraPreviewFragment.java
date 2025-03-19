@@ -519,7 +519,7 @@ public class CameraPreviewFragment extends Fragment {
             direction = CameraSelector.LENS_FACING_BACK;
         }
 
-        if (lens != null && lens.equals("wide")) {
+        if (lens != null && lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
                         List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();

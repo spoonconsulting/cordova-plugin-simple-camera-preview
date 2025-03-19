@@ -56,7 +56,7 @@
                 
                 AVCaptureDevice *videoDevice;
                 videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                if ([options[@"lens"] isEqual:@"wide"] && [self deviceHasUltraWideCamera]) {
+                if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
                         videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
                     }
@@ -187,15 +187,16 @@
 }
 
 - (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
-    if (![self deviceHasUltraWideCamera]) {
+    NSString* cameraMode = cameraOptions[@"lens"];
+    NSString* cameraDirection = cameraOptions[@"direction"];
+
+    if (![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
         if (completion) {
             completion(NO);
         }
         return;
     }
 
-    NSString* cameraMode = cameraOptions[@"lens"];
-    NSString* cameraDirection = cameraOptions[@"direction"];
     self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
 
     dispatch_async(self.sessionQueue, ^{
