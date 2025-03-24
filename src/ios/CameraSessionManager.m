@@ -72,8 +72,6 @@
                     }
                 }
                 
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-                
                 if (error) {
                     NSLog(@"%@", error);
                     success = FALSE;
@@ -88,6 +86,10 @@
                         }
                     }
                 }
+
+                [self.session beginConfiguration];
+
+                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
                 
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
@@ -123,6 +125,9 @@
                     
                     [self.session addOutput:dataOutput];
                 }
+
+                [self.session commitConfiguration];
+
                 __block AVCaptureVideoOrientation orientation;
                 dispatch_sync(dispatch_get_main_queue(), ^{
                     orientation=[self getCurrentOrientation];
