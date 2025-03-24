@@ -348,6 +348,46 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    private boolean switchMode(CallbackContext callbackContext) {
+    cordova.getActivity().runOnUiThread(() -> {
+        try {
+            if (fragment != null) {
+                // Remove existing single camera fragment if needed
+                cordova.getActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .remove(fragment)
+                        .commitAllowingStateLoss();
+                fragment = null;
+            }
+
+            FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+            if (containerView == null) {
+                containerView = new FrameLayout(cordova.getActivity());
+                containerView.setId(containerViewId);
+                FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                );
+                cordova.getActivity().addContentView(containerView, layoutParams);
+            }
+
+            Fragment dualCameraFragment = new DualCameraFragment();
+            cordova.getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(containerViewId, dualCameraFragment)
+                    .commitAllowingStateLoss();
+
+            callbackContext.success("Dual mode activated");
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Failed to activate dual mode: " + e.getMessage());
+        }
+    });
+
+    return true;
+}
+
+
     private int getIntegerFromOptions(JSONObject options, String key) {
         try {
             return options.getInt(key);
