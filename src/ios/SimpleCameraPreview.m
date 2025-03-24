@@ -1,4 +1,3 @@
-
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
@@ -6,6 +5,7 @@
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
+#import "DualModeManager.h"
 
 @implementation SimpleCameraPreview
 
@@ -50,10 +50,9 @@ BOOL torchActivated = false;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
-    
+    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
-    
     // render controller setup
     self.cameraRenderController = [[CameraRenderController alloc] init];
     self.cameraRenderController.sessionManager = self.sessionManager;
@@ -66,7 +65,6 @@ BOOL torchActivated = false;
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
     
-    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
@@ -96,6 +94,33 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
     } photoSettings:self.photoSettings];
+}
+
+- (void)switchMode:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+         //Ensure dualModeManager is initialized
+        if (!self.dualModeManager) {
+            NSLog(@"[Camera Plugin] Initializing DualModeManager...");
+            
+        }
+        self.dualModeManager = [[DualModeManager alloc] init];
+        // Toggle dual mode
+        [self.dualModeManager toggleDualMode:self.webView];
+
+        // Send success result to Cordova
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Toggled dual mode"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    });
+}
+
+- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"[DualModeManager] Disabling Dual Mode...");
+        [self.dualModeManager stopDualMode];
+        [self.dualModeManager deallocSession];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode disabled"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    });
 }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {
@@ -241,6 +266,54 @@ BOOL torchActivated = false;
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
+}
+
+- (void)captureDual:(CDVInvokedUrlCommand*)command {
+    NSLog(@"Jatin 1 captureDual");
+    self.onPictureTakenHandlerId = command.callbackId;
+    BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
+    if (torchActivated) {
+        useFlash = false;
+    }
+    
+    [self.dualModeManager captureDualImageWithCompletion:^(UIImage *compositeImage) {
+        if (compositeImage) {
+    
+            [self runBlockWithTryCatch:^{
+                
+                NSData *jpegData = UIImageJPEGRepresentation(compositeImage, 1.0);
+                
+               
+                NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+                NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+                if (![[NSFileManager defaultManager] fileExistsAtPath:libraryDirectory]) {
+                    NSError *error;
+                    [[NSFileManager defaultManager] createDirectoryAtPath:libraryDirectory
+                                              withIntermediateDirectories:YES
+                                                               attributes:nil
+                                                                    error:&error];
+                    if (error) {
+                        NSLog(@"Error creating NoCloud directory: %@", error.localizedDescription);
+                    }
+                }
+                
+                NSString *uniqueFileName = [NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]];
+                NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+                
+                // Write the JPEG data to file.
+                if ([jpegData writeToFile:dataPath atomically:YES]) {
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+                } else {
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to write composite image file"];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+                }
+            }];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Composite image capture failed"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
+        }
+    }];
 }
 
 - (NSDictionary *)getGPSDictionaryForLocation {

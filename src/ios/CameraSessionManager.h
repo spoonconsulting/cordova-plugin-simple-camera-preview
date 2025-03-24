@@ -17,6 +17,7 @@
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
 - (UIInterfaceOrientation) getOrientation;
+- (AVCaptureDevice *)cameraWithPosition:(AVCaptureDevicePosition)position captureDeviceType:(AVCaptureDeviceType)captureDeviceType;
 
 @property (atomic) CIFilter *ciFilter;
 @property (nonatomic) NSLock *filterLock;
@@ -31,4 +32,5 @@
 @property (nonatomic, weak) id delegate;
 @property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @property (nonatomic) NSTimer *videoTimer;
+
 @end

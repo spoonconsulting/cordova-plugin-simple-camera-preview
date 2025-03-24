@@ -83,17 +83,22 @@
 
 -(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
     if ([self.renderLock tryLock]) {
-        _pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
-        CIImage *image = [CIImage imageWithCVPixelBuffer:_pixelBuffer];
+        CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+        CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+        // Apply a 90° rotation transform to force vertical portrait orientation.
+        CGAffineTransform rotation = CGAffineTransformMakeRotation(M_PI_2);
+        CIImage *rotatedImage = [image imageByApplyingTransform:rotation];
+
         
         __block CGRect frame;
         dispatch_sync(dispatch_get_main_queue(), ^{
             frame = self.view.frame;
         });
         
-        CGFloat scaleHeight = frame.size.height/image.extent.size.height;
-        CGFloat scaleWidth = frame.size.width/image.extent.size.width;
-        
+        CGFloat scaleHeight = frame.size.height / rotatedImage.extent.size.height;
+        CGFloat scaleWidth = frame.size.width / rotatedImage.extent.size.width;
+       
+
         CGFloat scale, x, y;
         if (scaleHeight < scaleWidth) {
             scale = scaleWidth;
@@ -105,7 +110,6 @@
             y = 0;
         }
         
-        // scale - translate
         CGAffineTransform xscale = CGAffineTransformMakeScale(scale, scale);
         CGAffineTransform xlate = CGAffineTransformMakeTranslation(-x, -y);
         CGAffineTransform xform =  CGAffineTransformConcat(xscale, xlate);

@@ -22,9 +22,11 @@
 -(void) deallocateRenderMemory;
 
 @property (nonatomic) CameraSessionManager *sessionManager;
+@property (nonatomic, assign) AVCaptureDevicePosition cameraPosition;
 @property (nonatomic) CIContext *ciContext;
 @property (nonatomic) CIImage *latestFrame;
 @property (nonatomic) EAGLContext *context;
 @property (nonatomic) CVPixelBufferRef pixelBuffer;
 @property (nonatomic) NSLock *renderLock;
+
 @end
