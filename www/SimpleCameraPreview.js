@@ -53,6 +53,38 @@ SimpleCameraPreview.enable = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
+SimpleCameraPreview.enableDualMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", []);
+};
+
+SimpleCameraPreview.captureDual = function (options, onSuccess, onError) {
+  options = options || {};
+  exec(onSuccess, onError, PLUGIN_NAME, "captureDual", [options.flash]);
+};
+
+SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onError) {
+  if (!SimpleCameraPreview.videoCallback) {
+    console.error("Call initVideoCallback first");
+    onError("Call initVideoCallback first");
+    return;
+  }
+
+  if (!SimpleCameraPreview.videoInitialized) {
+    console.error("videoCallback not initialized");
+    onError("videoCallback not initialized");
+    return;
+  }
+  
+  options = options || {};
+  options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
+  options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture", [options]);
+};
+
+SimpleCameraPreview.disableDualMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
+};
+
 SimpleCameraPreview.disable = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
 };
