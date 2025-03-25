@@ -66,7 +66,7 @@
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
     <source-file src="src/ios/DualMode.swift" />
-    <source-file src="src/ios/DualMode.h" type="BridgingHeader" />
+    <header-file src="src/ios/DualMode.h" type="BridgingHeader" />
 
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
