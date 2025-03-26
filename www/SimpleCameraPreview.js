@@ -82,7 +82,7 @@ SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onErro
 };
 
 SimpleCameraPreview.disableDualMode = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "disable", []);
+  exec(onSuccess, onError, PLUGIN_NAME, "disableDualMode", []);
 };
 
 SimpleCameraPreview.disable = function (onSuccess, onError) {
