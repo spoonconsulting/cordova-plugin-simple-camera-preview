@@ -9,7 +9,7 @@
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
-        self.filterLock = [[NSLock alloc] init];
+        // self.filterLock = [[NSLock alloc] init];
         self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
     }
     return self;

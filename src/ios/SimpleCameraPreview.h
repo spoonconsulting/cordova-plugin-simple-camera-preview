@@ -26,12 +26,16 @@
 @property (nonatomic) CDVInvokedUrlCommand *videoCallbackContext;
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) DualMode *dualmode;
-@property (nonatomic) CameraRenderController *cameraRenderController;
+//@property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
 @property (nonatomic, assign) BOOL isDualModeEnabled;
 @property (nonatomic, strong) DualMode *dualMode;
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
+
+
+
 
 
 

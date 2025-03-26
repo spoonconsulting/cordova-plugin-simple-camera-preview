@@ -7,8 +7,6 @@
 
 #import "SimpleCameraPreview.h"
 
-AVCaptureVideoPreviewLayer *previewLayer;
-
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
@@ -101,66 +99,113 @@ BOOL torchActivated = false;
 //}
 
 - (void)enable:(CDVInvokedUrlCommand*)command {
-    self.onCameraEnabledHandlerId = command.callbackId;
-    CDVPluginResult *pluginResult;
+    
+    if (self.previewLayer && self.previewLayer.superlayer) {
+        [self.previewLayer removeFromSuperlayer];
+        self.previewLayer = nil;
+    }
 
+    self.onCameraEnabledHandlerId = command.callbackId;
+
+    // Prevent duplicate camera start
     if (self.sessionManager != nil) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
 
+    
     // Transparent web view background
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
 
-    // Location for GPS metadata
+    // Setup location manager
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
 
-    // Setup camera session
+    // Initialize session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
-    AVCaptureSession *session = [[AVCaptureSession alloc] init];
-    self.sessionManager.session = session;
+    //self.sessionManager.delegate = nil;
 
-    AVCaptureDevice *camera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-    NSError *error = nil;
-    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:camera error:&error];
+    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
 
-    if ([session canAddInput:input]) {
-        [session addInput:input];
-    }
+    NSMutableDictionary *options = [@{} mutableCopy];
+    [options setValue:@"back" forKey:@"direction"];
+    [options setValue:@"wide" forKey:@"lens"];
+    [options setValue:@1280 forKey:@"targetSize"];
 
-    AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
-    if ([session canAddOutput:output]) {
-        [session addOutput:output];
-    }
+    // Init session manager
+       self.sessionManager = [[CameraSessionManager alloc] init];
 
-    // Create and insert preview layer
-    previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:session];
-    previewLayer.frame = self.webView.superview.bounds;
-    previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
-    [self.webView.superview.layer insertSublayer:previewLayer below:self.webView.layer];
+       self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+       NSDictionary* config = nil;
+       if (command.arguments.count > 0 && [command.arguments[0] isKindOfClass:[NSDictionary class]]) {
+           config = command.arguments[0];
+           @try {
+               if (config[@"targetSize"] != [NSNull null]) {
+                   NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+                   [options setValue:@(targetSize) forKey:@"targetSize"];
+               }
+               if (config[@"lens"]) {
+                   [options setValue:config[@"lens"] forKey:@"lens"];
+               }
+               if (config[@"direction"]) {
+                   [options setValue:config[@"direction"] forKey:@"direction"];
+               }
+           } @catch(NSException *exception) {
+               [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid config in enable"] callbackId:command.callbackId];
+               return;
+           }
+       }
 
-    [session startRunning];
+    [self.sessionManager setupSession:options completion:^(BOOL started) {
+            if (!started) {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera permission denied or session failed"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                return;
+            }
 
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [pluginResult setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                CALayer *blackBackgroundLayer = [CALayer layer];
+                blackBackgroundLayer.frame = self.webView.superview.bounds;
+                blackBackgroundLayer.backgroundColor = [UIColor blackColor].CGColor;
+                [self.webView.superview.layer insertSublayer:blackBackgroundLayer atIndex:0];
+
+                self.previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.sessionManager.session];
+                self.previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+               
+                
+                if (config[@"x"] && config[@"y"] && config[@"width"] && config[@"height"]) {
+                    CGFloat x = ((NSNumber*)config[@"x"]).floatValue;
+                    CGFloat y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+                    CGFloat width = ((NSNumber*)config[@"width"]).floatValue;
+                    CGFloat height = ((NSNumber*)config[@"height"]).floatValue;
+
+                    self.previewLayer.frame = CGRectMake(x, y, width, height);
+                } else {
+                    self.previewLayer.frame = self.webView.superview.bounds;
+                }
+
+                [self.webView.superview.layer insertSublayer:self.previewLayer below:self.webView.layer];
+
+                [self.sessionManager.session startRunning];
+
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+                [pluginResult setKeepCallbackAsBool:YES];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            });
+        } photoSettings:self.photoSettings];
+    
 }
-
+   
 
 - (void)enableDualMode:(CDVInvokedUrlCommand*)command {
     self.isDualModeEnabled = YES;
     [self.sessionManager deallocSession];
         
-        // Optional: remove camera view if present
-        [self.cameraRenderController.view removeFromSuperview];
-        [self.cameraRenderController removeFromParentViewController];
-
         self.dualMode = [[DualMode alloc] init];
         [self.dualMode enableDualModeOn:self.webView.superview];
         
@@ -211,20 +256,23 @@ BOOL torchActivated = false;
 - (void)disable:(CDVInvokedUrlCommand*)command {
     [self.commandDelegate runInBackground:^{
         if (self.sessionManager != nil) {
+            [self.sessionManager.session beginConfiguration];
             for (AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
             }
             for (AVCaptureOutput *output in self.sessionManager.session.outputs) {
                 [self.sessionManager.session removeOutput:output];
             }
+            [self.sessionManager.session commitConfiguration];
+            
             self.sessionManager.delegate = nil;
             [self.sessionManager deallocSession];
             self.sessionManager = nil;
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                if (previewLayer) {
-                    [previewLayer removeFromSuperlayer];
-                    previewLayer = nil;
+                if (self.previewLayer && self.previewLayer.superlayer) {
+                    [self.previewLayer removeFromSuperlayer];
+                    self.previewLayer = nil;
                 }
                 [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
             });
@@ -234,14 +282,17 @@ BOOL torchActivated = false;
     }];
 }
 
+
 - (void)disableDualMode:(CDVInvokedUrlCommand*)command {
     NSLog(@"Disable 1");
     if (self.dualMode != nil) {
-        [self.dualMode disableDualMode];
-        self.dualMode = nil;
-
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        // Call Swift and pass a completion block
+        [self.dualMode disableDualModeWithCompletion:^{
+            // Send success once Swift cleanup is complete
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            self.dualMode = nil;
+        }];
     } else {
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -250,20 +301,21 @@ BOOL torchActivated = false;
 }
 
 
--(void) setSize:(CDVInvokedUrlCommand*)command {
-    [self _setSize:command];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
 
--(void)_setSize:(CDVInvokedUrlCommand*)command {
-    NSDictionary* config = command.arguments[0];
-    float x = ((NSNumber*)config[@"x"]).floatValue;
-    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
-    float width = ((NSNumber*)config[@"width"]).floatValue;
-    float height = ((NSNumber*)config[@"height"]).floatValue;
-    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
-}
+//-(void) setSize:(CDVInvokedUrlCommand*)command {
+//    [self _setSize:command];
+//    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+//    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//}
+
+//-(void)_setSize:(CDVInvokedUrlCommand*)command {
+//    NSDictionary* config = command.arguments[0];
+//    float x = ((NSNumber*)config[@"x"]).floatValue;
+//    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+//    float width = ((NSNumber*)config[@"width"]).floatValue;
+//    float height = ((NSNumber*)config[@"height"]).floatValue;
+//    self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
+//}
 
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
     BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
@@ -341,19 +393,87 @@ BOOL torchActivated = false;
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
         useFlash = false;
+    
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    if (self.sessionManager != nil)
-        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings];
-
-    CDVPluginResult *pluginResult;
-    if (self.cameraRenderController != NULL) {
+    
+    if (self.sessionManager != nil) {
+        [self.sessionManager setFlashMode:(useFlash ? AVCaptureFlashModeOn : AVCaptureFlashModeOff)
+                                photoSettings:self.photoSettings];
+        
         self.onPictureTakenHandlerId = command.callbackId;
-        [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        
+        if (self.sessionManager.imageOutput) {
+            [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Image output not available"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
     } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
+
+- (void)captureDual:(CDVInvokedUrlCommand*)command {
+    if (self.dualMode == nil) {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    }
+
+    [self.dualMode captureDualImagesWithCompletion:^(UIImage *mergedImage, NSError *error) {
+        if (error || mergedImage == nil) {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription ?: @"Failed to capture image"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            return;
+        }
+
+        [self runBlockWithTryCatch:^{
+            // Convert to JPEG
+            NSData *imageData = UIImageJPEGRepresentation(mergedImage, 0.9);
+            if (!imageData) {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to convert merged image"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                return;
+            }
+
+            // Add GPS metadata
+            CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
+            CFDictionaryRef metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
+            CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
+            NSDictionary *gpsData = [self getGPSDictionaryForLocation];
+            if (gpsData) {
+                CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
+            }
+
+            // Prepare paths
+            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+            NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+            NSString *uniqueFileName = [NSString stringWithFormat:@"%@_dual.jpg", [[NSUUID UUID] UUIDString]];
+            NSString *fullPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+            NSString *dataPath = [@"file://" stringByAppendingString:fullPath];
+
+            // Write merged image with metadata
+            CFStringRef UTI = CGImageSourceGetType(imageSource);
+            CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL URLWithString:dataPath], UTI, 1, NULL);
+            CGImageDestinationAddImageFromSource(destination, imageSource, 0, mutableDict);
+            CGImageDestinationFinalize(destination);
+
+            // Cleanup
+            CFRelease(destination);
+            CFRelease(imageSource);
+            CFRelease(metaDict);
+            CFRelease(UTI);
+            CFRelease(mutableDict);
+
+            // Send success with file path
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+            [pluginResult setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }];
+    }];
+}
+
 
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)
