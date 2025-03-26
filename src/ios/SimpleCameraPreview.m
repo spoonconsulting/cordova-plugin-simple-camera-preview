@@ -7,6 +7,8 @@
 
 #import "SimpleCameraPreview.h"
 
+AVCaptureVideoPreviewLayer *previewLayer;
+
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
@@ -28,75 +30,143 @@ BOOL torchActivated = false;
     }
 }
 
-- (void) enable:(CDVInvokedUrlCommand*)command {
+//- (void) enable:(CDVInvokedUrlCommand*)command {
+//    self.onCameraEnabledHandlerId = command.callbackId;
+//    CDVPluginResult *pluginResult;
+//    if (self.sessionManager != nil) {
+//        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
+//        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//        return;
+//    }
+//    
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
+//
+//    // start as transparent
+//    self.webView.opaque = NO;
+//    self.webView.backgroundColor = [UIColor clearColor];
+//    
+//    //required to get gps exif
+//    locationManager = [[CLLocationManager alloc] init];
+//    locationManager.delegate = self;
+//    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+//    locationManager.pausesLocationUpdatesAutomatically = NO;
+//    [locationManager requestWhenInUseAuthorization];
+//    
+//    // Create the session manager
+//    self.sessionManager = [[CameraSessionManager alloc] init];
+//    
+//    // render controller setup
+//    self.cameraRenderController = [[CameraRenderController alloc] init];
+//    self.cameraRenderController.sessionManager = self.sessionManager;
+//    [self _setSize:command];
+//    [self.viewController addChildViewController:self.cameraRenderController];
+//    [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
+//    [self.cameraRenderController didMoveToParentViewController:self.viewController];
+//    self.viewController.view.backgroundColor = [UIColor blackColor];
+//    
+//    // Setup session
+//    self.sessionManager.delegate = self.cameraRenderController;
+//    
+//    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
+//    if (command.arguments.count > 0) {
+//        NSDictionary* config = command.arguments[0];
+//        @try {
+//            if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
+//                NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+//                [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
+//            }
+//            NSString *captureDevice = config[@"lens"];
+//            if (captureDevice && [captureDevice length] > 0) {
+//                [setupSessionOptions setValue:captureDevice forKey:@"lens"];
+//            }
+//            NSString *direction = config[@"direction"];
+//            if (direction && [direction length] > 0) {
+//                [setupSessionOptions setValue:direction forKey:@"direction"];
+//            }
+//        } @catch(NSException *exception) {
+//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
+//        }
+//    }
+//    
+//    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+//    [self.sessionManager setupSession:setupSessionOptions
+//                           completion:^(BOOL started) {
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+//            [pluginResult setKeepCallbackAsBool:YES];
+//            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//        });
+//    } photoSettings:self.photoSettings];
+//}
+
+- (void)enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     CDVPluginResult *pluginResult;
+
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
 
-    // start as transparent
+    // Transparent web view background
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
-    
-    //required to get gps exif
+
+    // Location for GPS metadata
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
-    
-    // Create the session manager
+
+    // Setup camera session
     self.sessionManager = [[CameraSessionManager alloc] init];
-    
-    // render controller setup
-    self.cameraRenderController = [[CameraRenderController alloc] init];
-    self.cameraRenderController.sessionManager = self.sessionManager;
-    [self _setSize:command];
-    [self.viewController addChildViewController:self.cameraRenderController];
-    [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
-    [self.cameraRenderController didMoveToParentViewController:self.viewController];
-    self.viewController.view.backgroundColor = [UIColor blackColor];
-    
-    // Setup session
-    self.sessionManager.delegate = self.cameraRenderController;
-    
-    NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
-    if (command.arguments.count > 0) {
-        NSDictionary* config = command.arguments[0];
-        @try {
-            if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
-                NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-                [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
-            }
-            NSString *captureDevice = config[@"lens"];
-            if (captureDevice && [captureDevice length] > 0) {
-                [setupSessionOptions setValue:captureDevice forKey:@"lens"];
-            }
-            NSString *direction = config[@"direction"];
-            if (direction && [direction length] > 0) {
-                [setupSessionOptions setValue:direction forKey:@"direction"];
-            }
-        } @catch(NSException *exception) {
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
-        }
+    AVCaptureSession *session = [[AVCaptureSession alloc] init];
+    self.sessionManager.session = session;
+
+    AVCaptureDevice *camera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:camera error:&error];
+
+    if ([session canAddInput:input]) {
+        [session addInput:input];
     }
-    
-    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    [self.sessionManager setupSession:setupSessionOptions
-                           completion:^(BOOL started) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-            [pluginResult setKeepCallbackAsBool:YES];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        });
-    } photoSettings:self.photoSettings];
+
+    AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
+    if ([session canAddOutput:output]) {
+        [session addOutput:output];
+    }
+
+    // Create and insert preview layer
+    previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:session];
+    previewLayer.frame = self.webView.superview.bounds;
+    previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    [self.webView.superview.layer insertSublayer:previewLayer below:self.webView.layer];
+
+    [session startRunning];
+
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
+
+
+- (void)enableDualMode:(CDVInvokedUrlCommand*)command {
+    self.isDualModeEnabled = YES;
+    [self.sessionManager deallocSession];
+        
+        // Optional: remove camera view if present
+        [self.cameraRenderController.view removeFromSuperview];
+        [self.cameraRenderController removeFromParentViewController];
+
+        self.dualMode = [[DualMode alloc] init];
+        [self.dualMode enableDualModeOn:self.webView.superview];
+        
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
@@ -110,33 +180,75 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onCameraEnabledHandlerId];
 }
 
-- (void) disable:(CDVInvokedUrlCommand*)command {
+//- (void) disable:(CDVInvokedUrlCommand*)command {
+//    [self.commandDelegate runInBackground:^{
+//        if(self.sessionManager != nil) {
+//            for(AVCaptureInput *input in self.sessionManager.session.inputs) {
+//                [self.sessionManager.session removeInput:input];
+//            }
+//            for(AVCaptureOutput *output in self.sessionManager.session.outputs) {
+//                [self.sessionManager.session removeOutput:output];
+//            }
+//            self.sessionManager.delegate = nil;
+//            [self.sessionManager deallocSession];
+//            self.sessionManager = nil;
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                [self.cameraRenderController willMoveToParentViewController:nil];
+//                [self.cameraRenderController.view removeFromSuperview];
+//                [self.cameraRenderController removeFromParentViewController];
+//                [self.cameraRenderController deallocateRenderMemory];
+//                self.cameraRenderController = nil;
+//                [self deallocateMemory];
+//                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+//            });
+//        }
+//        else {
+//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
+//        }
+//    }];
+//}
+
+- (void)disable:(CDVInvokedUrlCommand*)command {
     [self.commandDelegate runInBackground:^{
-        if(self.sessionManager != nil) {
-            for(AVCaptureInput *input in self.sessionManager.session.inputs) {
+        if (self.sessionManager != nil) {
+            for (AVCaptureInput *input in self.sessionManager.session.inputs) {
                 [self.sessionManager.session removeInput:input];
             }
-            for(AVCaptureOutput *output in self.sessionManager.session.outputs) {
+            for (AVCaptureOutput *output in self.sessionManager.session.outputs) {
                 [self.sessionManager.session removeOutput:output];
             }
             self.sessionManager.delegate = nil;
             [self.sessionManager deallocSession];
             self.sessionManager = nil;
+
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self.cameraRenderController willMoveToParentViewController:nil];
-                [self.cameraRenderController.view removeFromSuperview];
-                [self.cameraRenderController removeFromParentViewController];
-                [self.cameraRenderController deallocateRenderMemory];
-                self.cameraRenderController = nil;
-                [self deallocateMemory];
+                if (previewLayer) {
+                    [previewLayer removeFromSuperlayer];
+                    previewLayer = nil;
+                }
                 [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
             });
-        }
-        else {
+        } else {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
     }];
 }
+
+- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
+    NSLog(@"Disable 1");
+    if (self.dualMode != nil) {
+        [self.dualMode disableDualMode];
+        self.dualMode = nil;
+
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not started"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+    NSLog(@"Disable 2");
+}
+
 
 -(void) setSize:(CDVInvokedUrlCommand*)command {
     [self _setSize:command];

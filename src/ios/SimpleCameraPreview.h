@@ -5,10 +5,14 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
+#import "SharinPix-Swift.h"
+
 @interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
 }
+
+
 
 - (void) setOptions:(CDVInvokedUrlCommand*)command;
 - (void) enable:(CDVInvokedUrlCommand*)command;
@@ -21,9 +25,14 @@
 - (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;
 @property (nonatomic) CDVInvokedUrlCommand *videoCallbackContext;
 @property (nonatomic) CameraSessionManager *sessionManager;
+@property (nonatomic) DualMode *dualmode;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
+@property (nonatomic, assign) BOOL isDualModeEnabled;
+@property (nonatomic, strong) DualMode *dualMode;
+
+
 
 @end

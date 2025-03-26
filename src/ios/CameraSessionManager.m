@@ -317,18 +317,28 @@
 }
 
 - (void)deallocSession {
-  if (self.session.running) {
-    [self.session stopRunning];
-  }
-  self.session = nil;
-  self.videoDeviceInput = nil;
-  self.imageOutput = nil;
-  self.dataOutput = nil;
-  self.filterLock = nil;
-  if (self.sessionQueue) {
+    if (self.session && self.session.running) {
+        [self.session stopRunning];
+    }
+
+    // Remove inputs
+    for (AVCaptureInput *input in self.session.inputs) {
+        [self.session removeInput:input];
+    }
+
+    // Remove outputs
+    for (AVCaptureOutput *output in self.session.outputs) {
+        [self.session removeOutput:output];
+    }
+
+    self.session = nil;
+    self.videoDeviceInput = nil;
+    self.imageOutput = nil;
+    self.dataOutput = nil;
+    self.device = nil;
+    self.filterLock = nil;
     self.sessionQueue = nil;
-  }
-  self.device = nil;
 }
+
 
 @end
