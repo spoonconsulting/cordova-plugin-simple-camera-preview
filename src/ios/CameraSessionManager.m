@@ -62,6 +62,37 @@
                     }
                 }
                 
+                if (options[@"previewWidth"] && options[@"previewHeight"]) {
+                    CGFloat previewWidth = ((NSNumber *)options[@"previewWidth"]).floatValue;
+                    CGFloat previewHeight = ((NSNumber *)options[@"previewHeight"]).floatValue;
+                    
+                    CMVideoDimensions bestDimensions = (CMVideoDimensions){0, 0};
+                    AVCaptureDeviceFormat *bestFormat = nil;
+                    
+                    for (AVCaptureDeviceFormat *format in [videoDevice formats]) {
+                        CMFormatDescriptionRef desc = format.formatDescription;
+                        CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(desc);
+
+                        if (dimensions.width >= (int)previewWidth && dimensions.height >= (int)previewHeight) {
+                            if (!bestFormat || (dimensions.width < bestDimensions.width && dimensions.height < bestDimensions.height)) {
+                                bestFormat = format;
+                                bestDimensions = dimensions;
+                            }
+                        }
+                    }
+                    
+                    if (bestFormat) {
+                        NSError *formatError = nil;
+                        if ([videoDevice lockForConfiguration:&formatError]) {
+                            videoDevice.activeFormat = bestFormat;
+                            videoDevice.videoZoomFactor = 1.0;
+                            [videoDevice unlockForConfiguration];
+                        } else {
+                            NSLog(@"Failed to set activeFormat: %@", formatError.localizedDescription);
+                        }
+                    }
+                }
+                
                 if ([videoDevice hasFlash]) {
                     if ([videoDevice lockForConfiguration:&error]) {
                         photoSettings.flashMode = AVCaptureFlashModeAuto;

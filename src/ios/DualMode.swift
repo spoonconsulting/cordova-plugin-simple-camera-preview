@@ -11,18 +11,15 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
     private var backOutput = AVCaptureVideoDataOutput()
     private var frontOutput = AVCaptureVideoDataOutput()
-    
+
     private var backVideoPort: AVCaptureInput.Port?
     private var frontVideoPort: AVCaptureInput.Port?
     private var pipView: UIView?
-    
+
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
 
-
-
-    
     private let queue = DispatchQueue(label: "dualMode.session.queue")
 
     @objc func enableDualMode(on view: UIView) {
@@ -52,17 +49,19 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
             self.backInput = backInput
             session.addInputWithNoConnections(backInput)
+            if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
+                self.backVideoPort = port
+            }
 
             if session.canAddOutput(backOutput) {
                 backOutput.setSampleBufferDelegate(self, queue: queue)
                 session.addOutputWithNoConnections(backOutput)
 
-                if let port = self.backVideoPort, let layer = backPreviewLayer {
-                    let conn = AVCaptureConnection(inputPort: port, videoPreviewLayer: layer)
+                if let port = self.backVideoPort {
+                    let conn = AVCaptureConnection(inputPorts: [port], output: backOutput)
                     conn.videoOrientation = .portrait
                     session.addConnection(conn)
                 }
-
             }
         }
 
@@ -73,21 +72,21 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
             self.frontInput = frontInput
             session.addInputWithNoConnections(frontInput)
+            if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
+                self.frontVideoPort = port
+            }
 
             if session.canAddOutput(frontOutput) {
                 frontOutput.setSampleBufferDelegate(self, queue: queue)
                 session.addOutputWithNoConnections(frontOutput)
 
-                if let port = self.frontVideoPort, let layer = frontPreviewLayer {
-                    let conn = AVCaptureConnection(inputPort: port, videoPreviewLayer: layer)
+                if let port = self.frontVideoPort {
+                    let conn = AVCaptureConnection(inputPorts: [port], output: frontOutput)
                     conn.videoOrientation = .portrait
                     conn.automaticallyAdjustsVideoMirroring = false
                     conn.isVideoMirrored = true
-
                     session.addConnection(conn)
                 }
-
-
             }
         }
     }
@@ -99,7 +98,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         backPreviewLayer?.frame = view.bounds
 
         if let backLayer = backPreviewLayer {
-            // Insert BELOW the webView layer
             if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
                 view.layer.insertSublayer(backLayer, below: webViewLayer)
             } else {
@@ -108,13 +106,23 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         // FRONT - PiP
-        let pipView = UIView(frame: CGRect(x: view.bounds.width - 160 - 16, y: 60, width: 160, height: 240))
-        self.pipView = pipView // Save the reference
+        let pipWidth: CGFloat = 160
+        let pipHeight: CGFloat = 240
+        let pipX: CGFloat = 16
+        let pipY: CGFloat = 60
+
+        let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
+        self.pipView = pipView
         pipView.layer.cornerRadius = 12
         pipView.clipsToBounds = true
         pipView.backgroundColor = .black
-        view.addSubview(pipView)
 
+        // 🛠️ Insert PiP BELOW the web view
+        if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
+            view.insertSubview(pipView, belowSubview: webView)
+        } else {
+            view.addSubview(pipView)
+        }
 
         frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
         frontPreviewLayer?.videoGravity = .resizeAspectFill
@@ -124,24 +132,8 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             pipView.layer.addSublayer(frontLayer)
         }
 
-        // FRONT layer connection
-        if let port = self.frontVideoPort, let layer = frontPreviewLayer {
-            let conn = AVCaptureConnection(inputPort: port, videoPreviewLayer: layer)
-            conn.videoOrientation = .portrait
-            conn.automaticallyAdjustsVideoMirroring = false
-            conn.isVideoMirrored = true
-            session.addConnection(conn)
-        }
-
-        // BACK layer connection
-        if let port = self.backVideoPort, let layer = backPreviewLayer {
-            let conn = AVCaptureConnection(inputPort: port, videoPreviewLayer: layer)
-            conn.videoOrientation = .portrait
-            session.addConnection(conn)
-        }
     }
-    
-    
+
     @objc func disableDualModeWithCompletion(_ completion: @escaping () -> Void) {
         print("Disable 3")
         queue.async {
@@ -165,7 +157,7 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 self.pipView?.removeFromSuperview()
                 self.pipView = nil
 
-                completion() // Notify Objective-C plugin
+                completion()
             }
         }
         print("Disable 4")
@@ -177,7 +169,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         self.latestBackImage = nil
     }
 
-    
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
@@ -185,7 +176,9 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         let context = CIContext()
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
 
-        let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .right)
+        let orientation = self.imageOrientationForCurrentDevice()
+        let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
+
 
         if output == backOutput {
             latestBackImage = image
@@ -194,32 +187,83 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
-            // Merge and return
-            let merged = mergeImages(top: front, bottom: back)
+            let merged = mergeImages(background: back, overlay: front)
+            let rotated = rotateImage(merged)
+            
             DispatchQueue.main.async {
-                completion(merged, nil)
+                completion(rotated, nil)
                 self.captureCompletion = nil
+                self.latestBackImage = nil
+                self.latestFrontImage = nil
             }
         }
     }
 
-    
-    func mergeImages(top: UIImage, bottom: UIImage) -> UIImage {
-        let width = max(top.size.width, bottom.size.width)
-        let height = top.size.height + bottom.size.height
-        let size = CGSize(width: width, height: height)
+    func mergeImages(background: UIImage, overlay: UIImage) -> UIImage {
+        let size = background.size
+        let overlayWidth: CGFloat = size.width * 0.3
+        let overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
+        let padding: CGFloat = 16
+
+        let overlayRect = CGRect(
+            x: size.width - overlayWidth - padding,
+            y: padding,
+            width: overlayWidth,
+            height: overlayHeight
+        )
 
         UIGraphicsBeginImageContextWithOptions(size, false, 0)
-        bottom.draw(in: CGRect(x: 0, y: 0, width: width, height: bottom.size.height))
-        top.draw(in: CGRect(x: 0, y: bottom.size.height, width: width, height: top.size.height))
-        let mergedImage = UIGraphicsGetImageFromCurrentImageContext()
+        background.draw(in: CGRect(origin: .zero, size: size))
+        overlay.draw(in: overlayRect)
+        let merged = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        
-        return mergedImage!
+
+        return merged!
     }
 
     
+    private func imageOrientationForCurrentDevice() -> UIImage.Orientation {
+        let deviceOrientation = UIDevice.current.orientation
+        switch deviceOrientation {
+        case .portraitUpsideDown:
+            return .left
+        case .landscapeLeft:
+            return .up
+        case .landscapeRight:
+            return .down
+        case .portrait:
+            return .right
+        default:
+            return .right
+        }
+    }
 }
+
+func rotateImage(_ image: UIImage) -> UIImage {
+    let size = CGSize(width: image.size.height, height: image.size.width)
+    
+    UIGraphicsBeginImageContextWithOptions(size, false, image.scale)
+    guard let context = UIGraphicsGetCurrentContext() else {
+        return image
+    }
+
+    // Move origin to the center
+    context.translateBy(x: 0, y: size.height)
+    // Rotate 90 degrees counter-clockwise
+    context.rotate(by: -.pi / 2)
+
+    // Draw the image into the context
+    image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
+
+    let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return rotatedImage ?? image
+}
+
+
+
+
 
 extension CALayer {
     func snapshot() -> UIImage {

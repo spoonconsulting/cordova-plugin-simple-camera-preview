@@ -146,7 +146,7 @@ BOOL torchActivated = false;
            config = command.arguments[0];
            @try {
                if (config[@"targetSize"] != [NSNull null]) {
-                   NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+                   NSInteger targetSize = 1920  ;
                    [options setValue:@(targetSize) forKey:@"targetSize"];
                }
                if (config[@"lens"]) {
@@ -161,7 +161,7 @@ BOOL torchActivated = false;
            }
        }
 
-    [self.sessionManager setupSession:options completion:^(BOOL started) {
+        [self.sessionManager setupSession:options completion:^(BOOL started) {
             if (!started) {
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera permission denied or session failed"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -183,6 +183,9 @@ BOOL torchActivated = false;
                     CGFloat y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
                     CGFloat width = ((NSNumber*)config[@"width"]).floatValue;
                     CGFloat height = ((NSNumber*)config[@"height"]).floatValue;
+                    
+                    [options setValue:@(width) forKey:@"previewWidth"];
+                    [options setValue:@(height) forKey:@"previewHeight"];
 
                     self.previewLayer.frame = CGRectMake(x, y, width, height);
                 } else {
@@ -299,8 +302,6 @@ BOOL torchActivated = false;
     }
     NSLog(@"Disable 2");
 }
-
-
 
 //-(void) setSize:(CDVInvokedUrlCommand*)command {
 //    [self _setSize:command];
