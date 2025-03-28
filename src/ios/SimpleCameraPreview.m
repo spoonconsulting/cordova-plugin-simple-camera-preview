@@ -106,61 +106,58 @@ BOOL torchActivated = false;
     }
 
     self.onCameraEnabledHandlerId = command.callbackId;
-
-    // Prevent duplicate camera start
     if (self.sessionManager != nil) {
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-
-    
-    // Transparent web view background
+    NSLog(@"Config: %@", command.arguments[0]);
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
-
-    // Setup location manager
     locationManager = [[CLLocationManager alloc] init];
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     locationManager.pausesLocationUpdatesAutomatically = NO;
     [locationManager requestWhenInUseAuthorization];
-
-    // Initialize session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
-    //self.sessionManager.delegate = nil;
-
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
 
     NSMutableDictionary *options = [@{} mutableCopy];
-    [options setValue:@"back" forKey:@"direction"];
-    [options setValue:@"wide" forKey:@"lens"];
-    [options setValue:@1280 forKey:@"targetSize"];
-
-    // Init session manager
        self.sessionManager = [[CameraSessionManager alloc] init];
-
        self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-       NSDictionary* config = nil;
-       if (command.arguments.count > 0 && [command.arguments[0] isKindOfClass:[NSDictionary class]]) {
-           config = command.arguments[0];
-           @try {
-               if (config[@"targetSize"] != [NSNull null]) {
-                   NSInteger targetSize = 1920  ;
-                   [options setValue:@(targetSize) forKey:@"targetSize"];
-               }
-               if (config[@"lens"]) {
-                   [options setValue:config[@"lens"] forKey:@"lens"];
-               }
-               if (config[@"direction"]) {
-                   [options setValue:config[@"direction"] forKey:@"direction"];
-               }
-           } @catch(NSException *exception) {
-               [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid config in enable"] callbackId:command.callbackId];
-               return;
-           }
-       }
+        NSDictionary* config = nil;
+        
+        if (command.arguments.count > 0 && [command.arguments[0] isKindOfClass:[NSDictionary class]]) {
+            config = command.arguments[0];
+            @try {
+                if (config[@"targetSize"] != [NSNull null]) {
+                    //NSInteger targetSize = 1920;
+                    [options setValue:config[@"targetSize"] forKey:@"targetSize"];
+                }
+                if (config[@"lens"]) {
+                    [options setValue:config[@"lens"] forKey:@"lens"];
+                }
+                if (config[@"direction"]) {
+                    [options setValue:config[@"direction"] forKey:@"direction"];
+                }
+            } @catch(NSException *exception) {
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid config in enable"] callbackId:command.callbackId];
+                return;
+            }
+        }
+    
+        // Ensure default values if not provided
+        if (!options[@"lens"]) {
+            [options setValue:@"auto" forKey:@"lens"];
+        }
+        if (!options[@"direction"]) {
+            [options setValue:@"back" forKey:@"direction"];
+        }
+        if (!options[@"targetSize"]) {
+            [options setValue:@1920 forKey:@"targetSize"];
+        }
 
+        NSLog(@"Enable normal mode: %@", options[@"lens"]);
         [self.sessionManager setupSession:options completion:^(BOOL started) {
             if (!started) {
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera permission denied or session failed"];
@@ -193,9 +190,7 @@ BOOL torchActivated = false;
                 }
 
                 [self.webView.superview.layer insertSublayer:self.previewLayer below:self.webView.layer];
-
                 [self.sessionManager.session startRunning];
-
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
                 [pluginResult setKeepCallbackAsBool:YES];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -284,7 +279,6 @@ BOOL torchActivated = false;
         }
     }];
 }
-
 
 - (void)disableDualMode:(CDVInvokedUrlCommand*)command {
     NSLog(@"Disable 1");
@@ -474,7 +468,6 @@ BOOL torchActivated = false;
         }];
     }];
 }
-
 
 - (NSDictionary *)getGPSDictionaryForLocation {
     if (!currentLocation)

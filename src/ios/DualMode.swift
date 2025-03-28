@@ -5,21 +5,16 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private var session: AVCaptureMultiCamSession!
     private var backPreviewLayer: AVCaptureVideoPreviewLayer?
     private var frontPreviewLayer: AVCaptureVideoPreviewLayer?
-
     private var backInput: AVCaptureDeviceInput?
     private var frontInput: AVCaptureDeviceInput?
-
     private var backOutput = AVCaptureVideoDataOutput()
     private var frontOutput = AVCaptureVideoDataOutput()
-
     private var backVideoPort: AVCaptureInput.Port?
     private var frontVideoPort: AVCaptureInput.Port?
     private var pipView: UIView?
-
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
-
     private let queue = DispatchQueue(label: "dualMode.session.queue")
 
     @objc func enableDualMode(on view: UIView) {
@@ -42,11 +37,9 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
-        // Back Camera
         if let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
            let backInput = try? AVCaptureDeviceInput(device: backCamera),
            session.canAddInput(backInput) {
-
             self.backInput = backInput
             session.addInputWithNoConnections(backInput)
             if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
@@ -65,7 +58,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             }
         }
 
-        // Front Camera
         if let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
            let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
            session.canAddInput(frontInput) {
@@ -92,7 +84,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     }
 
     private func setupPreview(on view: UIView) {
-        // BACK - Fullscreen
         backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
         backPreviewLayer?.videoGravity = .resizeAspectFill
         backPreviewLayer?.frame = view.bounds
@@ -105,19 +96,16 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             }
         }
 
-        // FRONT - PiP
         let pipWidth: CGFloat = 160
         let pipHeight: CGFloat = 240
         let pipX: CGFloat = 16
         let pipY: CGFloat = 60
-
         let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
         self.pipView = pipView
         pipView.layer.cornerRadius = 12
         pipView.clipsToBounds = true
         pipView.backgroundColor = .black
 
-        // 🛠️ Insert PiP BELOW the web view
         if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
             view.insertSubview(pipView, belowSubview: webView)
         } else {
@@ -131,11 +119,9 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         if let frontLayer = frontPreviewLayer {
             pipView.layer.addSublayer(frontLayer)
         }
-
     }
 
     @objc func disableDualModeWithCompletion(_ completion: @escaping () -> Void) {
-        print("Disable 3")
         queue.async {
             self.session.stopRunning()
 
@@ -160,7 +146,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 completion()
             }
         }
-        print("Disable 4")
     }
 
     @objc func captureDualImagesWithCompletion(_ completion: @escaping (UIImage?, Error?) -> Void) {
@@ -221,7 +206,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         return merged!
     }
 
-    
     private func imageOrientationForCurrentDevice() -> UIImage.Orientation {
         let deviceOrientation = UIDevice.current.orientation
         switch deviceOrientation {
@@ -247,12 +231,8 @@ func rotateImage(_ image: UIImage) -> UIImage {
         return image
     }
 
-    // Move origin to the center
     context.translateBy(x: 0, y: size.height)
-    // Rotate 90 degrees counter-clockwise
     context.rotate(by: -.pi / 2)
-
-    // Draw the image into the context
     image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
 
     let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
@@ -260,10 +240,6 @@ func rotateImage(_ image: UIImage) -> UIImage {
 
     return rotatedImage ?? image
 }
-
-
-
-
 
 extension CALayer {
     func snapshot() -> UIImage {

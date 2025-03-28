@@ -55,6 +55,7 @@
                 }
                 
                 AVCaptureDevice *videoDevice;
+                NSLog(@"Enable normal mode setup session: %@", options[@"lens"]);
                 videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
                 if ([options[@"lens"] isEqual:@"wide"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
@@ -179,6 +180,7 @@
     } else if (targetSize >= 640) {
         return AVCaptureSessionPreset640x480;
     } else {
+        NSLog(@"preset");
         return AVCaptureSessionPreset352x288;
     }
 }
@@ -191,6 +193,7 @@
             [captureConnection setVideoOrientation:orientation];
         }
     }
+    
     if (self.dataOutput != nil) {
         captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([captureConnection isVideoOrientationSupported]) {
