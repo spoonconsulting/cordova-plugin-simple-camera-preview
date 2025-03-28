@@ -126,7 +126,7 @@ BOOL torchActivated = false;
                 [self.cameraRenderController willMoveToParentViewController:nil];
                 [self.cameraRenderController.view removeFromSuperview];
                 [self.cameraRenderController removeFromParentViewController];
-                [self.cameraRenderController deallocateRenderMemory];
+//                [self.cameraRenderController deallocateRenderMemory];
                 self.cameraRenderController = nil;
                 [self deallocateMemory];
                 [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];

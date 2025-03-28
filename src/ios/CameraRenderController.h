@@ -19,7 +19,7 @@
   CVOpenGLESTextureRef _lumaTexture;
 }
 
--(void) deallocateRenderMemory;
+//-(void) deallocateRenderMemory;
 
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CIContext *ciContext;
