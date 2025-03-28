@@ -179,6 +179,7 @@
     } else if (targetSize >= 640) {
         return AVCaptureSessionPreset640x480;
     } else {
+        NSLog(@"preset");
         return AVCaptureSessionPreset352x288;
     }
 }
