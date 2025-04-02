@@ -36,10 +36,11 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private func setupSession() {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
-
+        
         if let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
            let backInput = try? AVCaptureDeviceInput(device: backCamera),
            session.canAddInput(backInput) {
+            configureCamera(backCamera, desiredWidth: 1920, desiredHeight: 1080)
             self.backInput = backInput
             session.addInputWithNoConnections(backInput)
             if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
@@ -61,7 +62,8 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         if let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
            let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
            session.canAddInput(frontInput) {
-
+            configureCamera(frontCamera, desiredWidth: 1920, desiredHeight: 1080)
+        
             self.frontInput = frontInput
             session.addInputWithNoConnections(frontInput)
             if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
@@ -78,6 +80,24 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                     conn.automaticallyAdjustsVideoMirroring = false
                     conn.isVideoMirrored = true
                     session.addConnection(conn)
+                }
+            }
+        }
+    }
+
+    private func configureCamera(_ device: AVCaptureDevice, desiredWidth: Int32, desiredHeight: Int32) {
+        for format in device.formats {
+            let description = format.formatDescription
+            let dimensions = CMVideoFormatDescriptionGetDimensions(description)
+            if dimensions.width == desiredWidth && dimensions.height == desiredHeight {
+                do {
+                    try device.lockForConfiguration()
+                    device.activeFormat = format
+                    device.unlockForConfiguration()
+                    print("Set \(device.localizedName) resolution to \(desiredWidth)x\(desiredHeight)")
+                    break
+                } catch {
+                    print("Error locking configuration for \(device.localizedName): \(error)")
                 }
             }
         }
@@ -163,7 +183,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
         let orientation = self.imageOrientationForCurrentDevice()
         let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
-
 
         if output == backOutput {
             latestBackImage = image

@@ -3,13 +3,12 @@
 
 - (CameraSessionManager *)init {
     if (self = [super init]) {
-        // Create the AVCaptureSession
         self.session = [[AVCaptureSession alloc] init];
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
-        // self.filterLock = [[NSLock alloc] init];
+        self.filterLock = [[NSLock alloc] init];
         self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
     }
     return self;
@@ -180,7 +179,6 @@
     } else if (targetSize >= 640) {
         return AVCaptureSessionPreset640x480;
     } else {
-        NSLog(@"preset");
         return AVCaptureSessionPreset352x288;
     }
 }
@@ -271,7 +269,6 @@
                 NSLog(@"Ultra-wide camera not found");
             }
         }
-        
         completion ? completion(cameraSwitched): NULL;
     });
 }
