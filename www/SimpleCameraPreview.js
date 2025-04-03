@@ -78,7 +78,11 @@ SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onErro
   options = options || {};
   options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
   options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
-  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCapture", [options]);
+  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCaptureDual", [options]);
+};
+
+SimpleCameraPreview.stopVideoCaptureDual = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCaptureDual");
 };
 
 SimpleCameraPreview.disableDualMode = function (onSuccess, onError) {

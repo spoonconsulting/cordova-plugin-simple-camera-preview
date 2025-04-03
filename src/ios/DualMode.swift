@@ -15,6 +15,8 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
+    private var containerView: UIView?
+    private var savedPortraitPiPFrame: CGRect?
     private let queue = DispatchQueue(label: "dualMode.session.queue")
 
     @objc func enableDualMode(on view: UIView) {
@@ -24,9 +26,17 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         session = AVCaptureMultiCamSession()
+        
+        NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(deviceOrientationDidChange),
+                name: UIDevice.orientationDidChangeNotification,
+                object: nil
+            )
         queue.async {
             self.setupSession()
             DispatchQueue.main.async {
+                self.containerView = view
                 self.setupPreview(on: view)
                 self.session.startRunning()
             }
@@ -142,6 +152,7 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     }
 
     @objc func disableDualModeWithCompletion(_ completion: @escaping () -> Void) {
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
         queue.async {
             self.session.stopRunning()
 
@@ -166,6 +177,56 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 completion()
             }
         }
+    }
+    
+    @objc private func deviceOrientationDidChange() {
+        DispatchQueue.main.async {
+            self.updatePreviewOrientation()
+        }
+    }
+    
+    private func updatePreviewOrientation() {
+        let orientation = UIDevice.current.orientation
+        let videoOrientation = orientation.videoOrientation
+        
+        if let connection = backPreviewLayer?.connection, connection.isVideoOrientationSupported {
+            connection.videoOrientation = videoOrientation
+        }
+
+        if let connection = frontPreviewLayer?.connection, connection.isVideoOrientationSupported {
+            connection.videoOrientation = videoOrientation
+        }
+
+        if let view = containerView {
+            backPreviewLayer?.frame = view.bounds
+        }
+
+        guard let pipView = pipView, let view = containerView else { return }
+        
+        let isLandscape = orientation.isLandscape
+        if isLandscape {
+            if savedPortraitPiPFrame == nil {
+                savedPortraitPiPFrame = pipView.frame
+            }
+            let pipWidth: CGFloat = 240
+            let pipHeight: CGFloat = 160
+            let pipX: CGFloat = 16
+            let pipY: CGFloat = 16
+            pipView.frame = CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight)
+        } else if orientation.isPortrait {
+            if let savedFrame = savedPortraitPiPFrame {
+                pipView.frame = savedFrame
+            } else {
+                let pipWidth: CGFloat = 160
+                let pipHeight: CGFloat = 240
+                let pipX: CGFloat = 16
+                let pipY: CGFloat = 16
+                pipView.frame = CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight)
+            }
+            savedPortraitPiPFrame = pipView.frame
+        }
+
+        frontPreviewLayer?.frame = pipView.bounds
     }
 
     @objc func captureDualImagesWithCompletion(_ completion: @escaping (UIImage?, Error?) -> Void) {
@@ -258,6 +319,23 @@ func rotateImage(_ image: UIImage) -> UIImage {
     UIGraphicsEndImageContext()
 
     return rotatedImage ?? image
+}
+
+extension UIDeviceOrientation {
+    var videoOrientation: AVCaptureVideoOrientation {
+        switch self {
+        case .portrait:
+            return .portrait
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        case .landscapeLeft:
+            return .landscapeRight // Front camera
+        case .landscapeRight:
+            return .landscapeLeft // Front camera
+        default:
+            return .portrait
+        }
+    }
 }
 
 extension CALayer {
