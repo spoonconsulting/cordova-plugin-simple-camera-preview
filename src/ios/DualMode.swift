@@ -329,9 +329,9 @@ extension UIDeviceOrientation {
         case .portraitUpsideDown:
             return .portraitUpsideDown
         case .landscapeLeft:
-            return .landscapeRight // Front camera
+            return .landscapeRight 
         case .landscapeRight:
-            return .landscapeLeft // Front camera
+            return .landscapeLeft 
         default:
             return .portrait
         }

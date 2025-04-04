@@ -67,7 +67,9 @@
     <source-file src="src/ios/CameraRenderController.m" />
     <source-file src="src/ios/DualMode.swift" />
     <header-file src="src/ios/DualMode.h" type="BridgingHeader" />
-
+    <source-file src="src/ios/PiPVideoMixer.swift" />
+    <source-file src="src/ios/PiPMixer.metal" />
+    
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
     <framework src="CoreLocation.framework" />
