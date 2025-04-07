@@ -3,24 +3,14 @@ import CoreMedia
 import CoreVideo
 
 class PiPVideoMixer {
-	
 	var description = "Video Mixer"
-	
 	private(set) var isPrepared = false
-	
-	/// A normalized CGRect representing the position and size of the PiP in relation to the full screen video preview
 	var pipFrame = CGRect.zero
-
 	private(set) var inputFormatDescription: CMFormatDescription?
-	
 	var outputFormatDescription: CMFormatDescription?
-	
 	private var outputPixelBufferPool: CVPixelBufferPool?
-	
 	private let metalDevice = MTLCreateSystemDefaultDevice()
-
 	private var textureCache: CVMetalTextureCache?
-	
 	private lazy var commandQueue: MTLCommandQueue? = {
 		guard let metalDevice = metalDevice else {
 			return nil
@@ -30,7 +20,6 @@ class PiPVideoMixer {
 	}()
 	
 	private var fullRangeVertexBuffer: MTLBuffer?
-
 	private var computePipelineState: MTLComputePipelineState?
 
 	init() {
