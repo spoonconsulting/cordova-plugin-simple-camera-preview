@@ -66,8 +66,8 @@
             NSLog(@"Starting session from viewWillAppear");
             [self.sessionManager.session startRunning];
         }
-        UIInterfaceOrientation orientation = [self.sessionManager getOrientation];
-        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:orientation]];
+        // UIInterfaceOrientation orientation = [self.sessionManager getOrientation];
+        // [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:orientation]];
     });
 }
 
@@ -114,7 +114,8 @@
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
-    // Handle size changes
+    UIInterfaceOrientation orientation = [self.sessionManager getOrientation];
+    [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:orientation]];
 }
 
 - (void)dealloc {
