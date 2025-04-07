@@ -6,7 +6,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import "SharinPix-Swift.h"
 
-@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate>{
+@interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate, DualModeRecordingDelegate>{
     CLLocationManager *locationManager;
     CLLocation* currentLocation;
 }

@@ -102,6 +102,7 @@ BOOL torchActivated = false;
     [self.sessionManager deallocSession];
         
         self.dualMode = [[DualMode alloc] init];
+        self.dualMode.recordingDelegate = self;
         [self.dualMode enableDualModeOn:self.webView.superview];
         
         CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -506,6 +507,42 @@ BOOL torchActivated = false;
     }
 }
 
+- (void)startVideoCaptureDual:(CDVInvokedUrlCommand*)command {
+    NSDictionary* options = [command.arguments firstObject];
+    BOOL recordWithAudio = [options[@"recordWithAudio"] boolValue];
+    NSInteger durationMs = [options[@"videoDurationMs"] integerValue];
+
+    if (!self.dualMode) {
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"] callbackId:command.callbackId];
+        return;
+    }
+
+    if (self.videoCallbackContext.callbackId) {
+        NSDictionary *event = @{ @"recording": @YES };
+        CDVPluginResult *recordingStarted = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:event];
+        [recordingStarted setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:recordingStarted callbackId:self.videoCallbackContext.callbackId];
+    }
+
+    [self.dualMode startDualVideoRecordingWithAudio:recordWithAudio duration:durationMs completion:^(NSString *videoPath, NSString *thumbnailPath, NSError *error) {
+        if (error) {
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription] callbackId:command.callbackId];
+        } else {
+            NSDictionary *result = @{@"nativePath": videoPath, @"thumbnail": thumbnailPath ?: [NSNull null]};
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
+    }];
+}
+
+- (void)stopVideoCaptureDual:(CDVInvokedUrlCommand*)command {
+    if (self.dualMode) {
+        [self.dualMode stopDualVideoRecording];
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }
+}
+
 - (NSString*)generateThumbnailForVideoAtURL:(NSURL *)videoURL {
     AVAsset *asset = [AVAsset assetWithURL:videoURL];
     AVAssetImageGenerator *imageGenerator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
@@ -572,6 +609,21 @@ BOOL torchActivated = false;
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
+}
+
+- (void)dualModeRecordingDidFinishWithVideoPath:(NSString *)videoPath thumbnailPath:(NSString *)thumbnailPath {
+    NSDictionary *result = @{
+        @"nativePath": videoPath ?: @"",
+        @"thumbnail": thumbnailPath ?: [NSNull null]
+    };
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
+}
+
+- (void)dualModeRecordingDidFailWithError:(NSError *)error {
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
 }
 
 @end

@@ -1,7 +1,7 @@
 import UIKit
 import AVFoundation
 
-class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     private var session: AVCaptureMultiCamSession!
     private var backPreviewLayer: AVCaptureVideoPreviewLayer?
     private var frontPreviewLayer: AVCaptureVideoPreviewLayer?
@@ -11,6 +11,7 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private var frontOutput = AVCaptureVideoDataOutput()
     private var backVideoPort: AVCaptureInput.Port?
     private var frontVideoPort: AVCaptureInput.Port?
+    private var audioOutput: AVCaptureAudioDataOutput?
     private var pipView: UIView?
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
@@ -18,6 +19,12 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private var containerView: UIView?
     private var savedPortraitPiPFrame: CGRect?
     private let queue = DispatchQueue(label: "dualMode.session.queue")
+    private var movieRecorder: MovieRecorder?
+    private var videoMixer = PiPVideoMixer()
+    private var audioInput: AVCaptureInput?
+    private var latestFrontBuffer: CMSampleBuffer?
+    private var latestBackBuffer: CMSampleBuffer?
+    @objc weak var recordingDelegate: DualModeRecordingDelegate?
 
     @objc func enableDualMode(on view: UIView) {
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
@@ -26,7 +33,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         session = AVCaptureMultiCamSession()
-        
         NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(deviceOrientationDidChange),
@@ -46,18 +52,22 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private func setupSession() {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
-        
         if let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
            let backInput = try? AVCaptureDeviceInput(device: backCamera),
            session.canAddInput(backInput) {
+
             configureCamera(backCamera, desiredWidth: 1920, desiredHeight: 1080)
             self.backInput = backInput
             session.addInputWithNoConnections(backInput)
+
             if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
                 self.backVideoPort = port
             }
 
             if session.canAddOutput(backOutput) {
+                backOutput.videoSettings = [
+                    kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+                ]
                 backOutput.setSampleBufferDelegate(self, queue: queue)
                 session.addOutputWithNoConnections(backOutput)
 
@@ -73,7 +83,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
            let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
            session.canAddInput(frontInput) {
             configureCamera(frontCamera, desiredWidth: 1920, desiredHeight: 1080)
-        
             self.frontInput = frontInput
             session.addInputWithNoConnections(frontInput)
             if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
@@ -81,6 +90,9 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             }
 
             if session.canAddOutput(frontOutput) {
+                frontOutput.videoSettings = [
+                    kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+                ]
                 frontOutput.setSampleBufferDelegate(self, queue: queue)
                 session.addOutputWithNoConnections(frontOutput)
 
@@ -91,6 +103,27 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                     conn.isVideoMirrored = true
                     session.addConnection(conn)
                 }
+            }
+        }
+        
+        if let mic = AVCaptureDevice.default(for: .audio),
+           let micInput = try? AVCaptureDeviceInput(device: mic),
+           session.canAddInput(micInput) {
+            self.audioInput = micInput
+            session.addInputWithNoConnections(micInput)
+            let audioOutput = AVCaptureAudioDataOutput()
+            if session.canAddOutput(audioOutput) {
+                audioOutput.setSampleBufferDelegate(self, queue: queue)
+                session.addOutputWithNoConnections(audioOutput)
+
+                if let port = micInput.ports.first(where: { $0.mediaType == .audio }) {
+                    let audioConnection = AVCaptureConnection(inputPorts: [port], output: audioOutput)
+                    if session.canAddConnection(audioConnection) {
+                        session.addConnection(audioConnection)
+                    }
+                }
+
+                self.audioOutput = audioOutput
             }
         }
     }
@@ -234,32 +267,93 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         self.latestFrontImage = nil
         self.latestBackImage = nil
     }
+    
+    @objc func startDualVideoRecordingWithAudio(
+        _ recordWithAudio: Bool,
+        duration: Int,
+        completion: @escaping (String, String?, Error?) -> Void
+    ) {
+        self.videoMixer.pipFrame = CGRect(x: 0.05, y: 0.05, width: 0.3, height: 0.3)
+        self.movieRecorder = MovieRecorder()
+        self.movieRecorder?.startWriting(audioEnabled: recordWithAudio) { [weak self] error in
+            guard let self = self else { return }
+
+            if let error = error {
+                completion("", nil, error)
+                return
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(duration)) {
+                self.movieRecorder?.stopWriting { path, thumb, err in
+                    if let err = err {
+                        self.recordingDelegate?.dualModeRecordingDidFail(error: err)
+                    } else {
+                        self.recordingDelegate?.dualModeRecordingDidFinish(videoPath: path, thumbnailPath: thumb)
+                    }
+                    completion(path, thumb, err)
+                }
+            }
+        }
+    }
+
+    @objc func stopDualVideoRecording() {
+        self.movieRecorder?.stopWriting(completion: { _, _, _ in })
+    }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        if let movieRecorder = self.movieRecorder {
+            if output == backOutput {
+                self.latestBackBuffer = sampleBuffer
+            } else if output == frontOutput {
+                self.latestFrontBuffer = sampleBuffer
+            } else if output == audioOutput {
+                movieRecorder.appendAudioBuffer(sampleBuffer)
+                return
+            }
 
-        let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+            if self.videoMixer.inputFormatDescription == nil,
+               let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) {
+                self.videoMixer.prepare(with: formatDesc, outputRetainedBufferCountHint: 6)
+            }
 
-        let orientation = self.imageOrientationForCurrentDevice()
-        let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
+            guard let front = latestFrontBuffer, let back = latestBackBuffer else { return }
 
-        if output == backOutput {
-            latestBackImage = image
-        } else if output == frontOutput {
-            latestFrontImage = image
+            guard let frontBuffer = CMSampleBufferGetImageBuffer(front),
+                  let backBuffer = CMSampleBufferGetImageBuffer(back) else { return }
+
+            if let merged = self.videoMixer.mix(fullScreenPixelBuffer: backBuffer, pipPixelBuffer: frontBuffer, fullScreenPixelBufferIsFrontCamera: false) {
+                movieRecorder.appendVideoPixelBuffer(merged, withPresentationTime: CMSampleBufferGetPresentationTimeStamp(back))
+                latestFrontBuffer = nil
+                latestBackBuffer = nil
+            }
         }
+        // Capture images
+        if self.captureCompletion != nil {
+            guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
-        if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
-            let merged = mergeImages(background: back, overlay: front)
-            let rotated = rotateImage(merged)
-            
-            DispatchQueue.main.async {
-                completion(rotated, nil)
-                self.captureCompletion = nil
-                self.latestBackImage = nil
-                self.latestFrontImage = nil
+            let ciImage = CIImage(cvImageBuffer: imageBuffer)
+            let context = CIContext()
+            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+
+            let orientation = self.imageOrientationForCurrentDevice()
+            let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
+
+            if output == backOutput {
+                latestBackImage = image
+            } else if output == frontOutput {
+                latestFrontImage = image
+            }
+
+            if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
+                let merged = mergeImages(background: back, overlay: front)
+                let rotated = rotateImage(merged)
+
+                DispatchQueue.main.async {
+                    completion(rotated, nil)
+                    self.captureCompletion = nil
+                    self.latestBackImage = nil
+                    self.latestFrontImage = nil
+                }
             }
         }
     }
@@ -345,4 +439,9 @@ extension CALayer {
             self.render(in: ctx.cgContext)
         }
     }
+}
+
+@objc protocol DualModeRecordingDelegate: AnyObject {
+    func dualModeRecordingDidFinish(videoPath: String, thumbnailPath: String?)
+    func dualModeRecordingDidFail(error: Error)
 }
