@@ -142,7 +142,6 @@
         self.imageOutput = [[AVCapturePhotoOutput alloc] init];
         if ([self.session canAddOutput:self.imageOutput]) {
             [self.session addOutput:self.imageOutput];
-            self.imageOutput = imageOutput;
         }
     }
 }
