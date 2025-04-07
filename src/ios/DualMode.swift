@@ -25,6 +25,8 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
     private var latestFrontBuffer: CMSampleBuffer?
     private var latestBackBuffer: CMSampleBuffer?
     @objc weak var recordingDelegate: DualModeRecordingDelegate?
+    private var recordingTimer: Timer?
+    private var recordingCompletion: ((String, String?, Error?) -> Void)?
 
     @objc func enableDualMode(on view: UIView) {
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
@@ -200,10 +202,8 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
             DispatchQueue.main.async {
                 self.backPreviewLayer?.removeFromSuperlayer()
                 self.backPreviewLayer = nil
-
                 self.frontPreviewLayer?.removeFromSuperlayer()
                 self.frontPreviewLayer = nil
-
                 self.pipView?.removeFromSuperview()
                 self.pipView = nil
 
@@ -275,6 +275,7 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
     ) {
         self.videoMixer.pipFrame = CGRect(x: 0.05, y: 0.05, width: 0.3, height: 0.3)
         self.movieRecorder = MovieRecorder()
+        self.recordingCompletion = completion
         self.movieRecorder?.startWriting(audioEnabled: recordWithAudio) { [weak self] error in
             guard let self = self else { return }
 
@@ -283,21 +284,33 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
                 return
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(duration)) {
-                self.movieRecorder?.stopWriting { path, thumb, err in
-                    if let err = err {
-                        self.recordingDelegate?.dualModeRecordingDidFail(error: err)
-                    } else {
-                        self.recordingDelegate?.dualModeRecordingDidFinish(videoPath: path, thumbnailPath: thumb)
-                    }
-                    completion(path, thumb, err)
-                }
-            }
+            let durationInSeconds = TimeInterval(duration) / 1000.0
+            self.recordingTimer = Timer.scheduledTimer(
+                timeInterval: durationInSeconds,
+                target: self,
+                selector: #selector(self.stopDualVideoRecording),
+                userInfo: nil,
+                repeats: false
+            )
         }
     }
-
+    
     @objc func stopDualVideoRecording() {
-        self.movieRecorder?.stopWriting(completion: { _, _, _ in })
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+
+        self.movieRecorder?.stopWriting { [weak self] path, thumb, err in
+            guard let self = self else { return }
+
+            if let err = err {
+                self.recordingDelegate?.dualModeRecordingDidFail(error: err)
+            } else {
+                self.recordingDelegate?.dualModeRecordingDidFinish(videoPath: path, thumbnailPath: thumb)
+            }
+
+            self.recordingCompletion?(path, thumb, err)
+            self.recordingCompletion = nil
+        }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -327,7 +340,7 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
                 latestBackBuffer = nil
             }
         }
-        // Capture images
+
         if self.captureCompletion != nil {
             guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
