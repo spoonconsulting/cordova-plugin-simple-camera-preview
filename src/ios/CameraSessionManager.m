@@ -96,12 +96,6 @@
                     self.videoDeviceInput = videoDeviceInput;
                 }
                 
-                AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
-                if ([self.session canAddOutput:imageOutput]) {
-                    [self.session addOutput:imageOutput];
-                    self.imageOutput = imageOutput;
-                }
-                
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
                 
                 AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
@@ -141,6 +135,16 @@
             completion(false);
         }
     }];
+}
+
+- (void) setupPhotoOutput {
+    if (!self.imageOutput) {
+        self.imageOutput = [[AVCapturePhotoOutput alloc] init];
+        if ([self.session canAddOutput:self.imageOutput]) {
+            [self.session addOutput:self.imageOutput];
+            self.imageOutput = imageOutput;
+        }
+    }
 }
 
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
