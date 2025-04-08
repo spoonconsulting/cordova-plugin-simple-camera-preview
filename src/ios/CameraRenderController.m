@@ -68,7 +68,7 @@
     });
 }
 
-- (void)appplicationIsActive:(NSNotification *)notification {
+- (void)applicationIsActive:(NSNotification *)notification {
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running){
             [self.sessionManager.session startRunning];
