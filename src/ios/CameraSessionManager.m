@@ -72,8 +72,6 @@
                     }
                 }
                 
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-                
                 if (error) {
                     NSLog(@"%@", error);
                     success = FALSE;
@@ -89,15 +87,13 @@
                     }
                 }
                 
+                [self.session beginConfiguration];
+
+                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
+
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
-                }
-                
-                AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
-                if ([self.session canAddOutput:imageOutput]) {
-                    [self.session addOutput:imageOutput];
-                    self.imageOutput = imageOutput;
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
@@ -123,6 +119,9 @@
                     
                     [self.session addOutput:dataOutput];
                 }
+
+                [self.session commitConfiguration];
+
                 __block AVCaptureVideoOrientation orientation;
                 dispatch_sync(dispatch_get_main_queue(), ^{
                     orientation=[self getCurrentOrientation];
@@ -136,6 +135,15 @@
             completion(false);
         }
     }];
+}
+
+- (void) setupPhotoOutput {
+    if (!self.imageOutput) {
+        self.imageOutput = [[AVCapturePhotoOutput alloc] init];
+        if ([self.session canAddOutput:self.imageOutput]) {
+            [self.session addOutput:self.imageOutput];
+        }
+    }
 }
 
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
