@@ -7,10 +7,8 @@ class MovieRecorder {
     private var videoInput: AVAssetWriterInput?
     private var audioInput: AVAssetWriterInput?
     private var adaptor: AVAssetWriterInputPixelBufferAdaptor?
-
     private var isWriting = false
     private var startTime: CMTime?
-
     private var outputURL: URL?
     private var completionHandler: ((String, String?, Error?) -> Void)?
 
@@ -25,7 +23,7 @@ class MovieRecorder {
 
             try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
 
-            let fileName = UUID().uuidString + "_dual.mov"
+            let fileName = UUID().uuidString + ".mov"
             outputURL = outputDirectory.appendingPathComponent(fileName)
 
             assetWriter = try AVAssetWriter(outputURL: outputURL!, fileType: .mov)
@@ -150,7 +148,7 @@ class MovieRecorder {
                 let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
                 let uiImage = UIImage(cgImage: cgImage)
                 if let data = uiImage.jpegData(compressionQuality: 0.8) {
-                    let thumbName = UUID().uuidString + "_thumb.jpg"
+                    let thumbName = UUID().uuidString + "video_thumb_.jpg"
                     let dir = try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                         .appendingPathComponent("NoCloud", isDirectory: true)
 

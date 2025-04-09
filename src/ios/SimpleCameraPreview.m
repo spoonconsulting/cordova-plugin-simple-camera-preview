@@ -289,7 +289,6 @@ BOOL torchActivated = false;
         }
 
         [self runBlockWithTryCatch:^{
-            // Convert to JPEG
             NSData *imageData = UIImageJPEGRepresentation(mergedImage, 0.9);
             if (!imageData) {
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to convert merged image"];
@@ -297,7 +296,6 @@ BOOL torchActivated = false;
                 return;
             }
 
-            // Add GPS metadata
             CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
             CFDictionaryRef metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
             CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
@@ -306,27 +304,23 @@ BOOL torchActivated = false;
                 CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
             }
 
-            // Prepare paths
             NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
             NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
-            NSString *uniqueFileName = [NSString stringWithFormat:@"%@_dual.jpg", [[NSUUID UUID] UUIDString]];
+            NSString *uniqueFileName = [NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]];
             NSString *fullPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
             NSString *dataPath = [@"file://" stringByAppendingString:fullPath];
 
-            // Write merged image with metadata
             CFStringRef UTI = CGImageSourceGetType(imageSource);
             CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL URLWithString:dataPath], UTI, 1, NULL);
             CGImageDestinationAddImageFromSource(destination, imageSource, 0, mutableDict);
             CGImageDestinationFinalize(destination);
 
-            // Cleanup
             CFRelease(destination);
             CFRelease(imageSource);
             CFRelease(metaDict);
             CFRelease(UTI);
             CFRelease(mutableDict);
 
-            // Send success with file path
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
             [pluginResult setKeepCallbackAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
