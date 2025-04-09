@@ -1,6 +1,7 @@
 
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
+#import "SimpleCameraPreview.h"
 #import <Cordova/CDVInvokedUrlCommand.h>
 @import CoreLocation;
 @import ImageIO;
