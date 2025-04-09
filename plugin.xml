@@ -59,12 +59,14 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
-    <header-file src="src/ios/SimpleCameraPreview.h" />
-    <source-file src="src/ios/SimpleCameraPreview.m" />
-    <header-file src="src/ios/CameraSessionManager.h" />
     <source-file src="src/ios/CameraSessionManager.m" />
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
+    <source-file src="src/ios/DualMode.swift" />
+    <header-file src="src/ios/DualMode.h" type="BridgingHeader" />
+    <source-file src="src/ios/PiPVideoMixer.swift" />
+    <source-file src="src/ios/PiPMixer.metal" />
+    <source-file src="src/ios/MovieRecorder.swift" />
 
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
