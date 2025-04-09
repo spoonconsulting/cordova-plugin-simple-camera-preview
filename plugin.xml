@@ -59,6 +59,9 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
+    <header-file src="src/ios/SimpleCameraPreview.h" />
+    <source-file src="src/ios/SimpleCameraPreview.m" />
+    <header-file src="src/ios/CameraSessionManager.h" />
     <source-file src="src/ios/CameraSessionManager.m" />
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
