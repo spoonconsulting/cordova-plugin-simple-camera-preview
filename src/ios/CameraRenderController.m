@@ -16,7 +16,7 @@
 
 - (CameraRenderController *)init {
     if (self = [super init]) {
-        self.renderLock = [[NSLock alloc] init];
+        self.renderLock = [NSLock new];
     }
     return self;
 }
@@ -43,7 +43,7 @@
     id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"vertex_main"];
     id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"fragment_main"];
 
-    MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+    MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
     pipelineDescriptor.vertexFunction = vertexFunction;
     pipelineDescriptor.fragmentFunction = fragmentFunction;
     pipelineDescriptor.colorAttachments[0].pixelFormat = self.mtkView.colorPixelFormat;
@@ -85,7 +85,10 @@
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
     if ([self.renderLock tryLock]) {
         CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-        if (!pixelBuffer) return;
+        if (!pixelBuffer) {
+            [self.renderLock unlock];
+            return;
+        }
         
         CVMetalTextureRef textureRef = NULL;
         size_t width = CVPixelBufferGetWidth(pixelBuffer);
@@ -135,6 +138,8 @@
         CFRelease(_textureCache);
         _textureCache = nil;
     }
+    _mtkView.delegate = nil;
+    _cameraTexture = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
