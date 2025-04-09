@@ -226,7 +226,7 @@ BOOL torchActivated = false;
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
     [self.sessionManager.session beginConfiguration];
-    [self.sessionManager setupPhotoOutput];
+    [self.sessionManager setPhotoOutputAndOrientation];
     [self.sessionManager.session commitConfiguration];
 
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];

@@ -137,7 +137,7 @@
     }];
 }
 
-- (void) setupPhotoOutput {
+- (void) setPhotoOutputAndOrientation {
     if (!self.imageOutput) {
         self.imageOutput = [[AVCapturePhotoOutput alloc] init];
         if ([self.session canAddOutput:self.imageOutput]) {
