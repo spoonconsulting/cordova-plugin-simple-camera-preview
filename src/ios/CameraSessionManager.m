@@ -4,13 +4,13 @@
 - (CameraSessionManager *)init {
     if (self = [super init]) {
         // Create the AVCaptureSession
-        self.session = [[AVCaptureSession alloc] init];
+        self.session = [AVCaptureSession new];
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
-        self.filterLock = [[NSLock alloc] init];
-        self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+        self.filterLock = [NSLock new];
+        self.movieFileOutput = [AVCaptureMovieFileOutput new];
     }
     return self;
 }
@@ -96,7 +96,7 @@
                     self.videoDeviceInput = videoDeviceInput;
                 }
                 
-                AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
+                AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
                 
                 AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
                 NSError *audioError = nil;
@@ -139,7 +139,7 @@
 
 - (void) setupPhotoOutput {
     if (!self.imageOutput) {
-        self.imageOutput = [[AVCapturePhotoOutput alloc] init];
+        self.imageOutput = [AVCapturePhotoOutput new];
         if ([self.session canAddOutput:self.imageOutput]) {
             [self.session addOutput:self.imageOutput];
         }
