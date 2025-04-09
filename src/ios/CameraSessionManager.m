@@ -143,6 +143,7 @@
         if ([self.session canAddOutput:self.imageOutput]) {
             [self.session addOutput:self.imageOutput];
         }
+        [self updateOrientation:[self getCurrentOrientation]];
     }
 }
 
