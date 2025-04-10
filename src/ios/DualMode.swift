@@ -54,79 +54,96 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
     private func setupSession() {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
-        if let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-           let backInput = try? AVCaptureDeviceInput(device: backCamera),
-           session.canAddInput(backInput) {
-
-            configureCamera(backCamera, desiredWidth: 1920, desiredHeight: 1080)
-            self.backInput = backInput
-            session.addInputWithNoConnections(backInput)
-
-            if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
-                self.backVideoPort = port
-            }
-
-            if session.canAddOutput(backOutput) {
-                backOutput.videoSettings = [
-                    kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-                ]
-                backOutput.setSampleBufferDelegate(self, queue: queue)
-                session.addOutputWithNoConnections(backOutput)
-
-                if let port = self.backVideoPort {
-                    let conn = AVCaptureConnection(inputPorts: [port], output: backOutput)
-                    conn.videoOrientation = .portrait
-                    session.addConnection(conn)
-                }
-            }
+        setupBackCamera()
+        setupFrontCamera()
+        setupMicrophone()
+    }
+    
+    private func setupBackCamera() {
+        guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              let backInput = try? AVCaptureDeviceInput(device: backCamera),
+              session.canAddInput(backInput) else {
+            return
         }
 
-        if let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
-           let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
-           session.canAddInput(frontInput) {
-            configureCamera(frontCamera, desiredWidth: 1920, desiredHeight: 1080)
-            self.frontInput = frontInput
-            session.addInputWithNoConnections(frontInput)
-            if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
-                self.frontVideoPort = port
-            }
+        configureCamera(backCamera, desiredWidth: 1920, desiredHeight: 1080)
+        self.backInput = backInput
+        session.addInputWithNoConnections(backInput)
 
-            if session.canAddOutput(frontOutput) {
-                frontOutput.videoSettings = [
-                    kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-                ]
-                frontOutput.setSampleBufferDelegate(self, queue: queue)
-                session.addOutputWithNoConnections(frontOutput)
+        if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
+            self.backVideoPort = port
+        }
 
-                if let port = self.frontVideoPort {
-                    let conn = AVCaptureConnection(inputPorts: [port], output: frontOutput)
-                    conn.videoOrientation = .portrait
-                    conn.automaticallyAdjustsVideoMirroring = false
-                    conn.isVideoMirrored = true
-                    session.addConnection(conn)
-                }
+        if session.canAddOutput(backOutput) {
+            backOutput.videoSettings = [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ]
+            backOutput.setSampleBufferDelegate(self, queue: queue)
+            session.addOutputWithNoConnections(backOutput)
+
+            if let port = self.backVideoPort {
+                let connection = AVCaptureConnection(inputPorts: [port], output: backOutput)
+                connection.videoOrientation = .portrait
+                session.addConnection(connection)
             }
         }
-        
-        if let mic = AVCaptureDevice.default(for: .audio),
-           let micInput = try? AVCaptureDeviceInput(device: mic),
-           session.canAddInput(micInput) {
-            self.audioInput = micInput
-            session.addInputWithNoConnections(micInput)
-            let audioOutput = AVCaptureAudioDataOutput()
-            if session.canAddOutput(audioOutput) {
-                audioOutput.setSampleBufferDelegate(self, queue: queue)
-                session.addOutputWithNoConnections(audioOutput)
+    }
 
-                if let port = micInput.ports.first(where: { $0.mediaType == .audio }) {
-                    let audioConnection = AVCaptureConnection(inputPorts: [port], output: audioOutput)
-                    if session.canAddConnection(audioConnection) {
-                        session.addConnection(audioConnection)
-                    }
-                }
+    private func setupFrontCamera() {
+        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
+              let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
+              session.canAddInput(frontInput) else {
+            return
+        }
 
-                self.audioOutput = audioOutput
+        configureCamera(frontCamera, desiredWidth: 1920, desiredHeight: 1080)
+        self.frontInput = frontInput
+        session.addInputWithNoConnections(frontInput)
+
+        if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
+            self.frontVideoPort = port
+        }
+
+        if session.canAddOutput(frontOutput) {
+            frontOutput.videoSettings = [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ]
+            frontOutput.setSampleBufferDelegate(self, queue: queue)
+            session.addOutputWithNoConnections(frontOutput)
+
+            if let port = self.frontVideoPort {
+                let connection = AVCaptureConnection(inputPorts: [port], output: frontOutput)
+                connection.videoOrientation = .portrait
+                connection.automaticallyAdjustsVideoMirroring = false
+                connection.isVideoMirrored = true
+                session.addConnection(connection)
             }
+        }
+    }
+    
+    private func setupMicrophone() {
+        guard let mic = AVCaptureDevice.default(for: .audio),
+              let micInput = try? AVCaptureDeviceInput(device: mic),
+              session.canAddInput(micInput) else {
+            return
+        }
+
+        self.audioInput = micInput
+        session.addInputWithNoConnections(micInput)
+
+        let audioOutput = AVCaptureAudioDataOutput()
+        if session.canAddOutput(audioOutput) {
+            audioOutput.setSampleBufferDelegate(self, queue: queue)
+            session.addOutputWithNoConnections(audioOutput)
+
+            if let port = micInput.ports.first(where: { $0.mediaType == .audio }) {
+                let audioConnection = AVCaptureConnection(inputPorts: [port], output: audioOutput)
+                if session.canAddConnection(audioConnection) {
+                    session.addConnection(audioConnection)
+                }
+            }
+
+            self.audioOutput = audioOutput
         }
     }
 
@@ -148,23 +165,20 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
         }
     }
 
-    private func setupPreview(on view: UIView) {
-        backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-        backPreviewLayer?.videoGravity = .resizeAspectFill
-        backPreviewLayer?.frame = view.bounds
-
-        if let backLayer = backPreviewLayer {
-            if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
-                view.layer.insertSublayer(backLayer, below: webViewLayer)
-            } else {
-                view.layer.insertSublayer(backLayer, at: 0)
-            }
-        }
-
-        let pipWidth: CGFloat = 160
-        let pipHeight: CGFloat = 240
+    private func setupPiPView(on view: UIView) {
+        let pipWidth: CGFloat
+        let pipHeight: CGFloat
         let pipX: CGFloat = 16
         let pipY: CGFloat = 60
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            pipWidth = 240 // Larger PiP size for iPad
+            pipHeight = 320
+        } else {
+            pipWidth = 160 // Default PiP size for iPhone
+            pipHeight = 240
+        }
+
         let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
         self.pipView = pipView
         pipView.layer.cornerRadius = 12
@@ -175,14 +189,6 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
             view.insertSubview(pipView, belowSubview: webView)
         } else {
             view.addSubview(pipView)
-        }
-
-        frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-        frontPreviewLayer?.videoGravity = .resizeAspectFill
-        frontPreviewLayer?.frame = pipView.bounds
-
-        if let frontLayer = frontPreviewLayer {
-            pipView.layer.addSublayer(frontLayer)
         }
     }
 
@@ -225,37 +231,43 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
         if let connection = backPreviewLayer?.connection, connection.isVideoOrientationSupported {
             connection.videoOrientation = videoOrientation
         }
-
         if let connection = frontPreviewLayer?.connection, connection.isVideoOrientationSupported {
             connection.videoOrientation = videoOrientation
         }
-
+        
         if let view = containerView {
             backPreviewLayer?.frame = view.bounds
         }
-
+        
         guard let pipView = pipView, let view = containerView else { return }
         
         let isLandscape = orientation.isLandscape
-        if isLandscape {
-            if savedPortraitPiPFrame == nil {
-                savedPortraitPiPFrame = pipView.frame
+        
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // Larger PiP size for iPad in both portrait and landscape
+            if isLandscape {
+                let pipWidth: CGFloat = 320 
+                let pipHeight: CGFloat = 240 
+                pipView.frame = CGRect(x: 16, y: 16, width: pipWidth, height: pipHeight)
+            } else {
+                let pipWidth: CGFloat = 240 
+                let pipHeight: CGFloat = 320
+                pipView.frame = CGRect(x: 16, y: 60, width: pipWidth, height: pipHeight)
             }
-            let pipWidth: CGFloat = 240
-            let pipHeight: CGFloat = 160
-            let pipX: CGFloat = 16
-            let pipY: CGFloat = 16
-            pipView.frame = CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight)
-        } else if orientation.isPortrait {
-            if let savedFrame = savedPortraitPiPFrame {
-                pipView.frame = savedFrame
+        } else {
+            // Default PiP size for iPhone
+            if isLandscape {
+                let pipWidth: CGFloat = 240
+                let pipHeight: CGFloat = 160
+                pipView.frame = CGRect(x: 16, y: 16, width: pipWidth, height: pipHeight)
             } else {
                 let pipWidth: CGFloat = 160
                 let pipHeight: CGFloat = 240
-                let pipX: CGFloat = 16
-                let pipY: CGFloat = 16
-                pipView.frame = CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight)
+                pipView.frame = CGRect(x: 16, y: 60, width: pipWidth, height: pipHeight)
             }
+        }
+        
+        if orientation.isPortrait {
             savedPortraitPiPFrame = pipView.frame
         }
 

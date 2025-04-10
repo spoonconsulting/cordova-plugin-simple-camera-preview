@@ -1,10 +1,3 @@
-/*
-See the LICENSE.txt file for this sample’s licensing information.
-
-Abstract:
-Shader that renders two input textures with one as a PiP and the other full screen.
-*/
-
 #include <metal_stdlib>
 using namespace metal;
 
@@ -44,4 +37,3 @@ kernel void reporterMixer(texture2d<half, access::read>		fullScreenInput		[[ tex
 
 	outputTexture.write(output, gid);
 }
-
