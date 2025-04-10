@@ -70,8 +70,8 @@
     <source-file src="src/ios/PiPVideoMixer.swift" />
     <source-file src="src/ios/PiPMixer.metal" />
     <source-file src="src/ios/MovieRecorder.swift" />
-    <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
 
+    <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
     <framework src="CoreLocation.framework" />
