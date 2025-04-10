@@ -95,6 +95,12 @@
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
                 }
+
+                AVCapturePhotoOutput *imageOutput = [AVCapturePhotoOutput new];
+                if ([self.session canAddOutput:imageOutput]) {
+                    [self.session addOutput:imageOutput];
+                    self.imageOutput = imageOutput;
+                }
                 
                 AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
                 
@@ -137,14 +143,12 @@
     }];
 }
 
-- (void) setPhotoOutputAndOrientation {
-    if (!self.imageOutput) {
-        self.imageOutput = [AVCapturePhotoOutput new];
-        if ([self.session canAddOutput:self.imageOutput]) {
-            [self.session addOutput:self.imageOutput];
+- (void) startSession {
+    dispatch_async(self.sessionQueue, ^{
+        if (![self.session isRunning]) {
+            [self.session startRunning];
         }
-        [self updateOrientation:[self getCurrentOrientation]];
-    }
+    });
 }
 
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
