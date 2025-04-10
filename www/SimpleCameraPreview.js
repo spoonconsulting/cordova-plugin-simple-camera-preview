@@ -1,7 +1,7 @@
 var exec = require("cordova/exec");
 var PLUGIN_NAME = "SimpleCameraPreview";
+var FEATURE_DUAL_MODE = "DualMode";
 var SimpleCameraPreview = function () {};
-var DualMode = function () {};
 
 
 SimpleCameraPreview.videoInitialized = false;
@@ -55,13 +55,13 @@ SimpleCameraPreview.enable = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
-DualMode.enableDualMode = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", []);
+SimpleCameraPreview.enableDualMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "enableDualMode", []);
 };
 
 SimpleCameraPreview.captureDual = function (options, onSuccess, onError) {
   options = options || {};
-  exec(onSuccess, onError, PLUGIN_NAME, "captureDual", [options.flash]);
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "captureDual", [options.flash]);
 };
 
 SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onError) {
@@ -80,15 +80,15 @@ SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onErro
   options = options || {};
   options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
   options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
-  exec(onSuccess, onError, PLUGIN_NAME, "startVideoCaptureDual", [options]);
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "startVideoCaptureDual", [options]);
 };
 
 SimpleCameraPreview.stopVideoCaptureDual = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCaptureDual");
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "stopVideoCaptureDual");
 };
 
 SimpleCameraPreview.disableDualMode = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "disableDualMode", []);
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "disableDualMode", []);
 };
 
 SimpleCameraPreview.disable = function (onSuccess, onError) {
@@ -124,7 +124,4 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
-module.exports = {
-  SimpleCameraPreview: SimpleCameraPreview,
-  DualMode: DualMode
-};
+module.exports = SimpleCameraPreview;
