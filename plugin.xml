@@ -45,13 +45,14 @@
   </platform>
 
   <platform name="ios">
-    <config-file target="config.xml" parent="/*">
-      <feature name="SimpleCameraPreview">
-        <param name="ios-package" value="SimpleCameraPreview" onload="true" />
-      </feature>
-      <feature name="DualMode">
-       <param name="ios-package" value="DualMode" onload="true" />
-      </feature>
+   <config-file target="config.xml" parent="/*">
+        <feature name="SimpleCameraPreview">
+            <param name="ios-package" value="SimpleCameraPreview" onload="true" />
+        </feature>
+        
+        <feature name="DualMode">
+            <param name="ios-package" value="DualMode" onload="true" />
+        </feature>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSCameraUsageDescription">

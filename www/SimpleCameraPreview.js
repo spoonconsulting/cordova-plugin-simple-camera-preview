@@ -1,6 +1,8 @@
 var exec = require("cordova/exec");
 var PLUGIN_NAME = "SimpleCameraPreview";
 var SimpleCameraPreview = function () {};
+var DualMode = function () {};
+
 
 SimpleCameraPreview.videoInitialized = false;
 SimpleCameraPreview.videoCallback = null;
@@ -122,4 +124,7 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
-module.exports = SimpleCameraPreview;
+module.exports = {
+  SimpleCameraPreview: SimpleCameraPreview,
+  DualMode: DualMode
+};
