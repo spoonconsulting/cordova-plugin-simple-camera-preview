@@ -4,7 +4,7 @@
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 #import <CoreLocation/CoreLocation.h>
-#import "SimpleCameraPreview-Swift.h"
+#import "DualMode.h"
 
 @interface SimpleCameraPreview : CDVPlugin <AVCapturePhotoCaptureDelegate, CLLocationManagerDelegate, AVCaptureFileOutputRecordingDelegate, DualModeRecordingDelegate>{
     CLLocationManager *locationManager;
