@@ -165,32 +165,56 @@ class DualMode: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
         }
     }
 
-    private func setupPiPView(on view: UIView) {
-        let pipWidth: CGFloat
-        let pipHeight: CGFloat
-        let pipX: CGFloat = 16
-        let pipY: CGFloat = 60
+   private func setupPreview(on view: UIView) {
+    setupBackPreviewLayer(on: view)
+    setupPiPView(on: view)
+    setupFrontPreviewLayer()
+}
 
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            pipWidth = 240 // Larger PiP size for iPad
-            pipHeight = 320
+private func setupBackPreviewLayer(on view: UIView) {
+    backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+    backPreviewLayer?.videoGravity = .resizeAspectFill
+    backPreviewLayer?.frame = view.bounds
+
+    if let backLayer = backPreviewLayer {
+        if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
+            view.layer.insertSublayer(backLayer, below: webViewLayer)
         } else {
-            pipWidth = 160 // Default PiP size for iPhone
-            pipHeight = 240
-        }
-
-        let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
-        self.pipView = pipView
-        pipView.layer.cornerRadius = 12
-        pipView.clipsToBounds = true
-        pipView.backgroundColor = .black
-
-        if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
-            view.insertSubview(pipView, belowSubview: webView)
-        } else {
-            view.addSubview(pipView)
+            view.layer.insertSublayer(backLayer, at: 0)
         }
     }
+}
+
+private func setupPiPView(on view: UIView) {
+    let pipWidth: CGFloat = 160
+    let pipHeight: CGFloat = 240
+    let pipX: CGFloat = 16
+    let pipY: CGFloat = 60
+
+    let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
+    self.pipView = pipView
+    pipView.layer.cornerRadius = 12
+    pipView.clipsToBounds = true
+    pipView.backgroundColor = .black
+
+    if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
+        view.insertSubview(pipView, belowSubview: webView)
+    } else {
+        view.addSubview(pipView)
+    }
+}
+
+private func setupFrontPreviewLayer() {
+    guard let pipView = self.pipView else { return }
+
+    frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+    frontPreviewLayer?.videoGravity = .resizeAspectFill
+    frontPreviewLayer?.frame = pipView.bounds
+
+    if let frontLayer = frontPreviewLayer {
+        pipView.layer.addSublayer(frontLayer)
+    }
+}
 
     @objc func disableDualModeWithCompletion(_ completion: @escaping () -> Void) {
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
