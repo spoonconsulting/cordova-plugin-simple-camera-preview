@@ -23,7 +23,7 @@ DualMode.initVideoCallback = function (onSuccess, onError, callback) {
 }
 
 DualMode.enableDualMode = function (onSuccess, onError) {
-  exec(onSuccess, onError, FEATURE_DUAL_MODE, "enableDualMode", []);
+  exec(onSuccess, onError, PLUGIN_NAME, "enableDualMode", []);
 };
 
 DualMode.captureDual = function (options, onSuccess, onError) {
