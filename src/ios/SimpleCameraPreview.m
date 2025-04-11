@@ -90,6 +90,9 @@ BOOL torchActivated = false;
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     [self.sessionManager setupSession:setupSessionOptions
                            completion:^(BOOL started) {
+        if (started) {
+            [self.sessionManager startSession];
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:YES];
@@ -225,10 +228,6 @@ BOOL torchActivated = false;
 }
 
 - (void) capture:(CDVInvokedUrlCommand*)command {
-    [self.sessionManager.session beginConfiguration];
-    [self.sessionManager setPhotoOutputAndOrientation];
-    [self.sessionManager.session commitConfiguration];
-
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
         useFlash = false;

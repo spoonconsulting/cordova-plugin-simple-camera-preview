@@ -57,20 +57,11 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAppWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
     
     dispatch_async(self.sessionManager.sessionQueue, ^{
         if (!self.sessionManager.session.running) {
             NSLog(@"Starting session from viewWillAppear");
-            [self.sessionManager.session startRunning];
-        }
-    });
-}
-
-- (void)applicationIsActive:(NSNotification *)notification {
-    dispatch_async(self.sessionManager.sessionQueue, ^{
-        if (!self.sessionManager.session.running){
             [self.sessionManager.session startRunning];
         }
     });
