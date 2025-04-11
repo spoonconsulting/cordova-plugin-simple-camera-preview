@@ -26,7 +26,5 @@
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
-@property (nonatomic, assign) BOOL isDualModeEnabled;
-@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
 
 @end

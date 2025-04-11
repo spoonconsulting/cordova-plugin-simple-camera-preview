@@ -1,8 +1,6 @@
 import UIKit
 import AVFoundation
 
-
-
 @objc(DualMode)
 class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     private var session: AVCaptureMultiCamSession!
@@ -31,9 +29,8 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
     private var recordingTimer: Timer?
     private var recordingCompletion: ((String, String?, Error?) -> Void)?
     private var callbackId: String?
+    private var videoCallbackContext: CDVInvokedUrlCommand?
     var simpleCameraPreview: SimpleCameraPreview?
-
-    
 
     @objc(enableDualMode:)
     func enableDualMode(_ command: CDVInvokedUrlCommand) {
@@ -406,6 +403,60 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
         self.latestBackImage = nil
     }
     
+    @objc(initVideoCallback:)
+    func initVideoCallback(_ command: CDVInvokedUrlCommand) {
+        self.videoCallbackContext = command
+        let data: [String: Any] = ["videoCallbackInitialized": true]
+        
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: data)
+        pluginResult?.setKeepCallbackAs(true)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    }
+    
+    @objc(startVideoCaptureDual:)
+     func startVideoCaptureDual(_ command: CDVInvokedUrlCommand) {
+        guard let options = command.arguments.first as? [String: Any] else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Missing options")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        let recordWithAudio = options["recordWithAudio"] as? Bool ?? true
+        let videoDurationMs = options["videoDurationMs"] as? Int ?? 3000
+        
+        guard self.session != nil else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Dual mode not enabled")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            let event: [String: Any] = ["recording": true]
+            let recordingStarted = CDVPluginResult(status: .ok, messageAs: event)!
+            recordingStarted.setKeepCallbackAs(true)
+            self.commandDelegate.send(recordingStarted, callbackId: callbackId)
+        } else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Video callback context not initialized")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        self.startDualVideoRecordingWithAudio(recordWithAudio, duration: videoDurationMs) { [weak self] (videoPath, thumbnailPath, error) in
+            guard let self = self else { return }
+            if let error = error {
+                let errorResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)!
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            } else {
+                let result: [String: Any] = [
+                    "nativePath": videoPath,
+                    "thumbnail": thumbnailPath ?? NSNull()
+                ]
+                let pluginResult = CDVPluginResult(status: .ok, messageAs: result)!
+                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            }
+        }
+    }
+
     @objc func startDualVideoRecordingWithAudio(
         _ recordWithAudio: Bool,
         duration: Int,
@@ -426,14 +477,26 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
             self.recordingTimer = Timer.scheduledTimer(
                 timeInterval: durationInSeconds,
                 target: self,
-                selector: #selector(self.stopDualVideoRecording),
+                selector: #selector(self.stopVideoCaptureDual),
                 userInfo: nil,
                 repeats: false
             )
         }
     }
     
-    @objc func stopDualVideoRecording() {
+    @objc(stopVideoCaptureDual:)
+    func stopVideoCaptureDual(_ command: CDVInvokedUrlCommand) {
+        if self.session != nil {
+            self.stopDualVideoRecording(command)
+            let result = CDVPluginResult(status: .ok)!
+            self.commandDelegate.send(result, callbackId: command.callbackId)
+        } else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Dual mode not enabled")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+        }
+    }
+    
+    func stopDualVideoRecording(_ command: CDVInvokedUrlCommand) {
         recordingTimer?.invalidate()
         recordingTimer = nil
 
@@ -445,9 +508,32 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
             } else {
                 self.dualModeRecordingDidFinish(withVideoPath: path, thumbnailPath: thumb)
             }
+        }
+    }
 
-            self.recordingCompletion?(path, thumb, err)
-            self.recordingCompletion = nil
+    @objc func dualModeRecordingDidFinish(withVideoPath videoPath: String, thumbnailPath: String?) {
+        let result: [String: Any] = [
+            "nativePath": videoPath,
+            "thumbnail": thumbnailPath ?? NSNull()
+        ]
+        
+        let pluginResult = CDVPluginResult(status: .ok, messageAs: result)!
+        pluginResult.setKeepCallbackAs(true)
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            self.commandDelegate.send(pluginResult, callbackId: callbackId)
+        } else {
+            print("videoCallbackContext not set; cannot send result.")
+        }
+    }
+
+    @objc func dualModeRecordingDidFail(withError error: Error) {
+        let pluginResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)!
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            self.commandDelegate.send(pluginResult, callbackId: callbackId)
+        } else {
+            print("videoCallbackContext not set; cannot send error.")
         }
     }
 
