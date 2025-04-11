@@ -4,7 +4,6 @@
 #import <Cordova/CDVInvokedUrlCommand.h>
 @import CoreLocation;
 @import ImageIO;
-#import "DualMode.h" 
 
 @implementation SimpleCameraPreview
 
