@@ -96,18 +96,6 @@ BOOL torchActivated = false;
     } photoSettings:self.photoSettings];
 }
 
-- (void)enableDualMode:(CDVInvokedUrlCommand*)command {
-    self.isDualModeEnabled = YES;
-    [self.sessionManager deallocSession];
-        
-        self.dualMode = [[DualMode alloc] init];
-        self.dualMode.recordingDelegate = self;
-        [self.dualMode enableDualModeOn:self.webView.superview];
-        
-        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-    }
-
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
     [pluginResult setKeepCallbackAsBool:true];
@@ -146,19 +134,6 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"] callbackId:command.callbackId];
         }
     }];
-}
-
-- (void)disableDualMode:(CDVInvokedUrlCommand*)command {
-    if (self.dualMode != nil) {
-        [self.dualMode disableDualModeWithCompletion:^{
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            self.dualMode = nil;
-        }];
-    } else {
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not started"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }
 }
 
 -(void) setSize:(CDVInvokedUrlCommand*)command {
@@ -271,60 +246,6 @@ BOOL torchActivated = false;
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
-}
-
-- (void)captureDual:(CDVInvokedUrlCommand*)command {
-    if (self.dualMode == nil) {
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        return;
-    }
-
-    [self.dualMode captureDualImagesWithCompletion:^(UIImage *mergedImage, NSError *error) {
-        if (error || mergedImage == nil) {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription ?: @"Failed to capture image"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            return;
-        }
-
-        [self runBlockWithTryCatch:^{
-            NSData *imageData = UIImageJPEGRepresentation(mergedImage, 0.9);
-            if (!imageData) {
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to convert merged image"];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-                return;
-            }
-
-            CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
-            CFDictionaryRef metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
-            CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
-            NSDictionary *gpsData = [self getGPSDictionaryForLocation];
-            if (gpsData) {
-                CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
-            }
-
-            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-            NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
-            NSString *uniqueFileName = [NSString stringWithFormat:@"%@.jpg", [[NSUUID UUID] UUIDString]];
-            NSString *fullPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
-            NSString *dataPath = [@"file://" stringByAppendingString:fullPath];
-
-            CFStringRef UTI = CGImageSourceGetType(imageSource);
-            CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL URLWithString:dataPath], UTI, 1, NULL);
-            CGImageDestinationAddImageFromSource(destination, imageSource, 0, mutableDict);
-            CGImageDestinationFinalize(destination);
-
-            CFRelease(destination);
-            CFRelease(imageSource);
-            CFRelease(metaDict);
-            CFRelease(UTI);
-            CFRelease(mutableDict);
-
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
-            [pluginResult setKeepCallbackAsBool:YES];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }];
-    }];
 }
 
 - (NSDictionary *)getGPSDictionaryForLocation {
@@ -500,41 +421,41 @@ BOOL torchActivated = false;
     }
 }
 
-- (void)startVideoCaptureDual:(CDVInvokedUrlCommand*)command {
-    NSDictionary* options = [command.arguments firstObject];
-    BOOL recordWithAudio = [options[@"recordWithAudio"] boolValue];
-    NSInteger durationMs = [options[@"videoDurationMs"] integerValue];
+//- (void)startVideoCaptureDual:(CDVInvokedUrlCommand*)command {
+//    NSDictionary* options = [command.arguments firstObject];
+//    BOOL recordWithAudio = [options[@"recordWithAudio"] boolValue];
+//    NSInteger durationMs = [options[@"videoDurationMs"] integerValue];
+//
+//    if (!self.dualMode) {
+//        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"] callbackId:command.callbackId];
+//        return;
+//    }
+//
+//    if (self.videoCallbackContext.callbackId) {
+//        NSDictionary *event = @{ @"recording": @YES };
+//        CDVPluginResult *recordingStarted = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:event];
+//        [recordingStarted setKeepCallbackAsBool:YES];
+//        [self.commandDelegate sendPluginResult:recordingStarted callbackId:self.videoCallbackContext.callbackId];
+//    }
+//
+//    [self.dualMode startDualVideoRecordingWithAudio:recordWithAudio duration:durationMs completion:^(NSString *videoPath, NSString *thumbnailPath, NSError *error) {
+//        if (error) {
+//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription] callbackId:command.callbackId];
+//        } else {
+//            NSDictionary *result = @{@"nativePath": videoPath, @"thumbnail": thumbnailPath ?: [NSNull null]};
+//            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+//            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//        }
+//    }];
+//}
 
-    if (!self.dualMode) {
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"] callbackId:command.callbackId];
-        return;
-    }
-
-    if (self.videoCallbackContext.callbackId) {
-        NSDictionary *event = @{ @"recording": @YES };
-        CDVPluginResult *recordingStarted = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:event];
-        [recordingStarted setKeepCallbackAsBool:YES];
-        [self.commandDelegate sendPluginResult:recordingStarted callbackId:self.videoCallbackContext.callbackId];
-    }
-
-    [self.dualMode startDualVideoRecordingWithAudio:recordWithAudio duration:durationMs completion:^(NSString *videoPath, NSString *thumbnailPath, NSError *error) {
-        if (error) {
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription] callbackId:command.callbackId];
-        } else {
-            NSDictionary *result = @{@"nativePath": videoPath, @"thumbnail": thumbnailPath ?: [NSNull null]};
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }
-    }];
-}
-
-- (void)stopVideoCaptureDual:(CDVInvokedUrlCommand*)command {
-    if (self.dualMode) {
-        [self.dualMode stopDualVideoRecording];
-        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-    }
-}
+//- (void)stopVideoCaptureDual:(CDVInvokedUrlCommand*)command {
+//    if (self.dualMode) {
+//        [self.dualMode stopDualVideoRecording];
+//        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+//        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+//    }
+//}
 
 - (NSString*)generateThumbnailForVideoAtURL:(NSURL *)videoURL {
     AVAsset *asset = [AVAsset assetWithURL:videoURL];

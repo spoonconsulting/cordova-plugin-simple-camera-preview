@@ -1,6 +1,9 @@
 import UIKit
 import AVFoundation
 
+
+
+@objc(DualMode)
 class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     private var session: AVCaptureMultiCamSession!
     private var backPreviewLayer: AVCaptureVideoPreviewLayer?
@@ -27,26 +30,41 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
     @objc weak var recordingDelegate: DualModeRecordingDelegate?
     private var recordingTimer: Timer?
     private var recordingCompletion: ((String, String?, Error?) -> Void)?
+    private var callbackId: String?
+    var simpleCameraPreview: SimpleCameraPreview?
 
-    @objc func enableDualMode(on view: UIView) {
+    
+
+    @objc(enableDualMode:)
+    func enableDualMode(_ command: CDVInvokedUrlCommand) {
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
-            print("Multicam not supported")
+            let pluginResult = CDVPluginResult(status: .error, messageAs: "Multicam not supported")
+            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             return
         }
-
+        
         session = AVCaptureMultiCamSession()
         NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(deviceOrientationDidChange),
-                name: UIDevice.orientationDidChangeNotification,
-                object: nil
-            )
+            self,
+            selector: #selector(deviceOrientationDidChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+        
         queue.async {
             self.setupSession()
             DispatchQueue.main.async {
-                self.containerView = view
-                self.setupPreview(on: view)
+                if let container = self.webView.superview {
+                    self.setupPreview(on: container)
+                } else {
+                    let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                    return
+                }
+                
                 self.session.startRunning()
+                let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode enabled successfully")
+                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             }
         }
     }
@@ -165,56 +183,56 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
         }
     }
 
-   private func setupPreview(on view: UIView) {
-    setupBackPreviewLayer(on: view)
-    setupPiPView(on: view)
-    setupFrontPreviewLayer()
-}
+    func setupPreview(on view: UIView) {
+        self.setupBackPreviewLayer(on: view)
+        self.setupPiPView(on: view)
+        self.setupFrontPreviewLayer()
+    }
+    
+    private func setupBackPreviewLayer(on view: UIView) {
+        backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+        backPreviewLayer?.videoGravity = .resizeAspectFill
+        backPreviewLayer?.frame = view.bounds
 
-private func setupBackPreviewLayer(on view: UIView) {
-    backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-    backPreviewLayer?.videoGravity = .resizeAspectFill
-    backPreviewLayer?.frame = view.bounds
-
-    if let backLayer = backPreviewLayer {
-        if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
-            view.layer.insertSublayer(backLayer, below: webViewLayer)
-        } else {
-            view.layer.insertSublayer(backLayer, at: 0)
+        if let backLayer = backPreviewLayer {
+            if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
+                view.layer.insertSublayer(backLayer, below: webViewLayer)
+            } else {
+                view.layer.insertSublayer(backLayer, at: 0)
+            }
         }
     }
-}
 
-private func setupPiPView(on view: UIView) {
-    let pipWidth: CGFloat = 160
-    let pipHeight: CGFloat = 240
-    let pipX: CGFloat = 16
-    let pipY: CGFloat = 60
+    private func setupPiPView(on view: UIView) {
+        let pipWidth: CGFloat = 160
+        let pipHeight: CGFloat = 240
+        let pipX: CGFloat = 16
+        let pipY: CGFloat = 60
 
-    let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
-    self.pipView = pipView
-    pipView.layer.cornerRadius = 12
-    pipView.clipsToBounds = true
-    pipView.backgroundColor = .black
+        let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
+        self.pipView = pipView
+        pipView.layer.cornerRadius = 12
+        pipView.clipsToBounds = true
+        pipView.backgroundColor = .black
 
-    if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
-        view.insertSubview(pipView, belowSubview: webView)
-    } else {
-        view.addSubview(pipView)
+        if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
+            view.insertSubview(pipView, belowSubview: webView)
+        } else {
+            view.addSubview(pipView)
+        }
     }
-}
 
-private func setupFrontPreviewLayer() {
-    guard let pipView = self.pipView else { return }
+    private func setupFrontPreviewLayer() {
+        guard let pipView = self.pipView else { return }
 
-    frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-    frontPreviewLayer?.videoGravity = .resizeAspectFill
-    frontPreviewLayer?.frame = pipView.bounds
+        frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
+        frontPreviewLayer?.videoGravity = .resizeAspectFill
+        frontPreviewLayer?.frame = pipView.bounds
 
-    if let frontLayer = frontPreviewLayer {
-        pipView.layer.addSublayer(frontLayer)
+        if let frontLayer = frontPreviewLayer {
+            pipView.layer.addSublayer(frontLayer)
+        }
     }
-}
 
     @objc func disableDualModeWithCompletion(_ completion: @escaping () -> Void) {
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
@@ -297,6 +315,90 @@ private func setupFrontPreviewLayer() {
 
         frontPreviewLayer?.frame = pipView.bounds
     }
+    
+    @objc(captureDual:)
+    func captureDual(_ command: CDVInvokedUrlCommand) {
+        self.captureDualImagesWithCompletion { [weak self] mergedImage, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                let errorResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            guard let mergedImage = mergedImage else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to capture image")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let imageData = mergedImage.jpegData(compressionQuality: 0.9) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to convert merged image")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            let cfData = imageData as CFData
+            guard let imageSource = CGImageSourceCreateWithData(cfData, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to create image source")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to get image properties")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            let mutableDict = NSMutableDictionary(dictionary: metaDict)
+            
+            if let gpsData = simpleCameraPreview?.getGPSDictionaryForLocation() {
+                mutableDict[kCGImagePropertyGPSDictionary as String] = gpsData
+            }
+            
+            let paths = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true)
+            guard let libraryDirectory = paths.first else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Library directory not found")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            let noCloudPath = (libraryDirectory as NSString).appendingPathComponent("NoCloud")
+            let uniqueFileName = UUID().uuidString + ".jpg"
+            let fullPath = (noCloudPath as NSString).appendingPathComponent(uniqueFileName)
+            let dataPath = "file://" + fullPath
+            
+            guard let url = URL(string: dataPath) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Invalid file URL")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let uti = CGImageSourceGetType(imageSource) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to get image UTI")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let destination = CGImageDestinationCreateWithURL(url as CFURL, uti, 1, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to create image destination")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            CGImageDestinationAddImageFromSource(destination, imageSource, 0, mutableDict)
+            
+            guard CGImageDestinationFinalize(destination) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to finalize image destination")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+    
+            let successResult = CDVPluginResult(status: .ok, messageAs: dataPath)
+            self.commandDelegate.send(successResult, callbackId: command.callbackId)
+        }
+    }
+
+
 
     @objc func captureDualImagesWithCompletion(_ completion: @escaping (UIImage?, Error?) -> Void) {
         self.captureCompletion = completion
@@ -338,10 +440,10 @@ private func setupFrontPreviewLayer() {
         self.movieRecorder?.stopWriting { [weak self] path, thumb, err in
             guard let self = self else { return }
 
-            if let err = err {
-                self.recordingDelegate?.dualModeRecordingDidFail(error: err)
+            if let error = err {
+                self.dualModeRecordingDidFail(withError: error)
             } else {
-                self.recordingDelegate?.dualModeRecordingDidFinish(videoPath: path, thumbnailPath: thumb)
+                self.dualModeRecordingDidFinish(withVideoPath: path, thumbnailPath: thumb)
             }
 
             self.recordingCompletion?(path, thumb, err)
@@ -427,6 +529,41 @@ private func setupFrontPreviewLayer() {
         UIGraphicsEndImageContext()
 
         return merged!
+    }
+    
+    @objc(disableDualMode:)
+    func disableDualMode(_ command: CDVInvokedUrlCommand) {
+        guard self.session != nil else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Dual mode not started")
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+        
+        queue.async {
+            self.session.stopRunning()
+            self.session = nil
+            self.backInput = nil
+            self.frontInput = nil
+            self.backVideoPort = nil
+            self.frontVideoPort = nil
+            
+            self.backOutput = AVCaptureVideoDataOutput()
+            self.frontOutput = AVCaptureVideoDataOutput()
+            
+            DispatchQueue.main.async {
+                self.backPreviewLayer?.removeFromSuperlayer()
+                self.backPreviewLayer = nil
+                self.frontPreviewLayer?.removeFromSuperlayer()
+                self.frontPreviewLayer = nil
+                self.pipView?.removeFromSuperview()
+                self.pipView = nil
+                
+                let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
+                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            }
+        }
     }
 
     private func imageOrientationForCurrentDevice() -> UIImage.Orientation {
