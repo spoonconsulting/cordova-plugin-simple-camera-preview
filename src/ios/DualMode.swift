@@ -395,8 +395,6 @@ class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptu
         }
     }
 
-
-
     @objc func captureDualImagesWithCompletion(_ completion: @escaping (UIImage?, Error?) -> Void) {
         self.captureCompletion = completion
         self.latestFrontImage = nil
