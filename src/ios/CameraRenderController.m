@@ -43,15 +43,10 @@
 
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appplicationIsActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationEnteredForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onAppWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
     
     dispatch_async(self.sessionManager.sessionQueue, ^{
-        if (!self.sessionManager.session.running){
-            NSLog(@"Starting session from viewWillAppear");
-            [self.sessionManager.session startRunning];
-        }
         UIInterfaceOrientation orientation = [self.sessionManager getOrientation];
         [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation: orientation]];
     });
@@ -61,16 +56,6 @@
     if (self.sessionManager.session.running){
       [self.sessionManager stopRecording];
     }
-}
-
-
-- (void) appplicationIsActive:(NSNotification *)notification {
-    dispatch_async(self.sessionManager.sessionQueue, ^{
-        if (!self.sessionManager.session.running){
-            NSLog(@"Starting session");
-            [self.sessionManager.session startRunning];
-        }
-    });
 }
 
 - (void) applicationEnteredForeground:(NSNotification *)notification {

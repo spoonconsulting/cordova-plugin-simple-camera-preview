@@ -89,7 +89,10 @@ BOOL torchActivated = false;
     
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     [self.sessionManager setupSession:setupSessionOptions
-                           completion:^(BOOL started) {
+                           completion:^(BOOL completed) {
+        if (completed) {
+            [self.sessionManager startSession];
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:YES];

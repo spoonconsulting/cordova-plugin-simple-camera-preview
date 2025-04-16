@@ -4,13 +4,13 @@
 - (CameraSessionManager *)init {
     if (self = [super init]) {
         // Create the AVCaptureSession
-        self.session = [[AVCaptureSession alloc] init];
+        self.session = [AVCaptureSession new];
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
-        self.filterLock = [[NSLock alloc] init];
-        self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+        self.filterLock = [NSLock new];
+        self.movieFileOutput = [AVCaptureMovieFileOutput new];
     }
     return self;
 }
@@ -72,8 +72,6 @@
                     }
                 }
                 
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-                
                 if (error) {
                     NSLog(@"%@", error);
                     success = FALSE;
@@ -88,19 +86,23 @@
                         }
                     }
                 }
+
+                [self.session beginConfiguration];
+
+                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
                 
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
                 }
-                
-                AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
+
+                AVCapturePhotoOutput *imageOutput = [AVCapturePhotoOutput new];
                 if ([self.session canAddOutput:imageOutput]) {
                     [self.session addOutput:imageOutput];
                     self.imageOutput = imageOutput;
                 }
                 
-                AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
+                AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
                 
                 AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
                 NSError *audioError = nil;
@@ -123,6 +125,9 @@
                     
                     [self.session addOutput:dataOutput];
                 }
+
+                [self.session commitConfiguration];
+
                 __block AVCaptureVideoOrientation orientation;
                 dispatch_sync(dispatch_get_main_queue(), ^{
                     orientation=[self getCurrentOrientation];
@@ -136,6 +141,14 @@
             completion(false);
         }
     }];
+}
+
+- (void) startSession {
+    dispatch_async(self.sessionQueue, ^{
+        if (![self.session isRunning]) {
+            [self.session startRunning];
+        }
+    });
 }
 
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
