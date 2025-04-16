@@ -1,3 +1,6 @@
+## [2.0.36](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.35...2.0.36) (2025-04-16)
+* **iOS:** Improve camera startup delay
+
 ## [2.0.35](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.34...2.0.35) (2025-03-17)
 * **iOS:** Skip Ultra-Wide Availability Check When Switching from Back to Front
 
