@@ -272,7 +272,6 @@ public class CameraPreviewFragment extends Fragment {
 //        return supportedSizes.get(supportedSizes.size() - 1);
 //    }
 
-    @SuppressLint("RestrictedApi")
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
         if (!camera.getCameraInfo().hasFlashUnit()) {
             torchCallback.onEnabled(new Exception("No flash unit present"));
