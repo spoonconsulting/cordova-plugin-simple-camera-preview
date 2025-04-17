@@ -1,3 +1,6 @@
+## [2.0.37](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.36...2.0.37) (2025-04-17)
+* **iOS:** Fix for torch staying on when leaving app
+
 ## [2.0.36](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.35...2.0.36) (2025-04-16)
 * **iOS:** Improve camera startup delay
 
