@@ -1,3 +1,6 @@
+## [2.0.38](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.37...2.0.38) (2025-04-21)
+* **Android:** Refactoring
+
 ## [2.0.37](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.36...2.0.37) (2025-04-17)
 * **Android:** Change flash state synchronously
 
