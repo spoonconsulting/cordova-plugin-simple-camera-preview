@@ -196,7 +196,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-
     private boolean stopVideoCapture(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
@@ -232,10 +231,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
-        int lensFacing = CameraCharacteristics.LENS_FACING_BACK;
         try {
             if (targetSize > 0) {
-
                 DisplayMetrics metrics = cordova.getContext().getResources().getDisplayMetrics();
                 int targetSizePx = Math.round(targetSize * metrics.density);
                 Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSizePx);

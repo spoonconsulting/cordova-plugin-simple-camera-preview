@@ -232,19 +232,18 @@ public class CameraPreviewFragment extends Fragment {
 
     public static Size calculateResolution(Context context, int targetSize) {
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
-        if (supportedSizes.length > 0) {
-            Size closestSize = findClosestSize(supportedSizes, targetSize);
-            float ratio = (float) closestSize.getWidth() / (float) closestSize.getHeight();
-            Size calculatedSize;
-            if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
-                calculatedSize = new Size(targetSize, (int) (targetSize / ratio));
-            } else {
-                 calculatedSize = new Size((int) (targetSize / ratio), targetSize);
-            }
-            return calculatedSize;
+        if (supportedSizes.length <= 0 && targetSize <= 0) {
+            return new Size(1920, 1440);
         }
 
-        return new Size(1280, 720);
+        Size closestSize = findClosestSize(supportedSizes, targetSize);
+        float ratio = (float) closestSize.getWidth() / (float) closestSize.getHeight();
+        if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
+            return new Size(targetSize, (int) (targetSize / ratio));
+        }
+
+        return new Size((int) (targetSize / ratio), targetSize);
+
     }
 
     public static Size[] getSupportedResolutions(Context context, int lensFacing) {
@@ -257,7 +256,7 @@ public class CameraPreviewFragment extends Fragment {
                 if (facing != null && facing == lensFacing) {
                     StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                     if (map != null) {
-                        return map.getOutputSizes(ImageFormat.JPEG); // Use SurfaceTexture.class for preview sizes
+                        return map.getOutputSizes(ImageFormat.JPEG);
                     }
                 }
             }
@@ -599,19 +598,41 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         Size targetResolution = null;
-        if (targetSize > 0) {
-            targetResolution = calculateResolution(getContext(), targetSize);
-        }
-
+        targetResolution = calculateResolution(getContext(), targetSize);
+   
         Recorder recorder = new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
-        Size imageResolution = new Size(targetResolution.getHeight(),targetResolution.getWidth());
+
         preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(imageResolution)
+        AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
+                    AspectRatio.RATIO_4_3,
+                    AspectRatioStrategy.FALLBACK_RULE_AUTO
+            );
+
+        if (targetResolution != null) {
+            int dynamicAspectRatio = aspectRatioFromSize(targetResolution);
+            aspectRatioStrategy = new AspectRatioStrategy(
+                    dynamicAspectRatio,
+                    AspectRatioStrategy.FALLBACK_RULE_AUTO
+            );
+        }
+        
+        ResolutionStrategy resolutionStrategy = new ResolutionStrategy(
+                targetResolution,
+                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+        );
+
+        ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
+                .setAspectRatioStrategy(aspectRatioStrategy)
+                .setResolutionStrategy(resolutionStrategy)
                 .build();
+        
+        imageCapture = new ImageCapture.Builder()
+                .setResolutionSelector(resolutionSelector)
+                .build();
+
         cameraProvider.unbindAll();
         try {
             camera = cameraProvider.bindToLifecycle(
