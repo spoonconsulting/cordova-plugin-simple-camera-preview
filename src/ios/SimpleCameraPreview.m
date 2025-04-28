@@ -89,8 +89,8 @@ BOOL torchActivated = false;
     
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     [self.sessionManager setupSession:setupSessionOptions
-                           completion:^(BOOL started) {
-        if (started) {
+                           completion:^(BOOL completed) {
+        if (completed) {
             [self.sessionManager startSession];
         }
         dispatch_async(dispatch_get_main_queue(), ^{
