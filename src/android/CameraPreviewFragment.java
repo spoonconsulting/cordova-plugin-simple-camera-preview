@@ -330,16 +330,14 @@ public class CameraPreviewFragment extends Fragment {
         if (!camera.getCameraInfo().hasFlashUnit()) {
             torchCallback.onEnabled(new Exception("No flash unit present"));
             return;
-        } else {
-            try {
-                camera.getCameraControl().enableTorch(torchOn);
-                torchCallback.onEnabled(null);
-            } catch (Exception e) {
-                torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch", e));
-                return;
-            }
-            torchActivated = torchOn;
         }
+        try {
+            camera.getCameraControl().enableTorch(torchOn).get();
+            torchCallback.onEnabled(null); 
+        } catch (Exception e) {
+            torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch", e));
+        }
+        torchActivated = torchOn;
     }
 
     public void hasFlash(HasFlashCallback hasFlashCallback) {
