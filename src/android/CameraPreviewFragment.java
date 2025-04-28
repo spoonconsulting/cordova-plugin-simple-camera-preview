@@ -760,6 +760,18 @@ public class CameraPreviewFragment extends Fragment {
     //     }
     // }
 
+     private static int aspectRatioFromSize(Size size) {
+        int width = size.getWidth();
+        int height = size.getHeight();
+        double previewRatio = (double) Math.max(width, height) / Math.min(width, height);
+
+        if (Math.abs(previewRatio - (4.0 / 3.0)) <= Math.abs(previewRatio - (16.0 / 9.0))) {
+            return AspectRatio.RATIO_4_3;
+        } else {
+            return AspectRatio.RATIO_16_9;
+        }
+    }
+
     @Override
     public void onPause() {
         super.onPause();
