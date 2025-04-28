@@ -9,8 +9,12 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Point;
+import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
@@ -29,6 +33,7 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl;
+import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
@@ -36,6 +41,9 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.core.ResolutionInfo;
+import androidx.camera.core.resolutionselector.AspectRatioStrategy;
+import androidx.camera.core.resolutionselector.ResolutionSelector;
+import androidx.camera.core.resolutionselector.ResolutionStrategy;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.PendingRecording;
@@ -223,13 +231,54 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public static Size calculateResolution(Context context, int targetSize) {
-        Size calculatedSize;
-        if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
-            calculatedSize = new Size((int) ((float) targetSize / ratio), targetSize);
-        } else {
-            calculatedSize = new Size(targetSize, (int) ((float) targetSize / ratio));
+        Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
+        if (supportedSizes.length > 0) {
+            Size closestSize = findClosestSize(supportedSizes, targetSize);
+            float ratio = (float) closestSize.getWidth() / (float) closestSize.getHeight();
+            Size calculatedSize;
+            if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
+                calculatedSize = new Size(targetSize, (int) (targetSize / ratio));
+            } else {
+                 calculatedSize = new Size((int) (targetSize / ratio), targetSize);
+            }
+            return calculatedSize;
         }
-        return calculatedSize;
+
+        return new Size(1280, 720);
+    }
+
+    public static Size[] getSupportedResolutions(Context context, int lensFacing) {
+        try {
+            CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null && facing == lensFacing) {
+                    StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                    if (map != null) {
+                        return map.getOutputSizes(ImageFormat.JPEG); // Use SurfaceTexture.class for preview sizes
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        return new Size[0];
+    }
+
+    public static Size findClosestSize(Size[] sizes, int targetSize) {
+        Size bestSize = sizes[0];
+        int minDiff = Math.abs(bestSize.getHeight() - targetSize);
+
+        for (Size size : sizes) {
+            int diff = Math.abs(size.getHeight() - targetSize); // you could also use width
+            if (diff < minDiff) {
+                minDiff = diff;
+                bestSize = size;
+            }
+        }
+        return bestSize;
     }
 
     private static int getScreenOrientation(Context context) {
@@ -503,7 +552,7 @@ public class CameraPreviewFragment extends Fragment {
             cameraSwitchedCallback.onSwitch(true);
         });
     }
-    
+
     @SuppressLint("RestrictedApi")
     public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
         CameraSelector cameraSelector;
@@ -553,17 +602,17 @@ public class CameraPreviewFragment extends Fragment {
 
         Size targetResolution = null;
         if (targetSize > 0) {
-            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
+            targetResolution = calculateResolution(getContext(), targetSize);
         }
 
         Recorder recorder = new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
-
+        Size imageResolution = new Size(targetResolution.getHeight(),targetResolution.getWidth());
         preview = new Preview.Builder().build();
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution)
+                .setTargetResolution(imageResolution)
                 .build();
         cameraProvider.unbindAll();
         try {
@@ -588,6 +637,109 @@ public class CameraPreviewFragment extends Fragment {
             );
         }
     }
+
+    // @SuppressLint("RestrictedApi")
+    // public void setUpCamera1(JSONObject options, ProcessCameraProvider cameraProvider){
+    //     CameraSelector cameraSelector;
+    //     try {
+    //         lens = options.getString("lens");
+    //     } catch (JSONException e) {
+    //         lens = "default";
+    //     }
+
+    //     try {
+    //         direction = options.getInt("direction");
+    //     } catch (JSONException e) {
+    //         direction = CameraSelector.LENS_FACING_BACK;
+    //     }
+
+    //     if (lens != null && lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
+    //         cameraSelector = new CameraSelector.Builder()
+    //                 .addCameraFilter(cameraInfos -> {
+    //                     List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
+    //                     for (CameraInfo cameraInfo : cameraInfos) {
+    //                         if (cameraInfo instanceof Camera2CameraInfoImpl) {
+    //                             Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
+    //                             if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
+    //                                 backCameras.add(camera2CameraInfo);
+    //                             }
+    //                         }
+    //                     }
+
+    //                     Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
+    //                         Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+    //                         Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+    //                         return Float.compare(focalLength1, focalLength2);
+    //                     });
+
+    //                     if (selectedCamera != null) {
+    //                         return Collections.singletonList(selectedCamera);
+    //                     } else {
+    //                         return cameraInfos;
+    //                     }
+    //                 })
+    //                 .build();
+    //     } else {
+    //         cameraSelector = new CameraSelector.Builder()
+    //                 .requireLensFacing(direction)
+    //                 .build();
+    //     }
+
+    //     Size targetResolution = null;
+    //     if (targetSize > 0) {
+    //         targetResolution = calculateResolution(getContext(), targetSize);
+    //     }
+
+    //     Recorder recorder = new Recorder.Builder()
+    //             .setQualitySelector(QualitySelector.from(Quality.LOWEST))
+    //             .build();
+    //     videoCapture = VideoCapture.withOutput(recorder);
+
+    //     preview = new Preview.Builder().build();
+    //     AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
+    //             AspectRatio.RATIO_16_9,
+    //             AspectRatioStrategy.FALLBACK_RULE_AUTO
+    //     );
+
+    //     ResolutionStrategy resolutionStrategy = new ResolutionStrategy(
+    //             targetResolution,
+    //             ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+    //     );
+
+    //     ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
+    //             .setAspectRatioStrategy(aspectRatioStrategy)
+    //             .setResolutionStrategy(resolutionStrategy)
+    //             .build();
+
+
+
+    //     imageCapture = new ImageCapture.Builder()
+    //             .setResolutionSelector(resolutionSelector)
+    //             .build();
+
+    //     cameraProvider.unbindAll();
+    //     try {
+    //         camera = cameraProvider.bindToLifecycle(
+    //                 getActivity(),
+    //                 cameraSelector,
+    //                 preview,
+    //                 imageCapture,
+    //                 videoCapture
+    //         );
+    //     } catch (IllegalArgumentException e) {
+    //         // Error with result in capturing image with default resolution
+    //         e.printStackTrace();
+    //         imageCapture = new ImageCapture.Builder()
+    //                 .build();
+    //         camera = cameraProvider.bindToLifecycle(
+    //                 getActivity(),
+    //                 cameraSelector,
+    //                 preview,
+    //                 imageCapture,
+    //                 videoCapture
+    //         );
+    //     }
+    // }
 
     @Override
     public void onPause() {

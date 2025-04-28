@@ -1,12 +1,12 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,12 +18,9 @@ import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
-
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PermissionHelper;
@@ -31,7 +28,6 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 
@@ -215,6 +211,18 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
+    public static Double getAspectRatioDouble(int width, int height) {
+        int gcd = getGCD(width, height);
+        int aspectWidth = width / gcd;
+        int aspectHeight = height / gcd;
+        return (double) aspectWidth / (double) aspectHeight;
+    }
+
+    private static int getGCD(int a, int b) {
+        if (b == 0) return a;
+        return getGCD(b, a % b);
+    }
+
     private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
         int targetSize = 0;
         try {
@@ -224,15 +232,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
+        int lensFacing = CameraCharacteristics.LENS_FACING_BACK;
         try {
             if (targetSize > 0) {
-                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
-                ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
-                        .setTargetResolution(targetResolution);
-                @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
-                @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
+
+                DisplayMetrics metrics = cordova.getContext().getResources().getDisplayMetrics();
+                int targetSizePx = Math.round(targetSize * metrics.density);
+                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSizePx);
+                double ratio = getAspectRatioDouble(targetResolution.getWidth(),targetResolution.getHeight());
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, String.valueOf(ratio));
                 callbackContext.sendPluginResult(pluginResult);
+
             }
             return true;
         } catch (Exception e) {
@@ -577,13 +587,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 videoCallbackContext.error("Cannot start video");
                 return;
             }
-            
+
             PluginResult result = new PluginResult(PluginResult.Status.OK, data);
             result.setKeepCallback(true);
             this.videoCallbackContext.sendPluginResult(result);
         }
     }
-    
 
     @Override
     public void onDestroy() {
