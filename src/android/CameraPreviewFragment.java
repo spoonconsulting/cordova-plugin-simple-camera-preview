@@ -236,40 +236,42 @@ public class CameraPreviewFragment extends Fragment {
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
-    public static Size calculateResolution(Context context, int targetWidthPx, int aspectX, int aspectY) {
+    public static Size calculateResolution(Context context, int desiredWidthPx, int ratioWidth, int ratioHeight) {
+        // 1) get all supported  output sizes
+        Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
 
-        Size[] all = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
-        if (all.length == 0) {
-            // fallback to a simple 4:3 – if nothing at all is advertised
-            int fallbackHeight = Math.round(targetWidthPx * ((float) aspectY / aspectX));
-            return new Size(targetWidthPx, fallbackHeight);
+        // 2) if none available, fall back to a simple ratioWidth:ratioHeight rectangle
+        if (supportedSizes.length == 0) {
+            int fallbackHeightPx = Math.round(
+                    desiredWidthPx * ((float) ratioHeight / ratioWidth)
+            );
+            return new Size(desiredWidthPx, fallbackHeightPx);
         }
 
-        // 2) keep only the ones that are exactly 4:3
-        List<Size> matches = new ArrayList<>();
-        for (Size s : all) {
-            if (s.getWidth() * aspectY == s.getHeight() * aspectX) {
-                matches.add(s);
+        // 3) collect only those sizes matching the exact ratio
+        List<Size> matchingResolutions = new ArrayList<>();
+        for (Size size : supportedSizes) {
+            if (size.getWidth() * ratioHeight == size.getHeight() * ratioWidth) {
+                matchingResolutions.add(size);
             }
         }
 
-        // if no exact matches, just use all sizes
-        List<Size> candidates = matches.isEmpty()
-                ? Arrays.asList(all)
-                : matches;
+        // 4) if no exact matches, consider all supported sizes
+        List<Size> candidateResolutions = matchingResolutions.isEmpty()
+                ? Arrays.asList(supportedSizes)
+                : matchingResolutions;
 
-        // 3) find the candidate whose width is closest to targetWidthPx
-        Size best = candidates.get(0);
-        int bestDiff = Math.abs(best.getWidth() - targetWidthPx);
-        for (Size s : candidates) {
-            int diff = Math.abs(s.getWidth() - targetWidthPx);
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                best = s;
+        // 5) pick the one whose width is closest to desiredWidthPx
+        Size bestMatch = candidateResolutions.get(0);
+        int smallestDifference = Math.abs(bestMatch.getWidth() - desiredWidthPx);
+        for (Size candidate : candidateResolutions) {
+            int difference = Math.abs(candidate.getWidth() - desiredWidthPx);
+            if (difference < smallestDifference) {
+                smallestDifference = difference;
+                bestMatch = candidate;
             }
         }
-
-        return best;
+        return bestMatch;
     }
 
     public static Size[] getSupportedResolutions(Context context, int lensFacing) {
