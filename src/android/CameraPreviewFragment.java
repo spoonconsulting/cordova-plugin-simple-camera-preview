@@ -2,12 +2,10 @@ package com.spoon.simplecamerapreview;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Point;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -20,11 +18,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -110,9 +106,12 @@ public class CameraPreviewFragment extends Fragment {
     private int direction;
     private int targetSize;
     private boolean torchActivated = false;
-
     private static final String TAG = "SimpleCameraPreview";
     private String lens;
+    private int aspectX;
+    private int aspectY;
+    private Size targetResolution = null;
+
 
     public CameraPreviewFragment() {
 
@@ -137,6 +136,18 @@ public class CameraPreviewFragment extends Fragment {
         } catch (JSONException e) {
             e.printStackTrace();
             this.lens = "default";
+        }
+        try {
+            this.aspectX = options.getInt("aspectX");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            this.aspectX = 4;
+        }
+        try {
+            this.aspectY = options.getInt("aspectY");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            this.aspectY = 3;
         }
         startCameraCallback = cameraStartedCallback;
     }
@@ -224,7 +235,6 @@ public class CameraPreviewFragment extends Fragment {
 
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
-
 
     public static Size calculateResolution(Context context, int targetWidthPx, int aspectX, int aspectY) {
 
@@ -403,13 +413,15 @@ public class CameraPreviewFragment extends Fragment {
         Bitmap bitmap = null;
         Size size = null;
 
-        if (this.targetSize > 0) {
-            size = calculateResolution(getContext(), this.targetSize, 4, 3);
-        } else {
-            ResolutionInfo info = imageCapture.getResolutionInfo();
-            if (info == null) { return thumbnailUri; }
+        ResolutionInfo info = imageCapture.getResolutionInfo();
+        if (info == null) { return thumbnailUri; }
 
-            size = info.getResolution();
+        size = info.getResolution();
+
+        if (this.targetSize > 0) {
+            if (targetResolution != null){
+                size = targetResolution;
+            }
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -588,17 +600,17 @@ public class CameraPreviewFragment extends Fragment {
                     .build();
         }
 
-        Size targetResolution = null;
-        targetResolution = calculateResolution(getContext(), targetSize, 4, 3);
+        targetResolution = calculateResolution(getContext(), targetSize, aspectX,aspectY);
 
         Recorder recorder = new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
         videoCapture = VideoCapture.withOutput(recorder);
 
+        int cameraAspectRatio = calculateCameraAspect(aspectX, aspectY);
         preview = new Preview.Builder().build();
         AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
-                AspectRatio.RATIO_4_3,
+                cameraAspectRatio,
                 AspectRatioStrategy.FALLBACK_RULE_AUTO
         );
 
@@ -638,6 +650,23 @@ public class CameraPreviewFragment extends Fragment {
                     videoCapture
             );
         }
+    }
+
+    private int calculateCameraAspect(int aspectX, int aspectY) {
+        if (aspectX == 4 && aspectY == 3) {
+            return AspectRatio.RATIO_4_3;
+        }
+        if (aspectX == 16 && aspectY == 9) {
+            return AspectRatio.RATIO_16_9;
+        }
+
+        // pick whichever is numerically closer
+        float requested = (float) aspectX / aspectY;
+        float fourThree = 4f / 3f;
+        float sixteenNine = 16f / 9f;
+        return Math.abs(requested - fourThree) < Math.abs(requested - sixteenNine)
+                ? AspectRatio.RATIO_4_3
+                : AspectRatio.RATIO_16_9;
     }
 
     @Override

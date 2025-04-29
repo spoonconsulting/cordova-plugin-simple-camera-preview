@@ -212,19 +212,23 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
         int targetSize = 0;
+        int aspectX = 4, aspectY = 3;
         try {
             if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
                 targetSize = Integer.parseInt(options.getString("targetSize"));
             }
+
+            if (options.getString("aspectX") != null && !options.getString("aspectX").equals("null") && options.getString("aspectY") != null && !options.getString("aspectY").equals("null")) {
+                aspectX = Integer.parseInt(options.getString("aspectX"));
+                aspectY = Integer.parseInt(options.getString("aspectY"));
+            }
+            
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
         try {
             if (targetSize > 0) {
-                DisplayMetrics metrics = cordova.getContext().getResources().getDisplayMetrics();
-                int targetSizePx = Math.round(targetSize * metrics.density);
-                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSizePx, 4, 3);
-                double ratio = (double) targetResolution.getWidth() / (double) targetResolution.getHeight();
+                double ratio = (double) aspectX / (double) aspectY;
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, String.valueOf(ratio));
                 callbackContext.sendPluginResult(pluginResult);
 
@@ -263,6 +267,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
+        int aspectX = 4, aspectY = 3;
+        try {
+            if (options.getString("aspectX") != null && !options.getString("aspectX").equals("null")
+                    && options.getString("aspectY") != null && !options.getString("aspectY").equals("null")) {
+                aspectX = Integer.parseInt(options.getString("aspectX"));
+                aspectY = Integer.parseInt(options.getString("aspectY"));
+            }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+
         String lens = "default";
         try {
             if (options.getString("lens") != null && !options.getString("lens").equals("null")) {
@@ -285,6 +300,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
         try {
             cameraPreviewOptions.put("direction", cameraDirection);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        try {
+            cameraPreviewOptions.put("aspectX", aspectX);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        try {
+            cameraPreviewOptions.put("aspectY", aspectY);
         } catch (JSONException e) {
             e.printStackTrace();
         }
