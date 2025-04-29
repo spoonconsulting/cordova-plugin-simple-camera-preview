@@ -6,8 +6,10 @@
 @import ImageIO;
 
 #import "SimpleCameraPreview.h"
+#import "DualCameraRenderController.h"
 
 @implementation SimpleCameraPreview
+DualCameraRenderController *dualCameraController;
 
 BOOL torchActivated = false;
 
@@ -100,6 +102,57 @@ BOOL torchActivated = false;
         });
     } photoSettings:self.photoSettings];
 }
+
+- (void)startPreview:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (dualCameraController != nil) {
+            NSLog(@"Dual mode already enabled");
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode already enabled"] callbackId:command.callbackId];
+            return;
+        }
+
+        // Initialize Dual Camera Controller
+        dualCameraController = [[DualCameraRenderController alloc] init];
+
+        // Add as child view controller
+        [self.viewController addChildViewController:dualCameraController];
+        dualCameraController.view.frame = self.webView.superview.bounds;
+        [self.webView.superview insertSubview:dualCameraController.view belowSubview:self.webView];
+        [dualCameraController didMoveToParentViewController:self.viewController];
+
+        // Start the preview
+        [dualCameraController startPreview];
+
+        // Send success callback
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode started"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    });
+}
+
+// Stop Dual Mode Preview
+- (void)stopPreview:(CDVInvokedUrlCommand*)command {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (dualCameraController == nil) {
+            NSLog(@"Dual mode not enabled");
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Dual mode not enabled"] callbackId:command.callbackId];
+            return;
+        }
+
+        // Stop the preview
+        [dualCameraController stopPreview];
+
+        // Remove from parent
+        [dualCameraController willMoveToParentViewController:nil];
+        [dualCameraController.view removeFromSuperview];
+        [dualCameraController removeFromParentViewController];
+        dualCameraController = nil;
+
+        // Send success callback
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Dual mode stopped"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    });
+}
+
 
 - (void) sessionNotInterrupted:(NSNotification *)notification {
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];

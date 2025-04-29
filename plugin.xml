@@ -65,6 +65,10 @@
     <source-file src="src/ios/CameraSessionManager.m" />
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
+    <header-file src="src/ios/DualCameraRenderController.h" />
+    <source-file src="src/ios/DualCameraRenderController.m" />
+    <header-file src="src/ios/DualCameraSessionManager.h" />
+    <source-file src="src/ios/DualCameraSessionManager.m" />
 
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
