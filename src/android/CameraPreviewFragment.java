@@ -60,6 +60,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -224,20 +225,41 @@ public class CameraPreviewFragment extends Fragment {
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
-    public static Size calculateResolution(Context context, int targetSize) {
-        Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
-        if (supportedSizes.length <= 0 && targetSize <= 0) {
-            return new Size(1920, 1440);
+
+    public static Size calculateResolution(Context context, int targetWidthPx, int aspectX, int aspectY) {
+
+        Size[] all = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
+        if (all.length == 0) {
+            // fallback to a simple 4:3 – if nothing at all is advertised
+            int fallbackHeight = Math.round(targetWidthPx * ((float) aspectY / aspectX));
+            return new Size(targetWidthPx, fallbackHeight);
         }
 
-        Size closestSize = findClosestSize(supportedSizes, targetSize);
-        float ratio = (float) closestSize.getWidth() / (float) closestSize.getHeight();
-        if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
-            return new Size(targetSize, (int) (targetSize / ratio));
+        // 2) keep only the ones that are exactly 4:3
+        List<Size> matches = new ArrayList<>();
+        for (Size s : all) {
+            if (s.getWidth() * aspectY == s.getHeight() * aspectX) {
+                matches.add(s);
+            }
         }
 
-        return new Size((int) (targetSize / ratio), targetSize);
+        // if no exact matches, just use all sizes
+        List<Size> candidates = matches.isEmpty()
+                ? Arrays.asList(all)
+                : matches;
 
+        // 3) find the candidate whose width is closest to targetWidthPx
+        Size best = candidates.get(0);
+        int bestDiff = Math.abs(best.getWidth() - targetWidthPx);
+        for (Size s : candidates) {
+            int diff = Math.abs(s.getWidth() - targetWidthPx);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                best = s;
+            }
+        }
+
+        return best;
     }
 
     public static Size[] getSupportedResolutions(Context context, int lensFacing) {
@@ -258,33 +280,6 @@ public class CameraPreviewFragment extends Fragment {
             e.printStackTrace();
         }
         return new Size[0];
-    }
-
-    public static Size findClosestSize(Size[] sizes, int targetSize) {
-        Size bestSize = sizes[0];
-        int minDiff = Math.abs(bestSize.getHeight() - targetSize);
-
-        for (Size size : sizes) {
-            int diff = Math.abs(size.getHeight() - targetSize); // you could also use width
-            if (diff < minDiff) {
-                minDiff = diff;
-                bestSize = size;
-            }
-        }
-        return bestSize;
-    }
-
-    private static int getScreenOrientation(Context context) {
-        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        Point pointSize = new Point();
-        display.getSize(pointSize);
-        int orientation;
-        if (pointSize.x < pointSize.y) {
-            orientation = Configuration.ORIENTATION_PORTRAIT;
-        } else {
-            orientation = Configuration.ORIENTATION_LANDSCAPE;
-        }
-        return orientation;
     }
 
 //    Another way to Calculate
@@ -331,7 +326,7 @@ public class CameraPreviewFragment extends Fragment {
             torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch", e));
             return;
         }
-        
+
         torchActivated = torchOn;
     }
 
@@ -409,7 +404,7 @@ public class CameraPreviewFragment extends Fragment {
         Size size = null;
 
         if (this.targetSize > 0) {
-            size = calculateResolution(getContext(), this.targetSize);
+            size = calculateResolution(getContext(), this.targetSize, 4, 3);
         } else {
             ResolutionInfo info = imageCapture.getResolutionInfo();
             if (info == null) { return thumbnailUri; }
@@ -594,7 +589,8 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         Size targetResolution = null;
-        targetResolution = calculateResolution(getContext(), targetSize);
+        targetResolution = calculateResolution(getContext(), targetSize, 4, 3);
+
         Recorder recorder = new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.LOWEST))
                 .build();
@@ -602,17 +598,9 @@ public class CameraPreviewFragment extends Fragment {
 
         preview = new Preview.Builder().build();
         AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
-            AspectRatio.RATIO_4_3,
-            AspectRatioStrategy.FALLBACK_RULE_AUTO
+                AspectRatio.RATIO_4_3,
+                AspectRatioStrategy.FALLBACK_RULE_AUTO
         );
-
-        if (targetResolution != null) {
-            int dynamicAspectRatio = aspectRatioFromSize(targetResolution);
-            aspectRatioStrategy = new AspectRatioStrategy(
-                    dynamicAspectRatio,
-                    AspectRatioStrategy.FALLBACK_RULE_AUTO
-            );
-        }
 
         ResolutionStrategy resolutionStrategy = new ResolutionStrategy(
                 targetResolution,
@@ -651,17 +639,6 @@ public class CameraPreviewFragment extends Fragment {
             );
         }
     }
-    private static int aspectRatioFromSize(Size size) {
-        int width = size.getWidth();
-        int height = size.getHeight();
-        double previewRatio = (double) Math.max(width, height) / Math.min(width, height);
-
-        if (Math.abs(previewRatio - (4.0 / 3.0)) <= Math.abs(previewRatio - (16.0 / 9.0)))
-            return AspectRatio.RATIO_4_3;
-
-        return AspectRatio.RATIO_16_9;
-    }
-
 
     @Override
     public void onPause() {

@@ -210,18 +210,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    public static Double getAspectRatioDouble(int width, int height) {
-        int gcd = getGCD(width, height);
-        int aspectWidth = width / gcd;
-        int aspectHeight = height / gcd;
-        return (double) aspectWidth / (double) aspectHeight;
-    }
-
-    private static int getGCD(int a, int b) {
-        if (b == 0) return a;
-        return getGCD(b, a % b);
-    }
-
     private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
         int targetSize = 0;
         try {
@@ -235,8 +223,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (targetSize > 0) {
                 DisplayMetrics metrics = cordova.getContext().getResources().getDisplayMetrics();
                 int targetSizePx = Math.round(targetSize * metrics.density);
-                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSizePx);
-                double ratio = getAspectRatioDouble(targetResolution.getWidth(),targetResolution.getHeight());
+                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSizePx, 4, 3);
+                double ratio = (double) targetResolution.getWidth() / (double) targetResolution.getHeight();
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, String.valueOf(ratio));
                 callbackContext.sendPluginResult(pluginResult);
 
