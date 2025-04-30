@@ -237,7 +237,7 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public static Size calculateResolution(Context context, int desiredWidthPx, int ratioWidth, int ratioHeight) {
-        // 1) get all supported  output sizes
+        // 1) get all supported JPEG output sizes
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
 
         // 2) if none available, fall back to a simple ratioWidth:ratioHeight rectangle

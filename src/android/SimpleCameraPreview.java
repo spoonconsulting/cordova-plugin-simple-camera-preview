@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -217,12 +218,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
                 targetSize = Integer.parseInt(options.getString("targetSize"));
             }
-
-            if (options.getString("aspectX") != null && !options.getString("aspectX").equals("null") && options.getString("aspectY") != null && !options.getString("aspectY").equals("null")) {
-                aspectX = Integer.parseInt(options.getString("aspectX"));
-                aspectY = Integer.parseInt(options.getString("aspectY"));
+            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
+                String[] parts = options.getString("aspectRatio").split(":");
+                if (parts.length == 2) {
+                    aspectX  = Integer.parseInt(parts[0]);
+                    aspectY = Integer.parseInt(parts[1]);
+                }
             }
-            
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
@@ -269,10 +271,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         int aspectX = 4, aspectY = 3;
         try {
-            if (options.getString("aspectX") != null && !options.getString("aspectX").equals("null")
-                    && options.getString("aspectY") != null && !options.getString("aspectY").equals("null")) {
-                aspectX = Integer.parseInt(options.getString("aspectX"));
-                aspectY = Integer.parseInt(options.getString("aspectY"));
+            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
+                String[] parts = options.getString("aspectRatio").split(":");
+                if (parts.length == 2) {
+                    aspectX  = Integer.parseInt(parts[0]);
+                    aspectY = Integer.parseInt(parts[1]);
+                }
             }
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
