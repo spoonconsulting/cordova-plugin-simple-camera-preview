@@ -54,8 +54,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             switch (action) {
-                case "setOptions":
-                    return setOptions((JSONObject) args.get(0), callbackContext);
 
                 case "enable":
                     return enable((JSONObject) args.get(0), callbackContext);
@@ -211,38 +209,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-    private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
-        int targetSize = 0;
-        int aspectX = 4, aspectY = 3;
-        try {
-            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
-                targetSize = Integer.parseInt(options.getString("targetSize"));
-            }
-            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
-                String[] parts = options.getString("aspectRatio").split(":");
-                if (parts.length == 2) {
-                    aspectX  = Integer.parseInt(parts[0]);
-                    aspectY = Integer.parseInt(parts[1]);
-                }
-            }
-        } catch (JSONException | NumberFormatException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (targetSize > 0) {
-                double ratio = (double) aspectX / (double) aspectY;
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, String.valueOf(ratio));
-                callbackContext.sendPluginResult(pluginResult);
-
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
-    }
-
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
         webView.getView().setBackgroundColor(0x00000000);
         // Request focus on webView as page needs to be clicked/tapped to get focus on page events
@@ -269,15 +235,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        int aspectX = 4, aspectY = 3;
+        double aspectRatio = 4.0 / 3.0;
         try {
             if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
-                String[] parts = options.getString("aspectRatio").split(":");
-                if (parts.length == 2) {
-                    aspectX  = Integer.parseInt(parts[0]);
-                    aspectY = Integer.parseInt(parts[1]);
-                }
+                aspectRatio = Double.parseDouble(options.getString("aspectRatio"));
             }
+        
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
@@ -308,12 +271,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
         try {
-            cameraPreviewOptions.put("aspectX", aspectX);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        try {
-            cameraPreviewOptions.put("aspectY", aspectY);
+            cameraPreviewOptions.put("aspectRatio", aspectRatio);
         } catch (JSONException e) {
             e.printStackTrace();
         }
