@@ -231,7 +231,8 @@ public class CameraPreviewFragment extends Fragment {
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
-    public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
+     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
+        int minWidthPx = 700;
         // 1) get all supported JPEG output sizes
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
 
@@ -255,7 +256,7 @@ public class CameraPreviewFragment extends Fragment {
         // 4) collect only those sizes matching the exact ratio
         List<Size> matchingResolutions = new ArrayList<>();
         for (Size size : supportedSizes) {
-            if (size.getWidth() * ratioHeight == size.getHeight() * ratioWidth) {
+            if ((size.getWidth() * ratioHeight == size.getHeight() * ratioWidth) && size.getWidth() > minWidthPx) {
                 matchingResolutions.add(size);
             }
         }
