@@ -287,7 +287,10 @@ public class CameraPreviewFragment extends Fragment {
             torchCallback.onEnabled(null); 
         } catch (Exception e) {
             torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage()));
+            return;
         }
+        
+        torchActivated = torchOn;
     }
 
     public void hasFlash(HasFlashCallback hasFlashCallback) {
