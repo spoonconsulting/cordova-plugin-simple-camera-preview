@@ -237,10 +237,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         double aspectRatio = 4.0 / 3.0;
         try {
-            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
-                aspectRatio = Double.parseDouble(options.getString("aspectRatio"));
+            if (options.has("aspectRatio") && !options.isNull("aspectRatio")) {
+                aspectRatio = options.getDouble("aspectRatio");
+
             }
-        
+
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }

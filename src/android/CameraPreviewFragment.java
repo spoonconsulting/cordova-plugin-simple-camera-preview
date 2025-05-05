@@ -233,10 +233,10 @@ public class CameraPreviewFragment extends Fragment {
 
      public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
         int minWidthPx = 700;
-        // 1) get all supported JPEG output sizes
+        // get all supported JPEG output sizes
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
 
-        // 2) if none available, fall back to a simple ratioWidth:ratioHeight rectangle
+        // if none available, fall back to a simple ratioWidth:ratioHeight rectangle
         if (supportedSizes.length == 0) {
             int fallbackHeight = Math.round(
                     desiredWidthPx / (float) aspectRatio
@@ -244,16 +244,16 @@ public class CameraPreviewFragment extends Fragment {
             return new Size(desiredWidthPx, fallbackHeight);
         }
 
-        int ratioWidth  = 4;
-        int ratioHeight = 3;
+        double ratioWidth  = 4.0;
+        double ratioHeight = 3.0;
 
-        // 3) pick the ratioWidth:ratioHeight rectangle closest to the requested aspect ratio
+        // pick the ratioWidth:ratioHeight rectangle closest to the requested aspect ratio
         if (Math.abs(aspectRatio - (ASPECT_RATIO_4_BY_3)) > Math.abs(aspectRatio - (ASPECT_RATIO_16_BY_9))) {
-            ratioWidth  = 16;
-            ratioHeight = 9;
+            ratioWidth  = 16.0;
+            ratioHeight = 9.0;
         }
 
-        // 4) collect only those sizes matching the exact ratio
+        // collect only those sizes matching the exact ratio
         List<Size> matchingResolutions = new ArrayList<>();
         for (Size size : supportedSizes) {
             if ((size.getWidth() * ratioHeight == size.getHeight() * ratioWidth) && size.getWidth() > minWidthPx) {
@@ -261,12 +261,12 @@ public class CameraPreviewFragment extends Fragment {
             }
         }
 
-        // 5) if no exact matches, consider all supported sizes
+        // if no exact matches, consider all supported sizes
         List<Size> candidateResolutions = matchingResolutions.isEmpty()
                 ? Arrays.asList(supportedSizes)
                 : matchingResolutions;
 
-        // 6) pick the one whose width is closest to desiredWidthPx
+        // pick the one whose width is closest to desiredWidthPx
         Size bestMatch = candidateResolutions.get(0);
         int smallestDifference = Math.abs(bestMatch.getWidth() - desiredWidthPx);
         for (Size candidate : candidateResolutions) {
@@ -424,11 +424,8 @@ public class CameraPreviewFragment extends Fragment {
         if (info == null) { return thumbnailUri; }
 
         size = info.getResolution();
-
-        if (this.targetSize > 0) {
-            if (targetResolution != null){
-                size = targetResolution;
-            }
+        if (this.targetSize > 0 && targetResolution != null) {
+            size = targetResolution;
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
