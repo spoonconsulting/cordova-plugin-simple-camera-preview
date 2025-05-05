@@ -286,7 +286,7 @@ public class CameraPreviewFragment extends Fragment {
             camera.getCameraControl().enableTorch(torchOn).get();
             torchCallback.onEnabled(null); 
         } catch (Exception e) {
-            torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage()));
+            torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage(), e));
             return;
         }
         
