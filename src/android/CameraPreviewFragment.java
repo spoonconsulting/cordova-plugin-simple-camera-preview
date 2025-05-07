@@ -231,35 +231,47 @@ public class CameraPreviewFragment extends Fragment {
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
-     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
-        int minWidthPx = 700;
-        // get all supported JPEG output sizes
+    public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
+        // Get all supported JPEG output sizes
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
 
-        // if none available, fall back to a simple ratioWidth:ratioHeight rectangle
+        // If none available, fall back to a simple ratioWidth:ratioHeight rectangle
         if (supportedSizes.length == 0) {
             int fallbackHeight = Math.round(
                     desiredWidthPx / (float) aspectRatio
             );
             return new Size(desiredWidthPx, fallbackHeight);
         }
-        // collect only those sizes matching the exact ratio
-         List<Size> matchingResolutions = new ArrayList<>();
-         for (Size size : supportedSizes) {
-             // Calculate the aspect ratio for the current resolution
-             double calculatedAspectRatio = (double) size.getWidth() / size.getHeight();
 
-             // Check if the calculated aspect ratio is close enough to the requested aspect ratio
-             if (Math.abs(calculatedAspectRatio - (aspectRatio)) < 0.01 && size.getWidth() > minWidthPx) {
-                 matchingResolutions.add(size);
-             }
-         }
-         // if no exact matches, consider all supported sizes
+        // Collect only those sizes matching the exact ratio
+        List<Size> matchingResolutions = new ArrayList<>();
+        for (Size size : supportedSizes) {
+            // Calculate the aspect ratio for the current resolution
+            double calculatedAspectRatio = (double) size.getWidth() / size.getHeight();
+
+            // Check if the calculated aspect ratio is close enough to the requested aspect ratio
+            if (Math.abs(calculatedAspectRatio - (aspectRatio)) < 0.01) {
+                matchingResolutions.add(size);
+            }
+        }
+
+        // If no exact matches, consider all supported sizes
         List<Size> candidateResolutions = matchingResolutions.isEmpty()
                 ? Arrays.asList(supportedSizes)
                 : matchingResolutions;
 
-        // pick the one whose width is closest to desiredWidthPx
+        if (desiredWidthPx <= 0) {
+            // If no target size specified, return the highest resolution that matches the aspect ratio
+            Size highestResolution = candidateResolutions.get(0);
+            for (Size candidate : candidateResolutions) {
+                if (candidate.getWidth() > highestResolution.getWidth()) {
+                    highestResolution = candidate;
+                }
+            }
+            return highestResolution;
+        }
+
+        // Pick the one whose width is closest to desiredWidthPx
         Size bestMatch = candidateResolutions.get(0);
         int smallestDifference = Math.abs(bestMatch.getWidth() - desiredWidthPx);
         for (Size candidate : candidateResolutions) {

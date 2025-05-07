@@ -235,7 +235,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        double aspectRatio = 1.333 // Default aspect ratio 3:4
+        double aspectRatio = 1.333; // Default aspect ratio 3:4
         try {
             if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
                 String aspectRatioString = options.getString("aspectRatio");
