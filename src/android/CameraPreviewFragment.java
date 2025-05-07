@@ -108,9 +108,9 @@ public class CameraPreviewFragment extends Fragment {
     private boolean torchActivated = false;
     private static final String TAG = "SimpleCameraPreview";
     private String lens;
-    private Double aspectRatio;
-    private static final double ASPECT_RATIO_4_BY_3 = 4.0 / 3.0;
-    private static final double ASPECT_RATIO_16_BY_9 = 16.0 / 9.0;
+    private double aspectRatio;
+    private static final double ASPECT_RATIO_3_BY_4 = 1.3333;
+    private static final double ASPECT_RATIO_9_BY_16 = 1.7777;
     private Size targetResolution = null;
 
 
@@ -139,10 +139,10 @@ public class CameraPreviewFragment extends Fragment {
             this.lens = "default";
         }
         try {
-        this.aspectRatio = options.getDouble("aspectRatio");
+            this.aspectRatio = options.getDouble("aspectRatio");
         } catch (JSONException e) {
             e.printStackTrace();
-            this.aspectRatio = ASPECT_RATIO_4_BY_3;
+            this.aspectRatio = ASPECT_RATIO_3_BY_4;
         }
         startCameraCallback = cameraStartedCallback;
     }
@@ -243,25 +243,18 @@ public class CameraPreviewFragment extends Fragment {
             );
             return new Size(desiredWidthPx, fallbackHeight);
         }
-
-        double ratioWidth  = 4.0;
-        double ratioHeight = 3.0;
-
-        // pick the ratioWidth:ratioHeight rectangle closest to the requested aspect ratio
-        if (Math.abs(aspectRatio - (ASPECT_RATIO_4_BY_3)) > Math.abs(aspectRatio - (ASPECT_RATIO_16_BY_9))) {
-            ratioWidth  = 16.0;
-            ratioHeight = 9.0;
-        }
-
         // collect only those sizes matching the exact ratio
-        List<Size> matchingResolutions = new ArrayList<>();
-        for (Size size : supportedSizes) {
-            if ((size.getWidth() * ratioHeight == size.getHeight() * ratioWidth) && size.getWidth() > minWidthPx) {
-                matchingResolutions.add(size);
-            }
-        }
+         List<Size> matchingResolutions = new ArrayList<>();
+         for (Size size : supportedSizes) {
+             // Calculate the aspect ratio for the current resolution
+             double calculatedAspectRatio = (double) size.getWidth() / size.getHeight();
 
-        // if no exact matches, consider all supported sizes
+             // Check if the calculated aspect ratio is close enough to the requested aspect ratio
+             if (Math.abs(calculatedAspectRatio - (aspectRatio)) < 0.01 && size.getWidth() > minWidthPx) {
+                 matchingResolutions.add(size);
+             }
+         }
+         // if no exact matches, consider all supported sizes
         List<Size> candidateResolutions = matchingResolutions.isEmpty()
                 ? Arrays.asList(supportedSizes)
                 : matchingResolutions;
@@ -657,8 +650,8 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     private int calculateCameraAspect(double aspectRatio) {
-        // whichever constant is numerically closer to the requested ratio
-        return Math.abs(aspectRatio - (ASPECT_RATIO_4_BY_3)) <= Math.abs(aspectRatio - (ASPECT_RATIO_16_BY_9))
+        // Pick whichever constant is numerically closer to the requested ratio
+        return Math.abs(aspectRatio - (ASPECT_RATIO_3_BY_4)) <= Math.abs(aspectRatio - (ASPECT_RATIO_9_BY_16))
                 ? AspectRatio.RATIO_4_3
                 : AspectRatio.RATIO_16_9;
     }

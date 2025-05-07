@@ -235,11 +235,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
             e.printStackTrace();
         }
 
-        double aspectRatio = 4.0 / 3.0;
+        double aspectRatio = 1.333 // Default aspect ratio 3:4
         try {
-            if (options.has("aspectRatio") && !options.isNull("aspectRatio")) {
-                aspectRatio = options.getDouble("aspectRatio");
-
+            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
+                String aspectRatioString = options.getString("aspectRatio");
+                String[] aspectRatioParts = aspectRatioString.split(":");
+                if (aspectRatioParts.length == 2) {
+                    double aspectRatioWidth = Double.parseDouble(aspectRatioParts[0]);
+                    double aspectRatioHeight = Double.parseDouble(aspectRatioParts[1]);
+                    aspectRatio = aspectRatioHeight/aspectRatioWidth;
+                }
             }
 
         } catch (JSONException | NumberFormatException e) {
