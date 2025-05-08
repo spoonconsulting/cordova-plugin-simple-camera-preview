@@ -556,6 +556,16 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
 
+            double currentAspectRatio = this.aspectRatio;
+            try {
+                if (options.has("aspectRatio")) {
+                    this.aspectRatio = options.getDouble("aspectRatio");
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                this.aspectRatio = currentAspectRatio;
+            }
+
             setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
@@ -575,6 +585,14 @@ public class CameraPreviewFragment extends Fragment {
             direction = options.getInt("direction");
         } catch (JSONException e) {
             direction = CameraSelector.LENS_FACING_BACK;
+        }
+
+        try {
+            if (options.has("aspectRatio")) {
+                aspectRatio = options.getDouble("aspectRatio");
+            }
+        } catch (JSONException e) {
+            Log.d(TAG, "Keeping current aspect ratio: " + aspectRatio);
         }
 
         if (lens != null && lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
@@ -647,9 +665,9 @@ public class CameraPreviewFragment extends Fragment {
                     videoCapture
             );
         } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
             e.printStackTrace();
             imageCapture = new ImageCapture.Builder()
+                    .setResolutionSelector(resolutionSelector)
                     .build();
             camera = cameraProvider.bindToLifecycle(
                     getActivity(),
