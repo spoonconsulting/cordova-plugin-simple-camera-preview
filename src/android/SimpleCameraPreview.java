@@ -1,12 +1,12 @@
 package com.spoon.simplecamerapreview;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -14,16 +14,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
-
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PermissionHelper;
@@ -31,7 +29,6 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 
@@ -48,6 +45,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
+    private static final double DEFAULT_ASPECT_RATIO = 1.33333;
 
     public SimpleCameraPreview() {
         super();
@@ -57,8 +55,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
         try {
             switch (action) {
-                case "setOptions":
-                    return setOptions((JSONObject) args.get(0), callbackContext);
 
                 case "enable":
                     return enable((JSONObject) args.get(0), callbackContext);
@@ -200,7 +196,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
-
     private boolean stopVideoCapture(CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed");
@@ -213,33 +208,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         callbackContext.success();
         return true;
-    }
-
-    private boolean setOptions(JSONObject options, CallbackContext callbackContext) {
-        int targetSize = 0;
-        try {
-            if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
-                targetSize = Integer.parseInt(options.getString("targetSize"));
-            }
-        } catch (JSONException | NumberFormatException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (targetSize > 0) {
-                Size targetResolution = CameraPreviewFragment.calculateResolution(cordova.getContext(), targetSize);
-                ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
-                        .setTargetResolution(targetResolution);
-                @SuppressLint("RestrictedApi") float height = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getHeight();
-                @SuppressLint("RestrictedApi") float width = imageCaptureBuilder.getUseCaseConfig().getTargetResolution().getWidth();
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, height / width);
-                callbackContext.sendPluginResult(pluginResult);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
-            return false;
-        }
     }
 
     private boolean enable(JSONObject options, CallbackContext callbackContext) {
@@ -264,6 +232,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
             if (options.getString("targetSize") != null && !options.getString("targetSize").equals("null")) {
                 targetSize = Integer.parseInt(options.getString("targetSize"));
             }
+        } catch (JSONException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+
+        double aspectRatio = DEFAULT_ASPECT_RATIO; // Default aspect ratio 3:4
+        try {
+            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
+                aspectRatio = getCameraAspectRatio(options);
+            }
+
         } catch (JSONException | NumberFormatException e) {
             e.printStackTrace();
         }
@@ -293,6 +271,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        try {
+            cameraPreviewOptions.put("aspectRatio", aspectRatio);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         fragment = new CameraPreviewFragment(cameraPreviewOptions, (err) -> {
             if (err != null) {
@@ -304,35 +287,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
         });
 
         try {
-            RunnableFuture<Void> addViewTask = new FutureTask<>(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        DisplayMetrics metrics = new DisplayMetrics();
-                        cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                        int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
-                        int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
-                        int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
-                        int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
-
-                        FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
-                        if (containerView == null) {
-                            containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
-                            containerView.setId(containerViewId);
-                            FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
-                            containerLayoutParams.setMargins(x, y, 0, 0);
-                            cordova.getActivity().addContentView(containerView, containerLayoutParams);
-                        }
-                        cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                        webViewParent = webView.getView().getParent();
-                        webView.getView().bringToFront();
-                        cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
-                    }
-                },
-                null
-            );
-            cordova.getActivity().runOnUiThread(addViewTask);
-            addViewTask.get();
+            updateContainerView(options);
+            cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
             fetchLocation();
             return true;
         } catch (Exception e) {
@@ -481,11 +437,28 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    private static double getCameraAspectRatio(JSONObject options) {
+        try {
+            String aspectRatio = options.getString("aspectRatio");
+            String[] ratioParts = aspectRatio.split(":");
+            double width =0,height = 0;
+            if (ratioParts.length == 2) {
+                 width = Double.parseDouble(ratioParts[0]);
+                 height = Double.parseDouble(ratioParts[1]);
+            }
+            return height / width;
+
+        } catch (JSONException e) {
+            return DEFAULT_ASPECT_RATIO;
+        }
+    }
+
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
         if (fragment == null) {
             callbackContext.error("Camera is closed, cannot switch camera");
             return true;
         }
+
         int cameraDirection = getCameraDirection(options);
         try {
             options.put("direction", cameraDirection);
@@ -494,11 +467,63 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
+        double currentAspectRatio = getCameraAspectRatio(options);
+        try {
+            options.put("aspectRatio", currentAspectRatio);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to set aspect ratio in options");
+            return true;
+        }
+
+        try {
+            updateContainerView(options);
+        } catch (Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Failed to update camera preview size: " + e.getMessage());
+            return false;
+        }
+
         fragment.switchCameraTo(options, (boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });
         return true;
+    }
+
+    private void updateContainerView(JSONObject options) throws Exception {
+        RunnableFuture<Void> updateViewTask = new FutureTask<>(
+            new Runnable() {
+                @Override
+                public void run() {
+                    DisplayMetrics metrics = new DisplayMetrics();
+                    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+                    int x = Math.round(getIntegerFromOptions(options, "x") * metrics.density);
+                    int y = Math.round(getIntegerFromOptions(options, "y") * metrics.density);
+                    int width = Math.round(getIntegerFromOptions(options, "width") * metrics.density);
+                    int height = Math.round(getIntegerFromOptions(options, "height") * metrics.density);
+
+                    FrameLayout containerView = cordova.getActivity().findViewById(containerViewId);
+                    if (containerView == null) {
+                        containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                        containerView.setId(containerViewId);
+                        FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                        containerLayoutParams.setMargins(x, y, 0, 0);
+                        cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                    } else {
+                        FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
+                        containerLayoutParams.setMargins(x, y, 0, 0);
+                        containerView.setLayoutParams(containerLayoutParams);
+                    }
+
+                    cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                    webView.getView().bringToFront();
+                }
+            },
+            null
+        );
+        cordova.getActivity().runOnUiThread(updateViewTask);
+        updateViewTask.get();
     }
 
 
@@ -577,13 +602,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 videoCallbackContext.error("Cannot start video");
                 return;
             }
-            
+
             PluginResult result = new PluginResult(PluginResult.Status.OK, data);
             result.setKeepCallback(true);
             this.videoCallbackContext.sendPluginResult(result);
         }
     }
-    
 
     @Override
     public void onDestroy() {
