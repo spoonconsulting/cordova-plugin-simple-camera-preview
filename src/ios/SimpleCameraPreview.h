@@ -25,5 +25,6 @@
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
+@property (nonatomic, strong) CDVInvokedUrlCommand *pendingCommand;
 
 @end

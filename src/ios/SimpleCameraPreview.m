@@ -9,7 +9,6 @@
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
-@property (nonatomic, strong) CDVInvokedUrlCommand *pendingCommand;
 
 - (void) setOptions:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
