@@ -9,6 +9,7 @@
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
+@property (nonatomic, strong) CDVInvokedUrlCommand *pendingEnableCommand;
 
 - (void) setOptions:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
@@ -50,11 +51,23 @@ BOOL torchActivated = false;
         return;
     }
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (![self isCameraInstanceRunning]) {
-            [self _enable:command];
-        }
-    });
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(deviceBecameAvailable:)
+                                               name:AVCaptureDeviceWasConnectedNotification
+                                             object:nil];
+    
+    self.pendingEnableCommand = command;
+}
+
+- (void)deviceBecameAvailable:(NSNotification *)notification {
+    if (![self isCameraInstanceRunning] && self.pendingEnableCommand != nil) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                      name:AVCaptureDeviceWasConnectedNotification
+                                                    object:nil];
+        
+        [self _enable:self.pendingEnableCommand];
+        self.pendingEnableCommand = nil;
+    }
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
