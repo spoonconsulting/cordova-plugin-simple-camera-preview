@@ -34,8 +34,12 @@ BOOL torchActivated = false;
         [self _enable:command];
         return;
     }
-    
-    [self checkDeviceAvailability:command];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (![self isCameraInstanceRunning]) {
+            [self _enable:command];
+        }
+    });
 }
 
 - (BOOL) isCameraInstanceRunning {
@@ -51,18 +55,6 @@ BOOL torchActivated = false;
     }
 
     return NO;
-}
-
-- (void) checkDeviceAvailability:(CDVInvokedUrlCommand*)command {
-    if (![self isCameraInstanceRunning]) {
-        [self _enable:command];
-        return;
-    }
-
-    self.pendingCommand = command;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        [self checkDeviceAvailability:self.pendingCommand];
-    });    
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
