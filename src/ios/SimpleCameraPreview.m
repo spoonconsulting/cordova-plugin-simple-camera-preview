@@ -51,23 +51,18 @@ BOOL torchActivated = false;
         return;
     }
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(deviceBecameAvailable:)
-                                               name:AVCaptureDeviceWasConnectedNotification
-                                             object:nil];
-    
-    self.pendingEnableCommand = command;
+    [self checkDeviceAvailability:command];
 }
 
-- (void)deviceBecameAvailable:(NSNotification *)notification {
-    if (![self isCameraInstanceRunning] && self.pendingEnableCommand != nil) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                      name:AVCaptureDeviceWasConnectedNotification
-                                                    object:nil];
-        
-        [self _enable:self.pendingEnableCommand];
-        self.pendingEnableCommand = nil;
+- (void)checkDeviceAvailability:(CDVInvokedUrlCommand*)command {
+    if (![self isCameraInstanceRunning]) {
+        [self _enable:command];
+        return;
     }
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [self checkDeviceAvailability:command];
+    });
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
