@@ -52,19 +52,25 @@ BOOL torchActivated = false;
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
-
-    // Check if there is any camera instance running by other apps wait for 1 second and check again
+    self.onCameraEnabledHandlerId = command.callbackId;
+    
+    // Check if there is any camera instance running
     if ([self isCameraInstanceRunning]) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             if ([self isCameraInstanceRunning]) {
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                // CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
+                // [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                return;
             }
+            [self _enable:command];
         });
         return;
     }
+    
+    [self _enable:command];
+}
 
-    self.onCameraEnabledHandlerId = command.callbackId;
+- (void) _enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
