@@ -65,14 +65,6 @@ BOOL torchActivated = false;
     });    
 }
 
-- (void)deviceBecameAvailable:(NSNotification *)notification {
-    if (![self isCameraInstanceRunning] && self.pendingCommand != nil) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVCaptureDeviceWasConnectedNotification object:nil];
-        [self _enable:self.pendingCommand];
-        self.pendingCommand = nil;
-    }
-}
-
 - (void) _enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
