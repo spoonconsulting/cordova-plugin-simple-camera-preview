@@ -54,20 +54,13 @@ BOOL torchActivated = false;
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    // Check if there is any camera instance running
-    if ([self isCameraInstanceRunning]) {
+    // Check if camera is in use by another app
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            if ([self isCameraInstanceRunning]) {
-                // CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
-                // [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-                return;
+            if (![self isCameraInstanceRunning]) {
+                [self _enable:command];
             }
-            [self _enable:command];
         });
         return;
-    }
-    
-    [self _enable:command];
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
