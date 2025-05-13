@@ -1,4 +1,3 @@
-
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
@@ -28,7 +27,34 @@ BOOL torchActivated = false;
     }
 }
 
+- (BOOL) isCameraInstanceRunning {
+    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
+                                                                                                              mediaType:AVMediaTypeVideo
+                                                                                                               position:AVCaptureDevicePositionUnspecified];
+    NSArray *devices = discoverySession.devices;
+    
+    for (AVCaptureDevice *device in devices) {
+        if (device.isSuspended) {
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+
 - (void) enable:(CDVInvokedUrlCommand*)command {
+
+    // Check if there is any camera instance running by other apps wait for 1 second and check again
+    if ([self isCameraInstanceRunning]) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            if ([self isCameraInstanceRunning]) {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        });
+        return;
+    }
+
     self.onCameraEnabledHandlerId = command.callbackId;
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
@@ -185,7 +211,7 @@ BOOL torchActivated = false;
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is closed, cannot switch camera"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
-    } 
+    }
     
     [self.sessionManager switchCameraTo:options completion:^(BOOL success) {
         if (success) {
@@ -193,7 +219,7 @@ BOOL torchActivated = false;
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             return;
-        } 
+        }
         
          NSLog(@"Failed to switch camera");
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
