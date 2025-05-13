@@ -28,18 +28,27 @@ BOOL torchActivated = false;
 }
 
 - (BOOL) isCameraInstanceRunning {
-    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
-                                                                                                              mediaType:AVMediaTypeVideo
-                                                                                                               position:AVCaptureDevicePositionUnspecified];
-    NSArray *devices = discoverySession.devices;
+    AVCaptureSession *tempSession = [[AVCaptureSession alloc] init];
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     
-    for (AVCaptureDevice *device in devices) {
-        if (device.isSuspended) {
-            return YES;
-        }
+    if (device == nil) {
+        return NO;
     }
     
-    return NO;
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+    
+    if (error != nil) {
+        return YES; // If we can't get input, camera is likely in use
+    }
+    
+    if ([tempSession canAddInput:input]) {
+        [tempSession addInput:input];
+        [tempSession removeInput:input];
+        return NO;
+    }
+    
+    return YES;
 }
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
