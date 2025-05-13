@@ -45,13 +45,16 @@ BOOL torchActivated = false;
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    // Check if camera is in use by another app
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            if (![self isCameraInstanceRunning]) {
-                [self _enable:command];
-            }
-        });
+    if (![self isCameraInstanceRunning]) {
+        [self _enable:command];
         return;
+    }
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (![self isCameraInstanceRunning]) {
+            [self _enable:command];
+        }
+    });
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
