@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -14,8 +13,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.util.Size;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
@@ -45,7 +42,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
-    private static final double DEFAULT_ASPECT_RATIO = 1.33333;
+    private static final double DEFAULT_ASPECT_RATIO = 4.0 / 3.0;
 
     public SimpleCameraPreview() {
         super();
@@ -441,7 +438,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
         try {
             String aspectRatio = options.getString("aspectRatio");
             String[] ratioParts = aspectRatio.split(":");
-            double width =0,height = 0;
+            double width = 0,height = 0;
             if (ratioParts.length == 2) {
                  width = Double.parseDouble(ratioParts[0]);
                  height = Double.parseDouble(ratioParts[1]);

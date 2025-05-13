@@ -109,8 +109,8 @@ public class CameraPreviewFragment extends Fragment {
     private static final String TAG = "SimpleCameraPreview";
     private String lens;
     private double aspectRatio;
-    private static final double ASPECT_RATIO_3_BY_4 = 1.3333;
-    private static final double ASPECT_RATIO_9_BY_16 = 1.7777;
+    private static final double ASPECT_RATIO_3_BY_4 = 4.0 / 3.0;
+    private static final double ASPECT_RATIO_9_BY_16 = 16.0 / 9.0;
     private Size targetResolution = null;
 
 
@@ -123,26 +123,26 @@ public class CameraPreviewFragment extends Fragment {
         try {
             this.direction = options.getInt("direction");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.direction = CameraSelector.LENS_FACING_BACK;
+            e.printStackTrace();
         }
         try {
             this.targetSize = options.getInt("targetSize");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.targetSize = 0;
+            e.printStackTrace();
         }
         try {
             this.lens = options.getString("lens");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.lens = "default";
+            e.printStackTrace();
         }
         try {
             this.aspectRatio = options.getDouble("aspectRatio");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.aspectRatio = ASPECT_RATIO_3_BY_4;
+            e.printStackTrace();
         }
         startCameraCallback = cameraStartedCallback;
     }
@@ -234,14 +234,6 @@ public class CameraPreviewFragment extends Fragment {
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
         // Get all supported JPEG output sizes
         Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
-
-        // If none available, fall back to a simple ratioWidth:ratioHeight rectangle
-        if (supportedSizes.length == 0) {
-            int fallbackHeight = Math.round(
-                    desiredWidthPx / (float) aspectRatio
-            );
-            return new Size(desiredWidthPx, fallbackHeight);
-        }
 
         // Collect only those sizes matching the exact ratio
         List<Size> matchingResolutions = new ArrayList<>();
@@ -345,7 +337,7 @@ public class CameraPreviewFragment extends Fragment {
             camera.getCameraControl().enableTorch(torchOn).get();
             torchCallback.onEnabled(null);
         } catch (Exception e) {
-            torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage()));
+            torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage(), e));
             return;
         }
 
@@ -430,7 +422,7 @@ public class CameraPreviewFragment extends Fragment {
 
         size = info.getResolution();
         if (this.targetSize > 0 && targetResolution != null) {
-            size = targetResolution;
+            size = this.targetResolution;
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -551,8 +543,8 @@ public class CameraPreviewFragment extends Fragment {
                 cameraProvider = cameraProviderFuture.get();
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-                e.printStackTrace();
                 cameraSwitchedCallback.onSwitch(false);
+                e.printStackTrace();
                 return;
             }
 
@@ -562,8 +554,9 @@ public class CameraPreviewFragment extends Fragment {
                     this.aspectRatio = options.getDouble("aspectRatio");
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
                 this.aspectRatio = currentAspectRatio;
+                e.printStackTrace();
+
             }
 
             setUpCamera(options, cameraProvider);
@@ -627,8 +620,8 @@ public class CameraPreviewFragment extends Fragment {
                     .build();
         }
 
-        targetResolution = calculateResolution(getContext(), targetSize, aspectRatio);
-        videoCapture = VideoCapture.withOutput(new Recorder.Builder()
+        this.targetResolution = calculateResolution(getContext(), targetSize, aspectRatio);
+        this.videoCapture = VideoCapture.withOutput(new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(calculateVideoCaptureRatio(aspectRatio)))
                 .build());
 
