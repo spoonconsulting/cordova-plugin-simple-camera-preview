@@ -9,7 +9,6 @@
 @implementation SimpleCameraPreview
 
 BOOL torchActivated = false;
-@property (nonatomic, strong) CDVInvokedUrlCommand *pendingEnableCommand;
 
 - (void) setOptions:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
@@ -28,6 +27,17 @@ BOOL torchActivated = false;
     }
 }
 
+- (void) enable:(CDVInvokedUrlCommand*)command {
+    self.onCameraEnabledHandlerId = command.callbackId;
+    
+    if (![self isCameraInstanceRunning]) {
+        [self _enable:command];
+        return;
+    }
+    
+    [self checkDeviceAvailability:command];
+}
+
 - (BOOL) isCameraInstanceRunning {
     AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
                                                                                                               mediaType:AVMediaTypeVideo
@@ -43,26 +53,22 @@ BOOL torchActivated = false;
     return NO;
 }
 
-- (void) enable:(CDVInvokedUrlCommand*)command {
-    self.onCameraEnabledHandlerId = command.callbackId;
-    
+- (void) checkDeviceAvailability:(CDVInvokedUrlCommand*)command {
     if (![self isCameraInstanceRunning]) {
         [self _enable:command];
         return;
     }
     
-    [self checkDeviceAvailability:command];
+    // dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    //     [self checkDeviceAvailability:command];
+    // });
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceBecameAvailable:) name:AVCaptureDeviceWasConnectedNotification object:nil];
 }
 
-- (void)checkDeviceAvailability:(CDVInvokedUrlCommand*)command {
+- (void )deviceBecameAvailable:(NSNotification *)notification {
     if (![self isCameraInstanceRunning]) {
         [self _enable:command];
-        return;
     }
-    
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        [self checkDeviceAvailability:command];
-    });
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
