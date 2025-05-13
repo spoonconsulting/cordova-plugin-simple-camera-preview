@@ -1,11 +1,9 @@
-
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
+#import "SimpleCameraPreview.h"
 #import <Cordova/CDVInvokedUrlCommand.h>
 @import CoreLocation;
 @import ImageIO;
-
-#import "SimpleCameraPreview.h"
 
 @implementation SimpleCameraPreview
 
@@ -65,7 +63,6 @@ BOOL torchActivated = false;
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
-    
     NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
@@ -232,16 +229,23 @@ BOOL torchActivated = false;
     BOOL useFlash = [[command.arguments objectAtIndex:0] boolValue];
     if (torchActivated)
         useFlash = false;
+    
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    if (self.sessionManager != nil)
-        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings];
-
-    CDVPluginResult *pluginResult;
-    if (self.cameraRenderController != NULL) {
+    
+    if (self.sessionManager != nil) {
+        [self.sessionManager setFlashMode:(useFlash ? AVCaptureFlashModeOn : AVCaptureFlashModeOff)
+                                photoSettings:self.photoSettings];
+        
         self.onPictureTakenHandlerId = command.callbackId;
-        [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        
+        if (self.sessionManager.imageOutput) {
+            [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        } else {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Image output not available"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
     } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
@@ -485,6 +489,21 @@ BOOL torchActivated = false;
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
+}
+
+- (void)dualModeRecordingDidFinishWithVideoPath:(NSString *)videoPath thumbnailPath:(NSString *)thumbnailPath {
+    NSDictionary *result = @{
+        @"nativePath": videoPath ?: @"",
+        @"thumbnail": thumbnailPath ?: [NSNull null]
+    };
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
+}
+
+- (void)dualModeRecordingDidFailWithError:(NSError *)error {
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
 }
 
 @end

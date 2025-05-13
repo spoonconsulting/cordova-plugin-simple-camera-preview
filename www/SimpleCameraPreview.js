@@ -1,6 +1,8 @@
 var exec = require("cordova/exec");
 var PLUGIN_NAME = "SimpleCameraPreview";
+var FEATURE_DUAL_MODE = "DualMode";
 var SimpleCameraPreview = function () {};
+
 
 SimpleCameraPreview.videoInitialized = false;
 SimpleCameraPreview.videoCallback = null;
@@ -51,6 +53,42 @@ SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
 
 SimpleCameraPreview.enable = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
+};
+
+SimpleCameraPreview.enableDualMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "enableDualMode", []);
+};
+
+SimpleCameraPreview.captureDual = function (options, onSuccess, onError) {
+  options = options || {};
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "captureDual", [options.flash]);
+};
+
+SimpleCameraPreview.startVideoCaptureDual = function (options, onSuccess, onError) {
+  if (!SimpleCameraPreview.videoCallback) {
+    console.error("Call initVideoCallback first");
+    onError("Call initVideoCallback first");
+    return;
+  }
+
+  if (!SimpleCameraPreview.videoInitialized) {
+    console.error("videoCallback not initialized");
+    onError("videoCallback not initialized");
+    return;
+  }
+  
+  options = options || {};
+  options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
+  options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "startVideoCaptureDual", [options]);
+};
+
+SimpleCameraPreview.stopVideoCaptureDual = function (onSuccess, onError) {
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "stopVideoCaptureDual");
+};
+
+SimpleCameraPreview.disableDualMode = function (onSuccess, onError) {
+  exec(onSuccess, onError, FEATURE_DUAL_MODE, "disableDualMode", []);
 };
 
 SimpleCameraPreview.disable = function (onSuccess, onError) {

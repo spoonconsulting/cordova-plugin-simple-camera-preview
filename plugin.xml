@@ -12,6 +12,9 @@
   <js-module src="www/SimpleCameraPreview.js" name="SimpleCameraPreview">
     <clobbers target="SimpleCameraPreview" />
   </js-module>
+ <js-module src="www/DualMode.js" name="DualMode">
+  <clobbers target="DualMode" />
+</js-module>
 
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.5.0" />
@@ -45,9 +48,13 @@
   </platform>
 
   <platform name="ios">
-    <config-file target="config.xml" parent="/*">
-      <feature name="SimpleCameraPreview">
-        <param name="ios-package" value="SimpleCameraPreview" onload="true" />
+   <config-file target="config.xml" parent="/*">
+        <feature name="SimpleCameraPreview">
+            <param name="ios-package" value="SimpleCameraPreview" onload="true" />
+        </feature>
+
+       <feature name="DualMode">
+        <param name="ios-package" value="DualMode" onload="true" />
       </feature>
     </config-file>
 
@@ -59,13 +66,18 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
-    <header-file src="src/ios/SimpleCameraPreview.h" />
+    <header-file src="src/ios/SimpleCameraPreview.h" type="BridgingHeader"/>
     <source-file src="src/ios/SimpleCameraPreview.m" />
     <header-file src="src/ios/CameraSessionManager.h" />
     <source-file src="src/ios/CameraSessionManager.m" />
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
+    <source-file src="src/ios/DualMode.swift" />
+    <source-file src="src/ios/PiPVideoMixer.swift" />
+    <source-file src="src/ios/PiPMixer.metal" />
+    <source-file src="src/ios/MovieRecorder.swift" />
 
+    <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
     <framework src="CoreLocation.framework" />
