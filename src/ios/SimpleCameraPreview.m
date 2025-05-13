@@ -27,34 +27,32 @@ BOOL torchActivated = false;
     }
 }
 
-- (void) enable:(CDVInvokedUrlCommand*)command {
-    self.onCameraEnabledHandlerId = command.callbackId;
-    
-    if (![self isCameraInstanceRunning]) {
-        [self _enable:command];
-        return;
-    }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (![self isCameraInstanceRunning]) {
-            [self _enable:command];
-        }
-    });
-}
-
 - (BOOL) isCameraInstanceRunning {
     AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
                                                                                                               mediaType:AVMediaTypeVideo
                                                                                                                position:AVCaptureDevicePositionUnspecified];
     NSArray *devices = discoverySession.devices;
-
     for (AVCaptureDevice *device in devices) {
         if (device.isSuspended) {
             return YES;
         }
     }
-
     return NO;
+}
+
+- (void) enable:(CDVInvokedUrlCommand*)command {
+    self.onCameraEnabledHandlerId = command.callbackId;
+
+    if (![self isCameraInstanceRunning]) {
+        [self _enable:command];
+        return;
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (![self isCameraInstanceRunning]) {
+            [self _enable:command];
+        }
+    });
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
