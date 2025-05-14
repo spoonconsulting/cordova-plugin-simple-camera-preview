@@ -109,10 +109,9 @@ public class CameraPreviewFragment extends Fragment {
     private static final String TAG = "SimpleCameraPreview";
     private String lens;
     private double aspectRatio;
-    private static final double ASPECT_RATIO_3_BY_4 = 4.0 / 3.0;
-    private static final double ASPECT_RATIO_9_BY_16 = 16.0 / 9.0;
+    private static final double ASPECT_RATIO_3_BY_4 = 3.0 / 4.0;
+    private static final double ASPECT_RATIO_9_BY_16 = 9.0 / 16.0;
     private Size targetResolution = null;
-
 
     public CameraPreviewFragment() {
 
@@ -239,7 +238,7 @@ public class CameraPreviewFragment extends Fragment {
         List<Size> matchingResolutions = new ArrayList<>();
         for (Size size : supportedSizes) {
             // Calculate the aspect ratio for the current resolution
-            double calculatedAspectRatio = (double) size.getWidth() / size.getHeight();
+            double calculatedAspectRatio = (double) size.getHeight() / size.getWidth();
 
             // Check if the calculated aspect ratio is close enough to the requested aspect ratio
             if (Math.abs(calculatedAspectRatio - (aspectRatio)) < 0.01) {

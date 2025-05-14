@@ -42,7 +42,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
     private static final String REQUIRED_PERMISSION = Manifest.permission.CAMERA;
-    private static final double DEFAULT_ASPECT_RATIO = 4.0 / 3.0;
+    private static final double DEFAULT_ASPECT_RATIO = 3.0 / 4.0;
 
     public SimpleCameraPreview() {
         super();
