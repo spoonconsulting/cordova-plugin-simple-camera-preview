@@ -27,30 +27,38 @@ BOOL torchActivated = false;
     }
 }
 
-- (BOOL) isCameraInstanceRunning {
-    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-    return device.isSuspended;
-}
-
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
-    
-    if (![self isCameraInstanceRunning]) {
-        [self _enable:command];
-        return;
-    }
     
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     if (device != nil) {
         NSError *error = nil;
         if ([device lockForConfiguration:&error]) {
+            // Force the device to wake up
+            if (device.isSuspended) {
+                device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
+                device.activeVideoMaxFrameDuration = CMTimeMake(1, 30);
+            }
             [device unlockForConfiguration];
+            
             [self _enable:command];
             return;
+        } else if (error.code == -11803) {
+            AVCaptureSession *tempSession = [[AVCaptureSession alloc] init];
+            [tempSession beginConfiguration];
+            AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+            if (input && [tempSession canAddInput:input]) {
+                [tempSession addInput:input];
+                [tempSession commitConfiguration];
+                [tempSession startRunning];
+                [tempSession stopRunning];
+                [tempSession removeInput:input];
+                [self _enable:command];
+                return;
+            }
         }
     }
     
-    // If we couldn't take over, try again
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         [self enable:command];
     });
