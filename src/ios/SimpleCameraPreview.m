@@ -28,30 +28,45 @@ BOOL torchActivated = false;
 }
 
 - (BOOL) isCameraInstanceRunning {
-    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
-        AVCaptureDeviceTypeBuiltInWideAngleCamera,
-        AVCaptureDeviceTypeBuiltInUltraWideCamera
-    ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-    NSArray *devices = discoverySession.devices;
- 
-    for (AVCaptureDevice *device in devices) {
-        if (device.isSuspended) {
-            return YES;
-        }
+    AVCaptureSession *tempSession = [[AVCaptureSession alloc] init];
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    
+    if (device == nil) {
+        return NO;
     }
- 
-    return NO;
+    
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+    
+    if (error != nil) {
+        return YES;
+    }
+    
+    if ([tempSession canAddInput:input]) {
+        [tempSession addInput:input];
+        [tempSession removeInput:input];
+        return NO;
+    }
+    
+    return YES;
 }
- 
+
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (![self isCameraInstanceRunning]) {
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if (device != nil) {
+        NSError *error = nil;
+        if ([device lockForConfiguration:&error]) {
+            [device unlockForConfiguration];
             [self _enable:command];
+            return;
         }
+    }
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [self enable:command];
     });
-    return;
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
