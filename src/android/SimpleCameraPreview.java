@@ -443,7 +443,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                  width = Double.parseDouble(ratioParts[0]);
                  height = Double.parseDouble(ratioParts[1]);
             }
-            return height / width;
+            return width / height;
 
         } catch (JSONException e) {
             return DEFAULT_ASPECT_RATIO;
