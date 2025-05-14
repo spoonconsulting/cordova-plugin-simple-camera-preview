@@ -28,9 +28,11 @@ BOOL torchActivated = false;
 }
 
 - (BOOL) isCameraInstanceRunning {
-    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
-                                                                                                              mediaType:AVMediaTypeVideo
-                                                                                                               position:AVCaptureDevicePositionUnspecified];
+    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
+        AVCaptureDeviceTypeBuiltInWideAngleCamera,
+        AVCaptureDeviceTypeBuiltInUltraWideCamera,
+        AVCaptureDeviceTypeBuiltInTelephotoCamera
+    ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
     NSArray *devices = discoverySession.devices;
  
     for (AVCaptureDevice *device in devices) {
@@ -45,23 +47,12 @@ BOOL torchActivated = false;
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(deviceBecameAvailable:)
-                                               name:AVCaptureDeviceWasConnectedNotification
-                                             object:nil];
-
-    self.pendingEnableCommand = command;
-}
-
-- (void)deviceBecameAvailable:(NSNotification *)notification {
-    if (![self isCameraInstanceRunning] && self.pendingEnableCommand != nil) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                      name:AVCaptureDeviceWasConnectedNotification
-                                                    object:nil];
-
-        [self _enable:self.pendingEnableCommand];
-        self.pendingEnableCommand = nil;
-    }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (![self isCameraInstanceRunning]) {
+            [self _enable:command];
+        }
+    });
+    return;
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
