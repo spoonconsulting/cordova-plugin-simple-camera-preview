@@ -32,25 +32,36 @@ BOOL torchActivated = false;
                                                                                                               mediaType:AVMediaTypeVideo
                                                                                                                position:AVCaptureDevicePositionUnspecified];
     NSArray *devices = discoverySession.devices;
-
+ 
     for (AVCaptureDevice *device in devices) {
         if (device.isSuspended) {
             return YES;
         }
     }
-
+ 
     return NO;
 }
-
+ 
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (![self isCameraInstanceRunning]) {
-            [self _enable:command];
-        }
-    });
-    return;
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(deviceBecameAvailable:)
+                                               name:AVCaptureDeviceWasConnectedNotification
+                                             object:nil];
+
+    self.pendingEnableCommand = command;
+}
+
+- (void)deviceBecameAvailable:(NSNotification *)notification {
+    if (![self isCameraInstanceRunning] && self.pendingEnableCommand != nil) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                      name:AVCaptureDeviceWasConnectedNotification
+                                                    object:nil];
+
+        [self _enable:self.pendingEnableCommand];
+        self.pendingEnableCommand = nil;
+    }
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
