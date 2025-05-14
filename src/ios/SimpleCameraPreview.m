@@ -30,8 +30,7 @@ BOOL torchActivated = false;
 - (BOOL) isCameraInstanceRunning {
     AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
         AVCaptureDeviceTypeBuiltInWideAngleCamera,
-        AVCaptureDeviceTypeBuiltInUltraWideCamera,
-        AVCaptureDeviceTypeBuiltInTelephotoCamera
+        AVCaptureDeviceTypeBuiltInUltraWideCamera
     ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
     NSArray *devices = discoverySession.devices;
  
