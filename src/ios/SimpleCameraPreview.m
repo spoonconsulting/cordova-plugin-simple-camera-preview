@@ -27,31 +27,41 @@ BOOL torchActivated = false;
     }
 }
 
-- (BOOL) isCameraInstanceRunning {
-    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
-        AVCaptureDeviceTypeBuiltInWideAngleCamera,
-        AVCaptureDeviceTypeBuiltInUltraWideCamera
-    ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-    NSArray *devices = discoverySession.devices;
- 
-    for (AVCaptureDevice *device in devices) {
-        if (device.isSuspended) {
-            return YES;
-        }
-    }
- 
-    return NO;
-}
- 
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (![self isCameraInstanceRunning]) {
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if (device != nil) {
+        NSError *error = nil;
+        if ([device lockForConfiguration:&error]) {
+            // Force the device to wake up
+            if (device.isSuspended) {
+                device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
+                device.activeVideoMaxFrameDuration = CMTimeMake(1, 30);
+            }
+            [device unlockForConfiguration];
+            
             [self _enable:command];
+            return;
+        } else if (error.code == -11803) {
+            AVCaptureSession *tempSession = [[AVCaptureSession alloc] init];
+            [tempSession beginConfiguration];
+            AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+            if (input && [tempSession canAddInput:input]) {
+                [tempSession addInput:input];
+                [tempSession commitConfiguration];
+                [tempSession startRunning];
+                [tempSession stopRunning];
+                [tempSession removeInput:input];
+                [self _enable:command];
+                return;
+            }
         }
+    }
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [self enable:command];
     });
-    return;
 }
 
 - (void) _enable:(CDVInvokedUrlCommand*)command {
@@ -62,8 +72,9 @@ BOOL torchActivated = false;
         return;
     }
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionNotInterrupted:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
+    // Add interruption handlers
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleInterruption:) name:AVCaptureSessionWasInterruptedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleInterruptionEnded:) name:AVCaptureSessionInterruptionEndedNotification object:nil];
 
     // start as transparent
     self.webView.opaque = NO;
@@ -126,16 +137,17 @@ BOOL torchActivated = false;
     } photoSettings:self.photoSettings];
 }
 
-- (void) sessionNotInterrupted:(NSNotification *)notification {
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not interrupted"];
-    [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onCameraEnabledHandlerId];
+- (void)handleInterruption:(NSNotification *)notification {
+    AVCaptureSessionInterruptionReason reason = [notification.userInfo[AVCaptureSessionInterruptionReasonKey] integerValue];
+    if (reason == AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground) {
+        // Try to force resume
+        [self.sessionManager.session startRunning];
+    }
 }
 
-- (void) sessionInterrupted:(NSNotification *)notification {
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session interrupted"];
-    [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onCameraEnabledHandlerId];
+- (void)handleInterruptionEnded:(NSNotification *)notification {
+    // Resume our session
+    [self.sessionManager.session startRunning];
 }
 
 - (void) disable:(CDVInvokedUrlCommand*)command {
