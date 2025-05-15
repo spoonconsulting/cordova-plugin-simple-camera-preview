@@ -25,6 +25,7 @@
 @property (nonatomic) dispatch_queue_t sessionQueue;
 @property (nonatomic) AVCaptureDevicePosition defaultCamera;
 @property (nonatomic) NSInteger defaultFlashMode;
+@property (nonatomic) bool audioConfigured;
 @property (nonatomic) AVCaptureDevice *device;
 @property (nonatomic) AVCaptureDeviceInput *videoDeviceInput;
 @property (nonatomic) AVCapturePhotoOutput *imageOutput;

@@ -92,6 +92,12 @@ BOOL torchActivated = false;
                            completion:^(BOOL completed) {
         if (completed) {
             [self.sessionManager startSession];
+            
+            if (!self.sessionManager.audioConfigured) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
+                });
+            }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -486,5 +492,49 @@ BOOL torchActivated = false;
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
 }
+
+- (void)showToastWithMessage:(NSString *)message {
+    if (!message || [message isEqualToString:@""]) return;
+    
+    UILabel *toastLabel = [[UILabel alloc] init];
+    toastLabel.text = message;
+    toastLabel.textColor = [UIColor blackColor];
+    toastLabel.backgroundColor = [UIColor whiteColor];
+    toastLabel.textAlignment = NSTextAlignmentCenter;
+    toastLabel.numberOfLines = 0;
+    toastLabel.alpha = 0.0;
+    toastLabel.layer.cornerRadius = 10;
+    toastLabel.clipsToBounds = YES;
+    toastLabel.font = [UIFont systemFontOfSize:14.0];
+
+    CGFloat horizontalPadding = 20;
+    CGFloat verticalPadding = 12;
+    CGSize maxSize = CGSizeMake(self.webView.frame.size.width - 40, CGFLOAT_MAX);
+    CGRect expectedSize = [toastLabel.text boundingRectWithSize:maxSize
+                                                         options:NSStringDrawingUsesLineFragmentOrigin
+                                                      attributes:@{NSFontAttributeName : toastLabel.font}
+                                                         context:nil];
+
+    toastLabel.frame = CGRectMake(0, 0,
+                                  expectedSize.size.width + horizontalPadding,
+                                  expectedSize.size.height + verticalPadding);
+    
+    toastLabel.center = CGPointMake(self.webView.center.x, 100);
+    
+    [self.webView addSubview:toastLabel];
+
+    [UIView animateWithDuration:0.4 animations:^{
+        toastLabel.alpha = 1.0;
+    } completion:^(BOOL finished) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [UIView animateWithDuration:0.4 animations:^{
+                toastLabel.alpha = 0.0;
+            } completion:^(BOOL finished) {
+                [toastLabel removeFromSuperview];
+            }];
+        });
+    }];
+}
+
 
 @end
