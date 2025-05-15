@@ -5,6 +5,7 @@
     if (self = [super init]) {
         // Create the AVCaptureSession
         self.session = [AVCaptureSession new];
+        self.audioConfigured = false;
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
@@ -112,6 +113,7 @@
                     } else {
                         NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
                     }
+                    self.audioConfigured = true;
                 }
 
                 if ([self.session canAddOutput:self.movieFileOutput]) {
