@@ -103,14 +103,15 @@
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
-                
-                AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
-                NSError *audioError = nil;
-                AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
-                if (audioInput && [self.session canAddInput:audioInput]) {
-                    [self.session addInput:audioInput];
-                } else {
-                    NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                if ([[AVAudioSession sharedInstance] inputNumberOfChannels] == 0) {
+                    AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+                    NSError *audioError = nil;
+                    AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
+                    if (audioInput && [self.session canAddInput:audioInput]) {
+                        [self.session addInput:audioInput];
+                    } else {
+                        NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                    }
                 }
 
                 if ([self.session canAddOutput:self.movieFileOutput]) {
