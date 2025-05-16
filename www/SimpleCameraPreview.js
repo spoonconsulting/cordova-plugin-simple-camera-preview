@@ -45,10 +45,6 @@ SimpleCameraPreview.initVideoCallback = function (onSuccess, onError, callback) 
         );
 }
 
-SimpleCameraPreview.setOptions = function (options, onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "setOptions", [options]);
-};
-
 SimpleCameraPreview.enable = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };

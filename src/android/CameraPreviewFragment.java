@@ -1,34 +1,31 @@
 package com.spoon.simplecamerapreview;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Point;
+import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.Camera2CameraInfoImpl;
+import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
@@ -36,6 +33,9 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.core.ResolutionInfo;
+import androidx.camera.core.resolutionselector.AspectRatioStrategy;
+import androidx.camera.core.resolutionselector.ResolutionSelector;
+import androidx.camera.core.resolutionselector.ResolutionStrategy;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.PendingRecording;
@@ -46,7 +46,6 @@ import androidx.camera.video.Recording;
 import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
@@ -57,6 +56,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -106,10 +106,12 @@ public class CameraPreviewFragment extends Fragment {
     private int direction;
     private int targetSize;
     private boolean torchActivated = false;
-
-    private static float ratio = (4 / (float) 3);
     private static final String TAG = "SimpleCameraPreview";
     private String lens;
+    private double aspectRatio;
+    private static final double ASPECT_RATIO_3_BY_4 = 3.0 / 4.0;
+    private static final double ASPECT_RATIO_9_BY_16 = 9.0 / 16.0;
+    private Size targetResolution = null;
 
     public CameraPreviewFragment() {
 
@@ -120,20 +122,26 @@ public class CameraPreviewFragment extends Fragment {
         try {
             this.direction = options.getInt("direction");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.direction = CameraSelector.LENS_FACING_BACK;
+            e.printStackTrace();
         }
         try {
             this.targetSize = options.getInt("targetSize");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.targetSize = 0;
+            e.printStackTrace();
         }
         try {
             this.lens = options.getString("lens");
         } catch (JSONException e) {
-            e.printStackTrace();
             this.lens = "default";
+            e.printStackTrace();
+        }
+        try {
+            this.aspectRatio = options.getDouble("aspectRatio");
+        } catch (JSONException e) {
+            this.aspectRatio = ASPECT_RATIO_3_BY_4;
+            e.printStackTrace();
         }
         startCameraCallback = cameraStartedCallback;
     }
@@ -174,7 +182,7 @@ public class CameraPreviewFragment extends Fragment {
         try {
             options.put("direction", direction);
         } catch (JSONException e) {
-             startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
+            startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
         }
 
         setUpCamera(options, cameraProvider);
@@ -197,7 +205,7 @@ public class CameraPreviewFragment extends Fragment {
             hasUltraWideCameraCallback.onResult(false);
             return;
         }
-        
+
         List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
         boolean defaultCamera = false;
         boolean ultraWideCamera = false;
@@ -222,27 +230,69 @@ public class CameraPreviewFragment extends Fragment {
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
     }
 
-    public static Size calculateResolution(Context context, int targetSize) {
-        Size calculatedSize;
-        if (getScreenOrientation(context) == Configuration.ORIENTATION_PORTRAIT) {
-            calculatedSize = new Size((int) ((float) targetSize / ratio), targetSize);
-        } else {
-            calculatedSize = new Size(targetSize, (int) ((float) targetSize / ratio));
+    public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
+        // Get all supported JPEG output sizes
+        Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
+
+        // Collect only those sizes matching the exact ratio
+        List<Size> matchingResolutions = new ArrayList<>();
+        for (Size size : supportedSizes) {
+            // Calculate the aspect ratio for the current resolution
+            double calculatedAspectRatio = (double) size.getHeight() / size.getWidth();
+
+            // Check if the calculated aspect ratio is close enough to the requested aspect ratio
+            if (Math.abs(calculatedAspectRatio - (aspectRatio)) < 0.01) {
+                matchingResolutions.add(size);
+            }
         }
-        return calculatedSize;
+
+        // If no exact matches, consider all supported sizes
+        List<Size> candidateResolutions = matchingResolutions.isEmpty()
+                ? Arrays.asList(supportedSizes)
+                : matchingResolutions;
+
+        if (desiredWidthPx <= 0) {
+            // If no target size specified, return the highest resolution that matches the aspect ratio
+            Size highestResolution = candidateResolutions.get(0);
+            for (Size candidate : candidateResolutions) {
+                if (candidate.getWidth() > highestResolution.getWidth()) {
+                    highestResolution = candidate;
+                }
+            }
+            return highestResolution;
+        }
+
+        // Pick the one whose width is closest to desiredWidthPx
+        Size bestMatch = candidateResolutions.get(0);
+        int smallestDifference = Math.abs(bestMatch.getWidth() - desiredWidthPx);
+        for (Size candidate : candidateResolutions) {
+            int difference = Math.abs(candidate.getWidth() - desiredWidthPx);
+            if (difference < smallestDifference) {
+                smallestDifference = difference;
+                bestMatch = candidate;
+            }
+        }
+        return bestMatch;
     }
 
-    private static int getScreenOrientation(Context context) {
-        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        Point pointSize = new Point();
-        display.getSize(pointSize);
-        int orientation;
-        if (pointSize.x < pointSize.y) {
-            orientation = Configuration.ORIENTATION_PORTRAIT;
-        } else {
-            orientation = Configuration.ORIENTATION_LANDSCAPE;
+    public static Size[] getSupportedResolutions(Context context, int lensFacing) {
+        try {
+            CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null && facing == lensFacing) {
+                    StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                    if (map != null) {
+                        return map.getOutputSizes(ImageFormat.JPEG);
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
-        return orientation;
+        return new Size[0];
     }
 
 //    Another way to Calculate
@@ -284,12 +334,12 @@ public class CameraPreviewFragment extends Fragment {
         }
         try {
             camera.getCameraControl().enableTorch(torchOn).get();
-            torchCallback.onEnabled(null); 
+            torchCallback.onEnabled(null);
         } catch (Exception e) {
             torchCallback.onEnabled(new Exception("Failed to switch " + (torchOn ? "on" : "off") + " torch: " + e.getMessage(), e));
             return;
         }
-        
+
         torchActivated = torchOn;
     }
 
@@ -366,13 +416,12 @@ public class CameraPreviewFragment extends Fragment {
         Bitmap bitmap = null;
         Size size = null;
 
-        if (this.targetSize > 0) {
-            size = calculateResolution(getContext(), this.targetSize);
-        } else {
-            ResolutionInfo info = imageCapture.getResolutionInfo();
-            if (info == null) { return thumbnailUri; }
-            
-            size = info.getResolution();
+        ResolutionInfo info = imageCapture.getResolutionInfo();
+        if (info == null) { return thumbnailUri; }
+
+        size = info.getResolution();
+        if (this.targetSize > 0 && targetResolution != null) {
+            size = this.targetResolution;
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -493,17 +542,28 @@ public class CameraPreviewFragment extends Fragment {
                 cameraProvider = cameraProviderFuture.get();
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-                e.printStackTrace();
                 cameraSwitchedCallback.onSwitch(false);
+                e.printStackTrace();
                 return;
             }
-            
+
+            double currentAspectRatio = this.aspectRatio;
+            try {
+                if (options.has("aspectRatio")) {
+                    this.aspectRatio = options.getDouble("aspectRatio");
+                }
+            } catch (JSONException e) {
+                this.aspectRatio = currentAspectRatio;
+                e.printStackTrace();
+
+            }
+
             setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
         });
     }
-    
+
     @SuppressLint("RestrictedApi")
     public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
         CameraSelector cameraSelector;
@@ -517,6 +577,14 @@ public class CameraPreviewFragment extends Fragment {
             direction = options.getInt("direction");
         } catch (JSONException e) {
             direction = CameraSelector.LENS_FACING_BACK;
+        }
+
+        try {
+            if (options.has("aspectRatio")) {
+                aspectRatio = options.getDouble("aspectRatio");
+            }
+        } catch (JSONException e) {
+            Log.d(TAG, "Keeping current aspect ratio: " + aspectRatio);
         }
 
         if (lens != null && lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
@@ -551,20 +619,33 @@ public class CameraPreviewFragment extends Fragment {
                     .build();
         }
 
-        Size targetResolution = null;
-        if (targetSize > 0) {
-            targetResolution = CameraPreviewFragment.calculateResolution(getContext(), targetSize);
-        }
+        this.targetResolution = calculateResolution(getContext(), targetSize, aspectRatio);
+        this.videoCapture = VideoCapture.withOutput(new Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(calculateVideoCaptureRatio(aspectRatio)))
+                .build());
 
-        Recorder recorder = new Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.LOWEST))
-                .build();
-        videoCapture = VideoCapture.withOutput(recorder);
-
+        int cameraAspectRatio = calculateCameraAspect(aspectRatio);
         preview = new Preview.Builder().build();
-        imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(targetResolution)
+        AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
+                cameraAspectRatio,
+                AspectRatioStrategy.FALLBACK_RULE_AUTO
+        );
+
+        ResolutionStrategy resolutionStrategy = new ResolutionStrategy(
+                targetResolution,
+                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+        );
+
+        ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
+                .setAspectRatioStrategy(aspectRatioStrategy)
+                .setResolutionStrategy(resolutionStrategy)
                 .build();
+
+        imageCapture = new ImageCapture.Builder()
+                .setResolutionSelector(resolutionSelector)
+                .build();
+
+
         cameraProvider.unbindAll();
         try {
             camera = cameraProvider.bindToLifecycle(
@@ -575,9 +656,9 @@ public class CameraPreviewFragment extends Fragment {
                     videoCapture
             );
         } catch (IllegalArgumentException e) {
-            // Error with result in capturing image with default resolution
             e.printStackTrace();
             imageCapture = new ImageCapture.Builder()
+                    .setResolutionSelector(resolutionSelector)
                     .build();
             camera = cameraProvider.bindToLifecycle(
                     getActivity(),
@@ -587,6 +668,20 @@ public class CameraPreviewFragment extends Fragment {
                     videoCapture
             );
         }
+    }
+
+    private int calculateCameraAspect(double aspectRatio) {
+        // Pick whichever constant is numerically closer to the requested ratio
+        return Math.abs(aspectRatio - (ASPECT_RATIO_3_BY_4)) <= Math.abs(aspectRatio - (ASPECT_RATIO_9_BY_16))
+            ? AspectRatio.RATIO_4_3
+            : AspectRatio.RATIO_16_9;
+    }
+
+    private Quality calculateVideoCaptureRatio(double aspectRatio) {
+        // set video capture 9:16 for aspect ratio 9:16 and 3:4 for aspect ratio 3:4
+        return Math.abs(aspectRatio - (ASPECT_RATIO_3_BY_4)) <= Math.abs(aspectRatio - (ASPECT_RATIO_9_BY_16))
+            ? Quality.LOWEST
+            : Quality.HD;
     }
 
     @Override

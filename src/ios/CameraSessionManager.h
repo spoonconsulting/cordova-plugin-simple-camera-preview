@@ -16,7 +16,7 @@
 - (void) stopRecording;
 - (void) startSession;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
-+ (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
++ (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio;
 - (UIInterfaceOrientation) getOrientation;
 
 @property (atomic) CIFilter *ciFilter;
@@ -32,4 +32,6 @@
 @property (nonatomic, weak) id delegate;
 @property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @property (nonatomic) NSTimer *videoTimer;
+@property (nonatomic, assign) NSInteger targetSize;
+@property (nonatomic, strong) NSString *aspectRatio;
 @end

@@ -11,22 +11,6 @@
 
 BOOL torchActivated = false;
 
-- (void) setOptions:(CDVInvokedUrlCommand*)command {
-    NSDictionary* config = command.arguments[0];
-    @try {
-        if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
-            NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
-            AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
-            NSArray *calculatedPresetArray = [[[NSString stringWithFormat: @"%@", calculatedPreset] stringByReplacingOccurrencesOfString:@"AVCaptureSessionPreset" withString:@""] componentsSeparatedByString:@"x"];
-            float height = [calculatedPresetArray[0] floatValue];
-            float width = [calculatedPresetArray[1] floatValue];
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"%f", (height / width)]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        }
-    } @catch(NSException *exception) {
-        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
-    }
-}
 
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
@@ -81,6 +65,10 @@ BOOL torchActivated = false;
             NSString *direction = config[@"direction"];
             if (direction && [direction length] > 0) {
                 [setupSessionOptions setValue:direction forKey:@"direction"];
+            }
+            NSString *aspectRatio = config[@"aspectRatio"];
+            if (aspectRatio && [aspectRatio length] > 0) {
+                [setupSessionOptions setValue:aspectRatio forKey:@"aspectRatio"];
             }
         } @catch(NSException *exception) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
@@ -180,24 +168,31 @@ BOOL torchActivated = false;
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
+    NSString *aspectRatio = options[@"aspectRatio"];
+    if (aspectRatio == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Aspect ratio missing"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
+    }
     if (self.sessionManager == nil) {
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is closed, cannot switch camera"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
-    } 
+    }
     
     [self.sessionManager switchCameraTo:options completion:^(BOOL success) {
         if (success) {
-            NSLog(@"Camera switched successfully");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self _setSize:command];
+            });
+           
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             return;
         } 
-        
-         NSLog(@"Failed to switch camera");
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
