@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
@@ -28,6 +29,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleCameraPreview extends CordovaPlugin {
 
@@ -234,13 +237,14 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
 
         double aspectRatio = DEFAULT_ASPECT_RATIO; // Default aspect ratio 3:4
+        String aspectRatioOption = null;
         try {
-            if (options.getString("aspectRatio") != null && !options.getString("aspectRatio").equals("null")) {
-                aspectRatio = getCameraAspectRatio(options);
-            }
-
-        } catch (JSONException | NumberFormatException e) {
-            e.printStackTrace();
+            aspectRatioOption = options.getString("aspectRatio");
+        } catch (JSONException e) {
+            Log.e("Error", "enable: " + e.getMessage());
+        }
+        if (aspectRatioOption != null && !aspectRatioOption.equals("null")) {
+            aspectRatio = getAspectRatio(aspectRatioOption);
         }
 
         String lens = "default";
@@ -285,7 +289,6 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         try {
             updateContainerView(options);
-            cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
             fetchLocation();
             return true;
         } catch (Exception e) {
@@ -434,20 +437,17 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
-    private static double getCameraAspectRatio(JSONObject options) {
-        try {
-            String aspectRatio = options.getString("aspectRatio");
-            String[] ratioParts = aspectRatio.split(":");
-            double width = 0,height = 0;
-            if (ratioParts.length == 2) {
-                 width = Double.parseDouble(ratioParts[0]);
-                 height = Double.parseDouble(ratioParts[1]);
-            }
-            return width / height;
-
-        } catch (JSONException e) {
+    private static double getAspectRatio(String aspectRatio) {
+        Pattern pattern = Pattern.compile("\\b([1-9]\\d*):([1-9]\\d*)\\b");
+        Matcher matcher = pattern.matcher(aspectRatio);
+        if (!matcher.matches()) {
             return DEFAULT_ASPECT_RATIO;
         }
+
+        String[] ratioParts = aspectRatio.split(":");
+        double width = Double.parseDouble(ratioParts[0]);
+        double height = Double.parseDouble(ratioParts[1]);
+        return width / height;
     }
 
     private boolean switchCameraTo(JSONObject options, CallbackContext callbackContext) {
@@ -464,20 +464,32 @@ public class SimpleCameraPreview extends CordovaPlugin {
             return true;
         }
 
-        double currentAspectRatio = getCameraAspectRatio(options);
+        double aspectRatio = DEFAULT_ASPECT_RATIO; // Default aspect ratio 3:4
+        String aspectRatioOption = null;
         try {
-            options.put("aspectRatio", currentAspectRatio);
+            aspectRatioOption = options.getString("aspectRatio");
         } catch (JSONException e) {
-            callbackContext.error("Unable to set aspect ratio in options");
-            return true;
+            Log.e("Error", "switchCameraTo: " + e.getMessage());
+        }
+        if (aspectRatioOption != null && !aspectRatioOption.equals("null")) {
+            aspectRatio = getAspectRatio(aspectRatioOption);
         }
 
         try {
-            updateContainerView(options);
-        } catch (Exception e) {
-            e.printStackTrace();
-            callbackContext.error("Failed to update camera preview size: " + e.getMessage());
-            return false;
+            options.put("aspectRatio", aspectRatio);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to set aspectRatio in options");
+            return true;
+        }
+
+        if (aspectRatio != fragment.getAspectRatio()) {
+            try {
+                updateContainerView(options);
+            } catch (Exception e) {
+                Log.e("Error", "switchCameraTo: " + e.getMessage());
+                callbackContext.error("Failed to update camera preview size: " + e.getMessage());
+                return false;
+            }
         }
 
         fragment.switchCameraTo(options, (boolean result) -> {
@@ -515,6 +527,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                     cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
                     webView.getView().bringToFront();
+                    cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                 }
             },
             null

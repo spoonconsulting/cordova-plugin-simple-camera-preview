@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -103,7 +104,7 @@ public class CameraPreviewFragment extends Fragment {
     private Camera camera;
     private CameraStartedCallback startCameraCallback;
     private Location location;
-    private int direction;
+    private static int direction;
     private int targetSize;
     private boolean torchActivated = false;
     private static final String TAG = "SimpleCameraPreview";
@@ -112,6 +113,7 @@ public class CameraPreviewFragment extends Fragment {
     private static final double ASPECT_RATIO_3_BY_4 = 3.0 / 4.0;
     private static final double ASPECT_RATIO_9_BY_16 = 9.0 / 16.0;
     private Size targetResolution = null;
+    private CameraSelector cameraSelector = null;
 
     public CameraPreviewFragment() {
 
@@ -138,9 +140,9 @@ public class CameraPreviewFragment extends Fragment {
             e.printStackTrace();
         }
         try {
-            this.aspectRatio = options.getDouble("aspectRatio");
+            aspectRatio = options.getDouble("aspectRatio");
         } catch (JSONException e) {
-            this.aspectRatio = ASPECT_RATIO_3_BY_4;
+            aspectRatio = ASPECT_RATIO_3_BY_4;
             e.printStackTrace();
         }
         startCameraCallback = cameraStartedCallback;
@@ -184,6 +186,11 @@ public class CameraPreviewFragment extends Fragment {
         } catch (JSONException e) {
             startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
         }
+        try {
+            options.put("aspectRatio", aspectRatio);
+        } catch (JSONException e) {
+            startCameraCallback.onCameraStarted(new Exception("Unable to set the aspectRatio option"));
+        }
 
         setUpCamera(options, cameraProvider);
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
@@ -209,15 +216,7 @@ public class CameraPreviewFragment extends Fragment {
         List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
         boolean defaultCamera = false;
         boolean ultraWideCamera = false;
-        List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
-        for (CameraInfo cameraInfo : cameraInfos) {
-            if (cameraInfo instanceof Camera2CameraInfoImpl) {
-                Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
-                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
-                    backCameras.add(camera2CameraInfo);
-                }
-            }
-        }
+        List<Camera2CameraInfoImpl> backCameras = getCamera2CameraInfos(cameraInfos);
 
         for (Camera2CameraInfoImpl backCamera : backCameras) {
             if (backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] >= 2.4) {
@@ -232,7 +231,7 @@ public class CameraPreviewFragment extends Fragment {
 
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
         // Get all supported JPEG output sizes
-        Size[] supportedSizes = getSupportedResolutions(context, CameraSelector.LENS_FACING_BACK);
+        Size[] supportedSizes = getSupportedResolutions(context, direction);
 
         // Collect only those sizes matching the exact ratio
         List<Size> matchingResolutions = new ArrayList<>();
@@ -294,39 +293,7 @@ public class CameraPreviewFragment extends Fragment {
         }
         return new Size[0];
     }
-
-//    Another way to Calculate
-//    @SuppressLint("RestrictedApi")
-//    public Size calculateResolution(ProcessCameraProvider cameraProvider, CameraSelector cameraSelector, int targetSize) {
-//        // tempCamera to calculate targetResolution
-//        Preview tempPreview = new Preview.Builder().build();
-//        ImageCapture tempImageCapture = new ImageCapture.Builder().build();
-//        Camera tempCamera = cameraProvider.bindToLifecycle(
-//                this,
-//                cameraSelector,
-//                tempPreview,
-//                tempImageCapture
-//        );
-//
-//        @SuppressLint("UnsafeOptInUsageError") CameraCharacteristics cameraCharacteristics = Camera2CameraInfo
-//                .extractCameraCharacteristics(tempCamera.getCameraInfo());
-//        StreamConfigurationMap streamConfigurationMap = cameraCharacteristics
-//                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//        List<Size> supportedSizes = Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG));
-//        Collections.sort(supportedSizes, new Comparator<Size>(){
-//            @Override
-//            public int compare(Size size, Size t1) {
-//                return Integer.compare(t1.getWidth(), size.getWidth());
-//            }
-//        });
-//        for (Size size: supportedSizes) {
-//            if (size.getWidth() <= targetSize) {
-//                return size;
-//            }
-//        }
-//        return supportedSizes.get(supportedSizes.size() - 1);
-//    }
-
+    
     public void torchSwitch(boolean torchOn, TorchCallback torchCallback) {
         if (!camera.getCameraInfo().hasFlashUnit()) {
             torchCallback.onEnabled(new Exception("No flash unit present"));
@@ -547,62 +514,37 @@ public class CameraPreviewFragment extends Fragment {
                 return;
             }
 
-            double currentAspectRatio = this.aspectRatio;
-            try {
-                if (options.has("aspectRatio")) {
-                    this.aspectRatio = options.getDouble("aspectRatio");
-                }
-            } catch (JSONException e) {
-                this.aspectRatio = currentAspectRatio;
-                e.printStackTrace();
-
-            }
-
             setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
         });
     }
 
+    @NonNull
     @SuppressLint("RestrictedApi")
-    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
-        CameraSelector cameraSelector;
-        try {
-            lens = options.getString("lens");
-        } catch (JSONException e) {
-            lens = "default";
-        }
-
-        try {
-            direction = options.getInt("direction");
-        } catch (JSONException e) {
-            direction = CameraSelector.LENS_FACING_BACK;
-        }
-
-        try {
-            if (options.has("aspectRatio")) {
-                aspectRatio = options.getDouble("aspectRatio");
+    private static List<Camera2CameraInfoImpl> getCamera2CameraInfos(List<CameraInfo> cameraInfos) {
+        List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
+        for (CameraInfo cameraInfo : cameraInfos) {
+            if (cameraInfo instanceof Camera2CameraInfoImpl) {
+                Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
+                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
+                    backCameras.add(camera2CameraInfo);
+                }
             }
-        } catch (JSONException e) {
-            Log.d(TAG, "Keeping current aspect ratio: " + aspectRatio);
         }
-
-        if (lens != null && lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
+        return backCameras;
+    }
+    
+    @SuppressLint("RestrictedApi")
+    private void setCameraSelector() {
+        if (lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {
-                        List<Camera2CameraInfoImpl> backCameras = new ArrayList<>();
-                        for (CameraInfo cameraInfo : cameraInfos) {
-                            if (cameraInfo instanceof Camera2CameraInfoImpl) {
-                                Camera2CameraInfoImpl camera2CameraInfo = (Camera2CameraInfoImpl) cameraInfo;
-                                if (camera2CameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK) {
-                                    backCameras.add(camera2CameraInfo);
-                                }
-                            }
-                        }
+                        List<Camera2CameraInfoImpl> backCameras = getCamera2CameraInfos(cameraInfos);
 
                         Camera2CameraInfoImpl selectedCamera = Collections.min(backCameras, (o1, o2) -> {
-                            Float focalLength1 = o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                            Float focalLength2 = o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                            float focalLength1 = Objects.requireNonNull(o1.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS))[0];
+                            float focalLength2 = Objects.requireNonNull(o2.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS))[0];
                             return Float.compare(focalLength1, focalLength2);
                         });
 
@@ -618,38 +560,66 @@ public class CameraPreviewFragment extends Fragment {
                     .requireLensFacing(direction)
                     .build();
         }
+    }
 
-        this.targetResolution = calculateResolution(getContext(), targetSize, aspectRatio);
-        this.videoCapture = VideoCapture.withOutput(new Recorder.Builder()
+    @SuppressLint("RestrictedApi")
+    public void setUpCamera(JSONObject options, ProcessCameraProvider cameraProvider){
+        int directionOption;
+        String lensOption;
+        double aspectRatioOption;
+
+        try {
+            directionOption = options.getInt("direction");
+        } catch (JSONException e) {
+            directionOption = CameraSelector.LENS_FACING_BACK;
+        }
+        try {
+            lensOption = options.getString("lens");
+        } catch (JSONException e) {
+            lensOption = "default";
+        }
+        try {
+            aspectRatioOption = options.getDouble("aspectRatio");
+        } catch (JSONException e) {
+            aspectRatioOption = ASPECT_RATIO_3_BY_4;
+        }
+
+        if (directionOption != direction) {
+            direction = directionOption;
+        }
+        if (!lens.equals(lensOption)) {
+            lens = lensOption;
+        }
+        if (aspectRatioOption != aspectRatio) {
+            aspectRatio = aspectRatioOption;
+        }
+
+        setCameraSelector();
+        targetResolution = calculateResolution(getContext(), targetSize, aspectRatio);
+        videoCapture = VideoCapture.withOutput(new Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(calculateVideoCaptureRatio(aspectRatio)))
                 .build());
-
         int cameraAspectRatio = calculateCameraAspect(aspectRatio);
         preview = new Preview.Builder().build();
         AspectRatioStrategy aspectRatioStrategy = new AspectRatioStrategy(
                 cameraAspectRatio,
                 AspectRatioStrategy.FALLBACK_RULE_AUTO
         );
-
         ResolutionStrategy resolutionStrategy = new ResolutionStrategy(
                 targetResolution,
                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
         );
-
         ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
                 .setAspectRatioStrategy(aspectRatioStrategy)
                 .setResolutionStrategy(resolutionStrategy)
                 .build();
-
         imageCapture = new ImageCapture.Builder()
                 .setResolutionSelector(resolutionSelector)
                 .build();
-
-
         cameraProvider.unbindAll();
         try {
             camera = cameraProvider.bindToLifecycle(
-                    getActivity(),
+                    requireActivity(),
                     cameraSelector,
                     preview,
                     imageCapture,
@@ -661,13 +631,17 @@ public class CameraPreviewFragment extends Fragment {
                     .setResolutionSelector(resolutionSelector)
                     .build();
             camera = cameraProvider.bindToLifecycle(
-                    getActivity(),
+                    requireActivity(),
                     cameraSelector,
                     preview,
                     imageCapture,
                     videoCapture
             );
         }
+    }
+
+    public double getAspectRatio() {
+        return aspectRatio;
     }
 
     private int calculateCameraAspect(double aspectRatio) {
