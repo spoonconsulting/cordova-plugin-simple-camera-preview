@@ -246,14 +246,14 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         // If no exact matches, consider all supported sizes
-        List<Size> candidateResolutions = matchingResolutions.isEmpty()
-                ? Arrays.asList(supportedSizes)
-                : matchingResolutions;
+        if (matchingResolutions.isEmpty()) {
+            matchingResolutions = Arrays.asList(supportedSizes);
+        }
 
         if (desiredWidthPx <= 0) {
             // If no target size specified, return the highest resolution that matches the aspect ratio
-            Size highestResolution = candidateResolutions.get(0);
-            for (Size candidate : candidateResolutions) {
+            Size highestResolution = matchingResolutions.get(0);
+            for (Size candidate : matchingResolutions) {
                 if (candidate.getWidth() > highestResolution.getWidth()) {
                     highestResolution = candidate;
                 }
@@ -262,9 +262,9 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         // Pick the one whose width is closest to desiredWidthPx
-        Size bestMatch = candidateResolutions.get(0);
+        Size bestMatch = matchingResolutions.get(0);
         int smallestDifference = Math.abs(bestMatch.getWidth() - desiredWidthPx);
-        for (Size candidate : candidateResolutions) {
+        for (Size candidate : matchingResolutions) {
             int difference = Math.abs(candidate.getWidth() - desiredWidthPx);
             if (difference < smallestDifference) {
                 smallestDifference = difference;
@@ -534,7 +534,7 @@ public class CameraPreviewFragment extends Fragment {
         }
         return backCameras;
     }
-    
+
     @SuppressLint("RestrictedApi")
     private void setCameraSelector() {
         if (lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
