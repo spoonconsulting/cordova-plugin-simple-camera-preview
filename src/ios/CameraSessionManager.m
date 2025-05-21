@@ -86,7 +86,7 @@
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
                     self.targetSize = targetSize;
-                    AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
                     if ([self.session canSetSessionPreset:calculatedPreset]) {
                         [self.session setSessionPreset:calculatedPreset];
                     }
@@ -156,7 +156,7 @@
     });
 }
 
-+ (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio {
+- (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio {
     NSArray<NSDictionary *> *presets = @[
         @{@"preset": AVCaptureSessionPreset3840x2160, @"width": @(3840), @"aspect": @"9:16"},
         @{@"preset": AVCaptureSessionPreset1920x1080, @"width": @(1920), @"aspect": @"9:16"},
@@ -165,38 +165,33 @@
         @{@"preset": AVCaptureSessionPreset352x288,   @"width": @(352),  @"aspect": @"3:4"},
     ];
     
-    NSString *normalizedAspect = [aspectRatio isEqualToString:@"9:16"] ? @"9:16" : @"3:4";
-    if ([normalizedAspect isEqualToString:@"3:4"]) {
-        return AVCaptureSessionPresetPhoto;
-    }
+    NSString *normalizedAspect = [aspectRatio isEqualToString:@"9:16"] ? @"9:16" : @"3:4";   
+    NSPredicate *aspectFilter = [NSPredicate predicateWithFormat:@"aspect == %@", normalizedAspect];
+    NSArray<NSDictionary *> *candidates = [presets filteredArrayUsingPredicate:aspectFilter];
     
-    NSPredicate *aspectPredicate = [NSPredicate predicateWithFormat:@"aspect == %@", normalizedAspect];
-    NSArray *filteredPresets = [presets filteredArrayUsingPredicate:aspectPredicate];
-    
-    // Return highest resolution if targetsize not specify for aspect ratio 9:16
     if (targetSize <= 0) {
-        return filteredPresets.firstObject[@"preset"];
+        if ([normalizedAspect isEqualToString:@"3:4"])
+            return AVCaptureSessionPresetPhoto;
+        else
+            return (AVCaptureSessionPreset)candidates.firstObject[@"preset"];
     }
     
-    // Find preset with closest width to targetSize
-    NSDictionary *closestPreset = nil;
-    NSInteger smallestDifference = NSIntegerMax;
-    
-    for (NSDictionary *presetInfo in filteredPresets) {
-        NSInteger width = [presetInfo[@"width"] integerValue];
-        NSInteger difference = abs((int)(width - targetSize));
-        
-        if (difference < smallestDifference) {
-            smallestDifference = difference;
-            closestPreset = presetInfo;
+    NSDictionary *bestMatch = nil;
+    NSInteger bestDiff = NSIntegerMax;
+    for (NSDictionary *info in candidates) {
+        NSInteger width = [info[@"width"] integerValue];
+        NSInteger diff = llabs((long)(width - targetSize));
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestMatch = info;
         }
     }
-    
-    if (closestPreset) {
-        return closestPreset[@"preset"];
+
+    if (bestMatch) {
+        return bestMatch[@"preset"];
+    } else {
+        return candidates.firstObject[@"preset"];
     }
-    
-    return presets[0][@"preset"];
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
@@ -238,11 +233,10 @@
     NSString* cameraDirection = cameraOptions[@"direction"];
     NSString* aspectRatio = cameraOptions[@"aspectRatio"];
 
-    if (aspectRatio && [aspectRatio length] > 0) {
-            self.aspectRatio = aspectRatio;
-        } else {
-            self.aspectRatio = @"3:4";
-    }
+    if (aspectRatio && [aspectRatio length] > 0)
+        self.aspectRatio = aspectRatio;
+    else
+        self.aspectRatio = @"3:4";
 
     if (![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
         if (completion) {
@@ -282,7 +276,7 @@
                     cameraSwitched = TRUE;
 
                     // Update session preset based on new targetSize and aspectRatio
-                    AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
                     if ([self.session canSetSessionPreset:calculatedPreset]) {
                         [self.session setSessionPreset:calculatedPreset];
                     } else {
