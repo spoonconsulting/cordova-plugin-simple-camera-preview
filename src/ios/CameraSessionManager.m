@@ -5,6 +5,7 @@
     if (self = [super init]) {
         // Create the AVCaptureSession
         self.session = [AVCaptureSession new];
+        self.audioConfigured = false;
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
@@ -103,14 +104,16 @@
                 }
                 
                 AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
-                
-                AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
-                NSError *audioError = nil;
-                AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
-                if (audioInput && [self.session canAddInput:audioInput]) {
-                    [self.session addInput:audioInput];
-                } else {
-                    NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                if ([[AVAudioSession sharedInstance] inputNumberOfChannels] == 0) {
+                    AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+                    NSError *audioError = nil;
+                    AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
+                    if (audioInput && [self.session canAddInput:audioInput]) {
+                        [self.session addInput:audioInput];
+                    } else {
+                        NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                    }
+                    self.audioConfigured = true;
                 }
 
                 if ([self.session canAddOutput:self.movieFileOutput]) {
