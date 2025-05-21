@@ -1,4 +1,3 @@
-
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
@@ -28,8 +27,34 @@ BOOL torchActivated = false;
     }
 }
 
+- (BOOL) isCameraInstanceRunning {
+    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
+        AVCaptureDeviceTypeBuiltInWideAngleCamera,
+        AVCaptureDeviceTypeBuiltInUltraWideCamera
+    ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+    NSArray *devices = discoverySession.devices;
+ 
+    for (AVCaptureDevice *device in devices) {
+        if (device.isSuspended) {
+            return YES;
+        }
+    }
+ 
+    return NO;
+}
+ 
 - (void) enable:(CDVInvokedUrlCommand*)command {
     self.onCameraEnabledHandlerId = command.callbackId;
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (![self isCameraInstanceRunning]) {
+            [self _enable:command];
+        }
+    });
+    return;
+}
+
+- (void) _enable:(CDVInvokedUrlCommand*)command {
     CDVPluginResult *pluginResult;
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
@@ -191,7 +216,7 @@ BOOL torchActivated = false;
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is closed, cannot switch camera"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
-    } 
+    }
     
     [self.sessionManager switchCameraTo:options completion:^(BOOL success) {
         if (success) {
@@ -199,7 +224,7 @@ BOOL torchActivated = false;
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             return;
-        } 
+        }
         
          NSLog(@"Failed to switch camera");
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch camera"];
