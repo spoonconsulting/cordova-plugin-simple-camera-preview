@@ -645,14 +645,12 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     private int calculateCameraAspect(double aspectRatio) {
-        // Pick whichever constant is numerically closer to the requested ratio
         return Math.abs(aspectRatio - (ASPECT_RATIO_3_BY_4)) <= Math.abs(aspectRatio - (ASPECT_RATIO_9_BY_16))
             ? AspectRatio.RATIO_4_3
             : AspectRatio.RATIO_16_9;
     }
 
     private Quality calculateVideoCaptureRatio(double aspectRatio) {
-        // set video capture 9:16 for aspect ratio 9:16 and 3:4 for aspect ratio 3:4
         return Math.abs(aspectRatio - (ASPECT_RATIO_3_BY_4)) <= Math.abs(aspectRatio - (ASPECT_RATIO_9_BY_16))
             ? Quality.LOWEST
             : Quality.HD;
