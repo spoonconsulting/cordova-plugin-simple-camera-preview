@@ -11,6 +11,7 @@
         }
         self.filterLock = [NSLock new];
         self.movieFileOutput = [AVCaptureMovieFileOutput new];
+        self.cameraSwitched = TRUE;
     }
     return self;
 }
@@ -211,9 +212,10 @@
     }
 
     self.defaultCamera = ([cameraDirection isEqual:@"front"]) ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
+    self.lastCameraDirectionWasFront = [self isUsingFrontCamera];
 
     dispatch_async(self.sessionQueue, ^{
-        BOOL cameraSwitched = FALSE;
+        self.cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
             AVCaptureDevice *ultraWideCamera;
             if([cameraMode isEqualToString:@"wide"]) {
@@ -240,7 +242,7 @@
                         });
                         [self updateOrientation:orientation];
                         self.device = ultraWideCamera;
-                        cameraSwitched = TRUE;
+                        self.cameraSwitched = TRUE;
                     } else {
                         NSLog(@"Failed to add ultra-wide input to session");
                     }
@@ -328,6 +330,10 @@
     } else {
         return [[UIApplication sharedApplication] statusBarOrientation];
     }
+}
+
+- (BOOL) isUsingFrontCamera {
+    return self.videoDeviceInput.device.position == AVCaptureDevicePositionFront;
 }
 
 - (void)deallocSession {

@@ -18,6 +18,7 @@
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 + (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize;
 - (UIInterfaceOrientation) getOrientation;
+- (BOOL) isUsingFrontCamera;
 
 @property (atomic) CIFilter *ciFilter;
 @property (nonatomic) NSLock *filterLock;
@@ -32,4 +33,6 @@
 @property (nonatomic, weak) id delegate;
 @property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @property (nonatomic) NSTimer *videoTimer;
+@property (atomic, assign) BOOL cameraSwitched;
+@property (atomic, assign) BOOL lastCameraDirectionWasFront;
 @end

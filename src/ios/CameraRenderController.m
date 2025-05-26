@@ -9,6 +9,7 @@
 @property (nonatomic, assign) CVMetalTextureCacheRef textureCache;
 @property (nonatomic, strong) id<MTLTexture> cameraTexture;
 @property (nonatomic, strong) id<MTLRenderPipelineState> pipelineState;
+@property (nonatomic, strong) id<MTLBuffer> flipBuffer;
 
 @end
 
@@ -53,6 +54,7 @@
     if (error) {
         NSLog(@"Error creating pipeline state: %@", error);
     }
+    self.flipBuffer = [self.device newBufferWithLength:sizeof(BOOL) options:MTLResourceStorageModeShared];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -107,6 +109,15 @@
     id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
     [encoder setRenderPipelineState:self.pipelineState];
     [encoder setFragmentTexture:self.cameraTexture atIndex:0];
+
+    BOOL flip = FALSE;
+    if (!self.sessionManager.cameraSwitched) {
+        flip = [self.sessionManager lastCameraDirectionWasFront];
+    } else {
+        flip = [self.sessionManager isUsingFrontCamera];
+    }
+    memcpy(self.flipBuffer.contents, &flip, sizeof(BOOL));
+    [encoder setVertexBuffer:self.flipBuffer offset:0 atIndex:0];
 
     // Draw 2 triangles to make a full-screen quad (4 vertices)
     [encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart:0 vertexCount:4];
