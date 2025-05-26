@@ -31,24 +31,25 @@ html, body, .ion-app, .ion-content {
 Make sure to set up the camera size as follows:
 
 ```javascript
-const cameraSize = this.getCameraSize();
+const aspectRatio = 3/4; // or 9/16
+const cameraSize = this.getCameraSize(aspectRatio);
 
-getCameraSize() {
+getCameraSize(aspectRatio) {
     let height;
     let width;
     const ratio = 4 / 3;
     const min = Math.min(window.innerWidth, window.innerHeight);
 
-    [width, height] = [min, Math.round(min * ratio)];
+    [width, height] = [min, Math.round(min / aspectRatio)];
     if (this.isLandscape()) {
-    [width, height] = [height, width];
+      [width, height] = [height, width];
     }
 
     return {
-    x: (window.innerWidth - width) / 2,
-    y: (window.innerHeight - height) / 2,
-    width,
-    height,
+      x: (window.innerWidth - width) / 2,
+      y: (window.innerHeight - height) / 2,
+      width,
+      height,
     };    
 }
 
@@ -65,23 +66,6 @@ Uses Google's CameraX API
 
 # Methods
 
-### setOptions(options, successCallback, errorCallback)
-
-Get the ratio for the camera preview instance (4:3, 16:9, ....).
-<br>
-
-```javascript
-const params = {
-    targetSize: 1024,
-    ...cameraSize, // use camera size 
-};
-
-SimpleCameraPreview.setOptions(params, (ratio) => {
-  console.log(ratio);
-});
-
-```
-
 ### enable(options, successCallback, errorCallback)
 
 Starts the camera preview instance.
@@ -90,7 +74,9 @@ Starts the camera preview instance.
 ```javascript
 const params = {
   targetSize: 1024,
+  lens: 'auto', // Camera lens (auto or wide). Default is auto.
   direction: 'back', // Camera direction (front or back). Default is back.
+  aspectRatio: '3:4', // Camera aspect ratoio (3:4 or 9:16). Default is 3:4.
   ...cameraSize,
 }
 
@@ -155,7 +141,7 @@ SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
 
 ### switchCameraTo(options, successCallback, errorCallback)
 
-Switch camera between wide or auto and set the camera direction (front or back) dynamically.
+Switch camera between wide or auto and set the camera direction (front or back) dynamically. Change camera aspect ratio.
 
 The options variable can take the following keys:
 #### Available options:
@@ -168,6 +154,9 @@ The options variable can take the following keys:
   - `"front"` – Use the front-facing camera.
   - `"back"` – Use the rear-facing camera.
 
+- **aspectRatio:**
+  - `"3:4"` – Display 3/4 preview.
+  - `"9:16"` – Display 9/16 preview.
 
 ### Note:
 Currently, the wide-angle lens functionality is not supported for the front-facing camera. If the `lens` is set to `"wide"` and the `direction` is set to `"front"`, the camera will default to the `"auto"` lens instead of switching to the wide lens.
@@ -176,6 +165,8 @@ Currently, the wide-angle lens functionality is not supported for the front-faci
 const params = {
   lens: "wide",
   direction: "back", // Specify camera direction
+  aspectRatio: "9:16", 
+  ...cameraSize,
 };
 
 SimpleCameraPreview.switchCameraTo(
