@@ -1,3 +1,6 @@
+## [2.0.41](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.40...2.0.41) (2025-05-28)
+* **iOS:** Allow use of camera when on call and prevent crashing when cancelling scan
+
 ## [2.0.40](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.39...2.0.40) (2025-05-23)
 * **Android:** Add Aspect Ratio option
 * **iOS:** Add Aspect Ratio option
