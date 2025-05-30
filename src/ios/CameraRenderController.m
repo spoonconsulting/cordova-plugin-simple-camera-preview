@@ -110,12 +110,7 @@
     [encoder setRenderPipelineState:self.pipelineState];
     [encoder setFragmentTexture:self.cameraTexture atIndex:0];
 
-    BOOL flip = FALSE;
-    if (!self.sessionManager.cameraSwitched) {
-        flip = [self.sessionManager lastCameraDirectionWasFront];
-    } else {
-        flip = [self.sessionManager isUsingFrontCamera];
-    }
+    BOOL flip = self.sessionManager.isCameraDirectionFront;
     memcpy(self.flipBuffer.contents, &flip, sizeof(BOOL));
     [encoder setVertexBuffer:self.flipBuffer offset:0 atIndex:0];
 
