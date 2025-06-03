@@ -227,14 +227,16 @@
     return -1;
 }
 
-- (void) torchSwitch:(NSInteger)torchState{
-    NSError *error = nil;
-    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        if ([self.device lockForConfiguration:&error]) {
-            self.device.torchMode = torchState;
-            [self.device unlockForConfiguration];
-        }
-    }
+- (void) torchSwitch:(NSInteger)torchState {
+    dispatch_async(self.sessionQueue, ^{
+        NSError *error = nil;
+        if ([self.device hasTorch] && [self.device isTorchAvailable]) {
+            if ([self.device lockForConfiguration:&error]) {
+                self.device.torchMode = torchState;
+                [self.device unlockForConfiguration];
+            }
+        } 
+    });
 }
 
 - (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
