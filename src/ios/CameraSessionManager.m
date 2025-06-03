@@ -230,13 +230,15 @@
     return -1;
 }
 
-- (void) torchSwitch:(NSInteger)torchState{
-    NSError *error = nil;
+- (void) torchSwitch:(NSInteger)torchState {
     if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        if ([self.device lockForConfiguration:&error]) {
-            self.device.torchMode = torchState;
-            [self.device unlockForConfiguration];
-        }
+        dispatch_async(self.sessionQueue, ^{
+            NSError *error = nil;
+            if ([self.device lockForConfiguration:&error]) {
+                self.device.torchMode = torchState;
+                [self.device unlockForConfiguration];
+            }
+        });
     }
 }
 
