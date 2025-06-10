@@ -207,7 +207,10 @@
 }
 
 - (AVCaptureSessionPreset)validateCameraPreset:(AVCaptureSessionPreset)preset camera:(AVCaptureDevice *)camera {
-    return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPreset1280x720;
+    if ([self.aspectRatio isEqualToString:@"9:16"]) {
+        return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPreset1280x720;
+    }
+    return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPresetPhoto;
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
@@ -296,7 +299,6 @@
                     [self updateOrientation:orientation];
                     self.device = selectedCamera;
                     cameraSwitched = TRUE;
-                    // Update session preset based on new targetSize and aspectRatio
                 } else {
                     NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
                 }
