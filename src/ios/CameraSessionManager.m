@@ -67,7 +67,7 @@
                 NSString *aspectRatio = options[@"aspectRatio"];
                    if (aspectRatio && [aspectRatio length] > 0) {
                        self.aspectRatio = aspectRatio;
-                   } 
+                   }
 
                 if ([videoDevice hasFlash]) {
                     if ([videoDevice lockForConfiguration:&error]) {
@@ -87,7 +87,7 @@
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
                     self.targetSize = targetSize;
-                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio camera:videoDevice];
                     if ([self.session canSetSessionPreset:calculatedPreset]) {
                         [self.session setSessionPreset:calculatedPreset];
                     }
@@ -159,7 +159,7 @@
     });
 }
 
-- (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio {
+- (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio camera:(AVCaptureDevice *)camera {
     // Define the available presets along with their native widths and aspect ratios.
     NSArray<NSDictionary *> *presets = @[
         @{@"preset": AVCaptureSessionPreset3840x2160, @"width": @(3840), @"aspect": @"9:16"},
@@ -170,7 +170,7 @@
     ];
     
     // Normalize the requested aspect ratio: only "9:16" is treated as such, all other inputs become "3:4".
-    NSString *normalizedAspect = [aspectRatio isEqualToString:@"9:16"] ? @"9:16" : @"3:4";   
+    NSString *normalizedAspect = [aspectRatio isEqualToString:@"9:16"] ? @"9:16" : @"3:4";
 
     // Filter out presets that don’t match the normalized aspect ratio.
     NSPredicate *aspectFilter = [NSPredicate predicateWithFormat:@"aspect == %@", normalizedAspect];
@@ -183,10 +183,10 @@
         if ([normalizedAspect isEqualToString:@"3:4"])
             return AVCaptureSessionPresetPhoto;
         else
-            return (AVCaptureSessionPreset)candidates.firstObject[@"preset"];
+            return [self validateCameraPreset: (AVCaptureSessionPreset)candidates.firstObject[@"preset"] camera:camera];
     }
     
-    // Otherwise, find which candidate’s width is closest to the requested targetSize.
+    // Otherwise, find which candidate's width is closest to the requested targetSize.
     NSDictionary *bestMatch = nil;
     NSInteger bestDiff = NSIntegerMax;
     for (NSDictionary *info in candidates) {
@@ -200,10 +200,17 @@
 
     // Return the preset of the closest match.
     if (bestMatch) {
-        return bestMatch[@"preset"];
+        return [self validateCameraPreset: bestMatch[@"preset"] camera:camera];
     } else {
-        return candidates.firstObject[@"preset"];
+        return [self validateCameraPreset: candidates.firstObject[@"preset"] camera:camera];
     }
+}
+
+- (AVCaptureSessionPreset)validateCameraPreset:(AVCaptureSessionPreset)preset camera:(AVCaptureDevice *)camera {
+    if ([self.aspectRatio isEqualToString:@"9:16"]) {
+        return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPreset1280x720;
+    }
+    return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPresetPhoto;
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
@@ -262,38 +269,36 @@
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
-            AVCaptureDevice *ultraWideCamera;
+            AVCaptureDevice *selectedCamera;
             if([cameraMode isEqualToString:@"wide"]) {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
             } else {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             }
-            if (ultraWideCamera) {
+            AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio camera:selectedCamera];
+            if ([self.session canSetSessionPreset:calculatedPreset]) {
+                [self.session setSessionPreset:calculatedPreset];
+            } else {
+                NSLog(@"Failed to add ultra-wide input to session");
+            }
+            if (selectedCamera) {
                 // Remove the current input
                 [self.session removeInput:self.videoDeviceInput];
                 
                 // Create a new input with the ultra-wide camera
                 NSError *error = nil;
-                AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
-                if (!error && [self.session canAddInput:ultraWideVideoDeviceInput]) {
+                AVCaptureDeviceInput *selectedCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:selectedCamera error:&error];
+                if (!error && [self.session canAddInput:selectedCameraInput]) {
                     // Add the new input to the session
-                    [self.session addInput:ultraWideVideoDeviceInput];
-                    self.videoDeviceInput = ultraWideVideoDeviceInput;
+                    [self.session addInput:selectedCameraInput];
+                    self.videoDeviceInput = selectedCameraInput;
                     __block AVCaptureVideoOrientation orientation;
                     dispatch_sync(dispatch_get_main_queue(), ^{
                         orientation = [self getCurrentOrientation];
                     });
                     [self updateOrientation:orientation];
-                    self.device = ultraWideCamera;
+                    self.device = selectedCamera;
                     cameraSwitched = TRUE;
-
-                    // Update session preset based on new targetSize and aspectRatio
-                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
-                    if ([self.session canSetSessionPreset:calculatedPreset]) {
-                        [self.session setSessionPreset:calculatedPreset];
-                    } else {
-                        NSLog(@"Failed to add ultra-wide input to session");
-                    }
                 } else {
                     NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
                 }
