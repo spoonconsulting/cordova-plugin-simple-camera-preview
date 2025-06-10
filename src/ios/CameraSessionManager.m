@@ -87,10 +87,9 @@
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
                     self.targetSize = targetSize;
-                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
-                    AVCaptureSessionPreset preset = [self validateCameraPreset: calculatedPreset];
-                    if ([self.session canSetSessionPreset:preset]) {
-                        [self.session setSessionPreset:preset];
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio camera:videoDevice];
+                    if ([self.session canSetSessionPreset:calculatedPreset]) {
+                        [self.session setSessionPreset:calculatedPreset];
                     }
                 }
 
@@ -160,7 +159,7 @@
     });
 }
 
-- (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio {
+- (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio camera:(AVCaptureDevice *)camera {
     // Define the available presets along with their native widths and aspect ratios.
     NSArray<NSDictionary *> *presets = @[
         @{@"preset": AVCaptureSessionPreset3840x2160, @"width": @(3840), @"aspect": @"9:16"},
@@ -184,10 +183,10 @@
         if ([normalizedAspect isEqualToString:@"3:4"])
             return AVCaptureSessionPresetPhoto;
         else
-            return (AVCaptureSessionPreset)candidates.firstObject[@"preset"];
+            return [self validateCameraPreset: (AVCaptureSessionPreset)candidates.firstObject[@"preset"] camera:camera];
     }
     
-    // Otherwise, find which candidate’s width is closest to the requested targetSize.
+    // Otherwise, find which candidate's width is closest to the requested targetSize.
     NSDictionary *bestMatch = nil;
     NSInteger bestDiff = NSIntegerMax;
     for (NSDictionary *info in candidates) {
@@ -201,14 +200,13 @@
 
     // Return the preset of the closest match.
     if (bestMatch) {
-        return bestMatch[@"preset"];
+        return [self validateCameraPreset: bestMatch[@"preset"] camera:camera];
     } else {
-        return candidates.firstObject[@"preset"];
+        return [self validateCameraPreset: candidates.firstObject[@"preset"] camera:camera];
     }
 }
 
-- (AVCaptureSessionPreset)validateCameraPreset:(AVCaptureSessionPreset)preset {
-    AVCaptureDevice *camera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+- (AVCaptureSessionPreset)validateCameraPreset:(AVCaptureSessionPreset)preset camera:(AVCaptureDevice *)camera {
     return [camera supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPreset1280x720;
 }
 
@@ -274,11 +272,12 @@
             } else {
                 selectedCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             }
-            AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
-            AVCaptureSessionPreset preset = [self validateCameraPreset: calculatedPreset];
-            if ([self.session canSetSessionPreset:preset]) {
-                [self.session setSessionPreset:preset];
-            } 
+            AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio camera:selectedCamera];
+            if ([self.session canSetSessionPreset:calculatedPreset]) {
+                [self.session setSessionPreset:calculatedPreset];
+            } else {
+                NSLog(@"Failed to add ultra-wide input to session");
+            }
             if (selectedCamera) {
                 // Remove the current input
                 [self.session removeInput:self.videoDeviceInput];
