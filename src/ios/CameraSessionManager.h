@@ -18,6 +18,7 @@
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 - (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio;
 - (UIInterfaceOrientation) getOrientation;
+- (AVCaptureSessionPreset)validateCameraPreset:(AVCaptureSessionPreset)preset;
 
 @property (atomic) CIFilter *ciFilter;
 @property (nonatomic) NSLock *filterLock;
