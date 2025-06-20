@@ -96,7 +96,7 @@
                 [self.session beginConfiguration];
 
                 AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-                
+
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
@@ -301,6 +301,7 @@
                 NSLog(@"Ultra-wide camera not found");
             }
         }
+        self.isCameraDirectionFront = self.defaultCamera == AVCaptureDevicePositionFront;
         completion ? completion(cameraSwitched): NULL;
     });
 }
