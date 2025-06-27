@@ -275,7 +275,7 @@
             if ([self.session canSetSessionPreset:calculatedPreset]) {
                 [self.session setSessionPreset:calculatedPreset];
             } else {
-                NSLog(@"Failed to add sesion preset: %@", calculatedPreset);
+                NSLog(@"Failed to set session preset: %@", calculatedPreset);
             }
             if (self.device) {
                 // Remove the current input
