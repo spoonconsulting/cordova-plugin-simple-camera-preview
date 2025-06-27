@@ -99,6 +99,17 @@
     }
 }
 
+-(void) viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    __block UIInterfaceOrientation toInterfaceOrientation;
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        toInterfaceOrientation = [self.sessionManager getOrientation];
+
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self.sessionManager updateOrientation:[self.sessionManager getCurrentOrientation:toInterfaceOrientation]];
+    }];
+}
+
 - (void)drawInMTKView:(MTKView *)view {
     if (!self.cameraTexture) return;
 
