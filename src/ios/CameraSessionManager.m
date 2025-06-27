@@ -275,7 +275,7 @@
             if ([self.session canSetSessionPreset:calculatedPreset]) {
                 [self.session setSessionPreset:calculatedPreset];
             } else {
-                NSLog(@"Failed to add ultra-wide input to session");
+                NSLog(@"Failed to add sesion preset: %@", calculatedPreset);
             }
             if (self.device) {
                 // Remove the current input
