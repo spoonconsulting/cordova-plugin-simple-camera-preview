@@ -1,3 +1,6 @@
+## [2.0.42](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.41...2.0.42) (2025-06-27)
+* **iOS:** Fix front camera for device without 4k 
+
 ## [2.0.41](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.40...2.0.41) (2025-05-28)
 * **iOS:** Allow use of camera when on call and prevent crashing when cancelling scan
 
