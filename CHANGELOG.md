@@ -1,3 +1,6 @@
+## [2.0.43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.42...2.0.43) (2025-07-04)
+* **iOS:** Replace OpenGL ES rendering with MetalKit for camera preview
+
 ## [2.0.42](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.41...2.0.42) (2025-06-27)
 * **iOS:** Fix front camera for device without 4k 
 

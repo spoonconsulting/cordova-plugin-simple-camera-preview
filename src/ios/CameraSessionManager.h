@@ -36,4 +36,5 @@
 @property (nonatomic) NSTimer *videoTimer;
 @property (nonatomic) NSInteger targetSize;
 @property (nonatomic) NSString *aspectRatio;
+@property (atomic, assign) BOOL isCameraDirectionFront;
 @end

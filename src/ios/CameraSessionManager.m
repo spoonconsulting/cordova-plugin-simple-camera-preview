@@ -297,6 +297,7 @@
                 NSLog(@"Ultra-wide camera not found");
             }
         }
+        self.isCameraDirectionFront = self.defaultCamera == AVCaptureDevicePositionFront;
         completion ? completion(cameraSwitched): NULL;
     });
 }
