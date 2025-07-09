@@ -219,6 +219,7 @@
                 [captureConnection setVideoOrientation:orientation];
             }
         }
+
         if (self.dataOutput != nil) {
             captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
             if ([captureConnection isVideoOrientationSupported]) {
