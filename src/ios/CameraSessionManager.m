@@ -311,12 +311,12 @@
             
             [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
             
-           NSInteger videoDurationInSec = videoDurationMs / 1000;
-            _videoTimer = [NSTimer scheduledTimerWithTimeInterval:videoDurationInSec
-                                        target:self
-                                        selector:@selector(stopRecording)
-                                        userInfo:nil
-                                        repeats:NO];
+            int64_t delayInNs = (int64_t)((videoDurationMs / 1000.0) * NSEC_PER_SEC);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delayInNs), self.sessionQueue, ^{
+               if (self.movieFileOutput.isRecording) {
+                   [self.movieFileOutput stopRecording];
+               }
+            });
         }
     });
 }
@@ -327,10 +327,6 @@
         if (self.movieFileOutput.isRecording) {
             [self.movieFileOutput stopRecording];
         }
-        if (_videoTimer != nil) {
-        [_videoTimer invalidate];
-        _videoTimer = nil;
-    }
     });
 }
 
