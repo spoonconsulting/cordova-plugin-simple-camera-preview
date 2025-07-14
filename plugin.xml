@@ -12,6 +12,9 @@
   <js-module src="www/SimpleCameraPreview.js" name="SimpleCameraPreview">
     <clobbers target="SimpleCameraPreview" />
   </js-module>
+  <js-module src="www/DualModeCameraPreview.js" name="DualModeCameraPreviewß">
+  <clobbers target="DualModeCameraPreview" />
+  </js-module>
 
   <platform name="android">
    <framework src="androidx.lifecycle:lifecycle-common:2.5.0" />
@@ -45,12 +48,13 @@
   </platform>
 
   <platform name="ios">
-    <config-file target="config.xml" parent="/*">
-      <feature name="SimpleCameraPreview">
-        <param name="ios-package" value="SimpleCameraPreview" onload="true" />
-      </feature>
-      <feature name = "DualModeCameraPreview">
-        <param name = "ios-package" value = "DualModeCameraPreview" onload = "true"/>
+   <config-file target="config.xml" parent="/*">
+        <feature name="SimpleCameraPreview">
+            <param name="ios-package" value="SimpleCameraPreview" onload="true" />
+        </feature>
+
+       <feature name="DualModeCameraPreview">
+        <param name="ios-package" value="DualModeCameraPreview" onload="true" />
       </feature>
     </config-file>
 
