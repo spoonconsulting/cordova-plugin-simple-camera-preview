@@ -51,7 +51,7 @@
       </feature>
       <feature name = "DualModeCameraPreview">
         <param name = "ios-package" value = "DualModeCameraPreview" onload = "true"/>
-      <feature>
+      </feature>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
