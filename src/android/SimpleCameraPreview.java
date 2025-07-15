@@ -249,10 +249,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         String lens = "default";
         try {
-            if (options.getString("lens") != null && !options.getString("lens").equals("null")) {
+            if (options.getString("lens") != null && !options.getString("lens").equals("null") && !options.getString("lens").isEmpty()) {
                 lens = options.getString("lens");
             }
-        } catch (JSONException | NumberFormatException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 

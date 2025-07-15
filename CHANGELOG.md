@@ -1,3 +1,6 @@
+## [2.0.44](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.43...2.0.44) (2025-07-15)
+* **Android:** Fix lens error
+
 ## [2.0.43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.42...2.0.43) (2025-07-04)
 * **iOS:** Replace OpenGL ES rendering with MetalKit for camera preview
 
