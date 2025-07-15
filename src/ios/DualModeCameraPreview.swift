@@ -1,13 +1,13 @@
 import UIKit
 import AVFoundation
+import Cordova
 
-@objc(DualMode)
-class DualMode: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
+@objc(DualModeCameraPreview) class DualModeCameraPreview: CDVPlugin {
     
-
-    @objc(enableDualMode:)
-    func enableDualMode(_ command: CDVInvokedUrlCommand) {
-       
+    @objc(deviceSupportDualMode:)
+    func deviceSupportDualMode(command: CDVInvokedUrlCommand) {
+        let supportsMultiCam = AVCaptureMultiCamSession.isMultiCamSupported
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: supportsMultiCam)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
-
 }
