@@ -210,5 +210,31 @@ import AVFoundation
             pipView.layer.addSublayer(frontLayer)
         }
     }
-    
+
+    @objc(disableDualMode:)
+    func disableDualMode(_ command: CDVInvokedUrlCommand) {
+       queue.async {
+           self.session.stopRunning()
+           self.session = nil
+           self.backInput = nil
+           self.frontInput = nil
+           self.backVideoPort = nil
+           self.frontVideoPort = nil
+           
+           self.backOutput = AVCaptureVideoDataOutput()
+           self.frontOutput = AVCaptureVideoDataOutput()
+           
+           DispatchQueue.main.async {
+               self.backPreviewLayer?.removeFromSuperlayer()
+               self.backPreviewLayer = nil
+               self.frontPreviewLayer?.removeFromSuperlayer()
+               self.frontPreviewLayer = nil
+               self.pipView?.removeFromSuperview()
+               self.pipView = nil
+               
+               let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
+               self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+           }
+       }
+    }
 }
