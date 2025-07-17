@@ -35,29 +35,6 @@ DualModeCameraPreview.captureDual = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "captureDual", [options.flash]);
 };
 
-DualModeCameraPreview.startVideoCaptureDual = function (options, onSuccess, onError) {
-//   if (!DualModeCameraPreview.videoCallback) {
-//     console.error("Call initVideoCallback first");
-//     onError("Call initVideoCallback first");
-//     return;
-//   }
-
-//   if (!DualModeCameraPreview.videoInitialized) {
-//     console.error("videoCallback not initialized");
-//     onError("videoCallback not initialized");
-//     return;
-//   }
-  
-//   options = options || {};
-//   options.recordWithAudio = options.recordWithAudio != null ? options.recordWithAudio : true;
-//   options.videoDurationMs = options.videoDurationMs != null ? options.videoDurationMs : 3000;
-//   exec(onSuccess, onError, PLUGIN_NAME, "startVideoCaptureDual", [options]);
-};
-
-DualModeCameraPreview.stopVideoCaptureDual = function (onSuccess, onError) {
-  // exec(onSuccess, onError, PLUGIN_NAME, "stopVideoCaptureDual");
-};
-
 DualModeCameraPreview.disableDualMode = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "disableDualMode", []);
 };

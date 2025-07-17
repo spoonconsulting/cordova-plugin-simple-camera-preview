@@ -1,20 +1,15 @@
 import UIKit
 import AVFoundation
+import CoreLocation
 
 @objc(DualModeCameraPreview) class DualModeCameraPreview: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
-    private var session: AVCaptureMultiCamSession!
-    private let queue = DispatchQueue(label: "dualMode.session.queue")
-    private var backInput: AVCaptureDeviceInput?
-    private var frontInput: AVCaptureDeviceInput?
-    private var backOutput = AVCaptureVideoDataOutput()
-    private var frontOutput = AVCaptureVideoDataOutput()
-    private var backVideoPort: AVCaptureInput.Port?
-    private var frontVideoPort: AVCaptureInput.Port?
-    private var audioOutput: AVCaptureAudioDataOutput?
-    private var audioInput: AVCaptureInput?
-    private var backPreviewLayer: AVCaptureVideoPreviewLayer?
-    private var frontPreviewLayer: AVCaptureVideoPreviewLayer?
-    private var pipView: UIView?
+    
+    private var sessionManager: DualCameraSessionManager?
+    private var previewBuilder: PreviewLayerBuilder?
+    private var latestBackImage: UIImage?
+    private var latestFrontImage: UIImage?
+    private var captureCompletion: ((UIImage?, Error?) -> Void)?
+    private var currentLocation: CLLocation?
 
     @objc(deviceSupportDualMode:)
     func deviceSupportDualMode(command: CDVInvokedUrlCommand) {
@@ -26,215 +21,293 @@ import AVFoundation
 
     @objc(enableDualMode:)
     func enableDualMode(_ command: CDVInvokedUrlCommand) {
-        session = AVCaptureMultiCamSession()
-        queue.async {
-            self.setupSession()
-            DispatchQueue.main.async {
-                if let container = self.webView.superview {
-                    self.setupPreview(on: container)
-                } else {
-                    let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
-                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-                    return
-                }
-                
-                self.session.startRunning()
-                let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode enabled successfully")
-                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-            }
-        }
-    }
+        sessionManager = DualCameraSessionManager()
+        previewBuilder = PreviewLayerBuilder()
 
-    private func setupSession() {
-         session.beginConfiguration()
-         defer { session.commitConfiguration() }
-         setupBackCamera()
-         setupFrontCamera()
-         setupMicrophone()
-     }
-
-    private func setupBackCamera() {
-        guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-          let backInput = try? AVCaptureDeviceInput(device: backCamera),
-          session.canAddInput(backInput) else {
-        return
-        }
-
-        configureCamera(backCamera, desiredWidth: 1920, desiredHeight: 1080)
-        self.backInput = backInput
-        session.addInputWithNoConnections(backInput)
-
-        if let port = backInput.ports.first(where: { $0.mediaType == .video }) {
-            self.backVideoPort = port
-        }
-
-        if session.canAddOutput(backOutput) {
-            backOutput.videoSettings = [
-                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-            ]
-            backOutput.setSampleBufferDelegate(self, queue: queue)
-            session.addOutputWithNoConnections(backOutput)
-
-            if let port = self.backVideoPort {
-                let connection = AVCaptureConnection(inputPorts: [port], output: backOutput)
-                connection.videoOrientation = .portrait
-                session.addConnection(connection)
-            }
-        }
-    }
-
-    private func setupFrontCamera() {
-        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
-          let frontInput = try? AVCaptureDeviceInput(device: frontCamera),
-          session.canAddInput(frontInput) else {
-        return
-        }
-
-        configureCamera(frontCamera, desiredWidth: 1920, desiredHeight: 1080)
-        self.frontInput = frontInput
-        session.addInputWithNoConnections(frontInput)
-
-        if let port = frontInput.ports.first(where: { $0.mediaType == .video }) {
-            self.frontVideoPort = port
-        }
-
-        if session.canAddOutput(frontOutput) {
-            frontOutput.videoSettings = [
-                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-            ]
-            frontOutput.setSampleBufferDelegate(self, queue: queue)
-            session.addOutputWithNoConnections(frontOutput)
-
-            if let port = self.frontVideoPort {
-                let connection = AVCaptureConnection(inputPorts: [port], output: frontOutput)
-                connection.videoOrientation = .portrait
-                connection.automaticallyAdjustsVideoMirroring = false
-                connection.isVideoMirrored = true
-                session.addConnection(connection)
-            }
-        }
-    }
-
-    private func setupMicrophone() {
-        guard let mic = AVCaptureDevice.default(for: .audio),
-              let micInput = try? AVCaptureDeviceInput(device: mic),
-              session.canAddInput(micInput) else {
+        guard let sessionManager = sessionManager, let previewBuilder = previewBuilder else {
+            let pluginResult = CDVPluginResult(status: .error, messageAs: "Failed to initialize session.")
+            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             return
         }
 
-        self.audioInput = micInput
-        session.addInputWithNoConnections(micInput)
+        sessionManager.setupSession(delegate: self)
 
-        let audioOutput = AVCaptureAudioDataOutput()
-        if session.canAddOutput(audioOutput) {
-            audioOutput.setSampleBufferDelegate(self, queue: queue)
-            session.addOutputWithNoConnections(audioOutput)
-
-            if let port = micInput.ports.first(where: { $0.mediaType == .audio }) {
-                let audioConnection = AVCaptureConnection(inputPorts: [port], output: audioOutput)
-                if session.canAddConnection(audioConnection) {
-                    session.addConnection(audioConnection)
-                }
-            }
-
-            self.audioOutput = audioOutput
-        }
-    }
-        
-    private func configureCamera(_ device: AVCaptureDevice, desiredWidth: Int32, desiredHeight: Int32) {
-        for format in device.formats {
-            let description = format.formatDescription
-            let dimensions = CMVideoFormatDescriptionGetDimensions(description)
-            if dimensions.width == desiredWidth && dimensions.height == desiredHeight {
-                do {
-                    try device.lockForConfiguration()
-                    device.activeFormat = format
-                    device.unlockForConfiguration()
-                    print("Set \(device.localizedName) resolution to \(desiredWidth)x\(desiredHeight)")
-                    break
-                } catch {
-                    print("Error locking configuration for \(device.localizedName): \(error)")
-                }
-            }
-        }
-    }
-        
-        
-    func setupPreview(on view: UIView) {
-        self.setupBackPreviewLayer(on: view)
-        self.setupPiPView(on: view)
-        self.setupFrontPreviewLayer()
-    }
-
-    private func setupBackPreviewLayer(on view: UIView) {
-        backPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-        backPreviewLayer?.videoGravity = .resizeAspectFill
-        backPreviewLayer?.frame = view.bounds
-
-        if let backLayer = backPreviewLayer {
-            if let webViewLayer = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView })?.layer {
-                view.layer.insertSublayer(backLayer, below: webViewLayer)
+        DispatchQueue.main.async {
+            if let container = self.webView.superview {
+                previewBuilder.setupPreview(on: container, session: sessionManager.session)
             } else {
-                view.layer.insertSublayer(backLayer, at: 0)
+                let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
+                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                return
             }
-        }
-    }
 
-    private func setupPiPView(on view: UIView) {
-        let pipWidth: CGFloat = 160
-        let pipHeight: CGFloat = 240
-        let pipX: CGFloat = 16
-        let pipY: CGFloat = 60
-
-        let pipView = UIView(frame: CGRect(x: pipX, y: pipY, width: pipWidth, height: pipHeight))
-        self.pipView = pipView
-        pipView.layer.cornerRadius = 12
-        pipView.clipsToBounds = true
-        pipView.backgroundColor = .black
-
-        if let webView = view.subviews.first(where: { $0 is WKWebView || $0 is UIWebView }) {
-            view.insertSubview(pipView, belowSubview: webView)
-        } else {
-            view.addSubview(pipView)
-        }
-    }
-
-    private func setupFrontPreviewLayer() {
-        guard let pipView = self.pipView else { return }
-
-        frontPreviewLayer = AVCaptureVideoPreviewLayer(session: session)
-        frontPreviewLayer?.videoGravity = .resizeAspectFill
-        frontPreviewLayer?.frame = pipView.bounds
-
-        if let frontLayer = frontPreviewLayer {
-            pipView.layer.addSublayer(frontLayer)
+            sessionManager.startSession()
+            let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode enabled successfully")
+            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
         }
     }
 
     @objc(disableDualMode:)
     func disableDualMode(_ command: CDVInvokedUrlCommand) {
-       queue.async {
-           self.session.stopRunning()
-           self.session = nil
-           self.backInput = nil
-           self.frontInput = nil
-           self.backVideoPort = nil
-           self.frontVideoPort = nil
-           
-           self.backOutput = AVCaptureVideoDataOutput()
-           self.frontOutput = AVCaptureVideoDataOutput()
-           
-           DispatchQueue.main.async {
-               self.backPreviewLayer?.removeFromSuperlayer()
-               self.backPreviewLayer = nil
-               self.frontPreviewLayer?.removeFromSuperlayer()
-               self.frontPreviewLayer = nil
-               self.pipView?.removeFromSuperview()
-               self.pipView = nil
-               
-               let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
-               self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        sessionManager?.stopSession()
+
+        DispatchQueue.main.async {
+            self.previewBuilder?.teardownPreview()
+            self.sessionManager = nil
+            self.previewBuilder = nil
+            
+            let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
+            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        }
+    }
+    
+    func getGPSDictionaryForLocation() -> [String: Any]? {
+        guard let location = currentLocation else { return nil }
+        var gps: [String: Any] = [:]
+        
+        // GPS tag version
+        gps[kCGImagePropertyGPSVersion as String] = "2.2.0.0"
+        
+        // Time and date must be provided as strings, not as an NSDate object
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSSSSS"
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        gps[kCGImagePropertyGPSTimeStamp as String] = formatter.string(from: location.timestamp)
+        formatter.dateFormat = "yyyy:MM:dd"
+        gps[kCGImagePropertyGPSDateStamp as String] = formatter.string(from: location.timestamp)
+        
+        // Latitude
+        var latitude = location.coordinate.latitude
+        if latitude < 0 {
+            latitude = -latitude
+            gps[kCGImagePropertyGPSLatitudeRef as String] = "S"
+        } else {
+            gps[kCGImagePropertyGPSLatitudeRef as String] = "N"
+        }
+        gps[kCGImagePropertyGPSLatitude as String] = latitude
+        
+        // Longitude
+        var longitude = location.coordinate.longitude
+        if longitude < 0 {
+            longitude = -longitude
+            gps[kCGImagePropertyGPSLongitudeRef as String] = "W"
+        } else {
+            gps[kCGImagePropertyGPSLongitudeRef as String] = "E"
+        }
+        gps[kCGImagePropertyGPSLongitude as String] = longitude
+        
+        // Altitude
+        let altitude = location.altitude
+        if !altitude.isNaN {
+            if altitude < 0 {
+                gps[kCGImagePropertyGPSAltitudeRef as String] = "1"
+            } else {
+                gps[kCGImagePropertyGPSAltitudeRef as String] = "0"
+            }
+            gps[kCGImagePropertyGPSAltitude as String] = altitude
+        }
+        
+        if location.speed >= 0 {
+            gps[kCGImagePropertyGPSSpeedRef as String] = "K"
+            gps[kCGImagePropertyGPSSpeed as String] = location.speed * 3.6
+        }
+        
+        // Heading
+        if location.course >= 0 {
+            gps[kCGImagePropertyGPSTrackRef as String] = "T"
+            gps[kCGImagePropertyGPSTrack as String] = location.course
+        }
+        
+        return gps
+    }
+    
+    @objc(captureDual:)
+    func captureDual(_ command: CDVInvokedUrlCommand) {
+        self.captureDualImagesWithCompletion {
+            [weak self] mergedImage, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                let errorResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            guard let mergedImage = mergedImage else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to capture image")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let imageData = mergedImage.jpegData(compressionQuality: 0.9) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to convert merged image")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            let cfData = imageData as CFData
+            guard let imageSource = CGImageSourceCreateWithData(cfData, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to create image source")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to get image properties")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            let mutableDict = NSMutableDictionary(dictionary: metaDict)
+            
+            if let gpsData = getGPSDictionaryForLocation() {
+                mutableDict[kCGImagePropertyGPSDictionary as String] = gpsData
+            }
+            
+            let paths = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true)
+            guard let libraryDirectory = paths.first else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Library directory not found")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            let noCloudPath = (libraryDirectory as NSString).appendingPathComponent("NoCloud")
+            let uniqueFileName = UUID().uuidString + ".jpg"
+            let fullPath = (noCloudPath as NSString).appendingPathComponent(uniqueFileName)
+            let dataPath = "file://" + fullPath
+            
+            guard let url = URL(string: dataPath) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Invalid file URL")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let uti = CGImageSourceGetType(imageSource) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to get image UTI")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            guard let destination = CGImageDestinationCreateWithURL(url as CFURL, uti, 1, nil) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to create image destination")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+            
+            CGImageDestinationAddImageFromSource(destination, imageSource, 0, mutableDict)
+            
+            guard CGImageDestinationFinalize(destination) else {
+                let errorResult = CDVPluginResult(status: .error, messageAs: "Failed to finalize image destination")
+                self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                return
+            }
+
+            let successResult = CDVPluginResult(status: .ok, messageAs: dataPath)
+            self.commandDelegate.send(successResult, callbackId: command.callbackId)
+            }
+    }
+
+    @objc func captureDualImagesWithCompletion(_ completion: @escaping (UIImage?, Error?) -> Void) {
+        self.captureCompletion = completion
+        self.latestFrontImage = nil
+        self.latestBackImage = nil
+    }
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+       if self.captureCompletion != nil {
+           guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+                 let sessionManager = self.sessionManager else { return }
+
+           let ciImage = CIImage(cvImageBuffer: imageBuffer)
+           let context = CIContext()
+           guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+
+           let orientation = self.imageOrientationForCurrentDevice()
+           let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
+
+           if output == sessionManager.backOutput {
+               latestBackImage = image
+           } else if output == sessionManager.frontOutput {
+               latestFrontImage = image
+           }
+
+           if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
+               let merged = mergeImages(background: back, overlay: front)
+               let rotated = rotateImage(merged)
+
+               DispatchQueue.main.async {
+                   completion(rotated, nil)
+                   self.captureCompletion = nil
+                   self.latestBackImage = nil
+                   self.latestFrontImage = nil
+               }
            }
        }
+   }
+    
+    private func imageOrientationForCurrentDevice() -> UIImage.Orientation {
+        let deviceOrientation = UIDevice.current.orientation
+        switch deviceOrientation {
+        case .portraitUpsideDown:
+            return .left
+        case .landscapeLeft:
+            return .up
+        case .landscapeRight:
+            return .down
+        case .portrait:
+            return .right
+        default:
+            return .right
+        }
+    }
+    
+    func mergeImages(background: UIImage, overlay: UIImage) -> UIImage {
+        let size = background.size
+        let overlayWidth: CGFloat = size.width * 0.3
+        let overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
+        let padding: CGFloat = 16
+
+        let overlayRect = CGRect(
+            x: size.width - overlayWidth - padding,
+            y: padding,
+            width: overlayWidth,
+            height: overlayHeight
+        )
+
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        background.draw(in: CGRect(origin: .zero, size: size))
+        overlay.draw(in: overlayRect)
+        let merged = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        guard let merged = merged else {
+            return background
+        }
+        return merged
+    }
+    
+    func rotateImage(_ image: UIImage) -> UIImage {
+        let size = CGSize(width: image.size.height, height: image.size.width)
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, image.scale)
+        guard let context = UIGraphicsGetCurrentContext() else {
+            return image
+        }
+
+        context.translateBy(x: 0, y: size.height)
+        context.rotate(by: -.pi / 2)
+        image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
+
+        let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return rotatedImage ?? image
+    }
+    
+}
+
+extension CALayer {
+    func snapshot() -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: self.bounds.size)
+        return renderer.image { ctx in
+            self.render(in: ctx.cgContext)
+        }
     }
 }
