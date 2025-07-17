@@ -5,7 +5,7 @@ import CoreLocation
 @objc(DualCameraPreview) class DualCameraPreview: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     
     private var sessionManager: DualCameraSessionManager?
-    private var previewBuilder: PreviewLayerBuilder?
+    private var previewBuilder: DualCameraRenderController?
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
@@ -22,7 +22,7 @@ import CoreLocation
     @objc(enableDualMode:)
     func enableDualMode(_ command: CDVInvokedUrlCommand) {
         sessionManager = DualCameraSessionManager()
-        previewBuilder = PreviewLayerBuilder()
+        previewBuilder = DualCameraRenderController()
 
         guard let sessionManager = sessionManager, let previewBuilder = previewBuilder else {
             let pluginResult = CDVPluginResult(status: .error, messageAs: "Failed to initialize session.")
