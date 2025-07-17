@@ -12,8 +12,8 @@
   <js-module src="www/SimpleCameraPreview.js" name="SimpleCameraPreview">
     <clobbers target="SimpleCameraPreview" />
   </js-module>
-  <js-module src="www/DualModeCameraPreview.js" name="DualModeCameraPreview">
-  <clobbers target="DualModeCameraPreview" />
+  <js-module src="www/DualCameraPreview.js" name="DualCameraPreview">
+  <clobbers target="DualCameraPreview" />
   </js-module>
 
   <platform name="android">
@@ -53,8 +53,8 @@
             <param name="ios-package" value="SimpleCameraPreview" onload="true" />
         </feature>
 
-       <feature name="DualModeCameraPreview">
-        <param name="ios-package" value="DualModeCameraPreview" onload="true" />
+       <feature name="DualCameraPreview">
+        <param name="ios-package" value="DualCameraPreview" onload="true" />
       </feature>
     </config-file>
 
@@ -73,7 +73,9 @@
     <header-file src="src/ios/CameraRenderController.h" />
     <source-file src="src/ios/CameraRenderController.m" />
     <source-file src="src/ios/Shaders.metal" />
-    <source-file src="src/ios/DualModeCameraPreview.swift" />
+    <source-file src="src/ios/DualCameraPreview.swift" />
+    <source-file src="src/ios/DualCameraSessionManager.swift" />
+    <source-file src="src/ios/DualCameraRenderController.swift" />
 
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />

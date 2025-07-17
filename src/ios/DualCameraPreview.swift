@@ -2,7 +2,7 @@ import UIKit
 import AVFoundation
 import CoreLocation
 
-@objc(DualModeCameraPreview) class DualModeCameraPreview: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
+@objc(DualCameraPreview) class DualCameraPreview: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     
     private var sessionManager: DualCameraSessionManager?
     private var previewBuilder: PreviewLayerBuilder?
