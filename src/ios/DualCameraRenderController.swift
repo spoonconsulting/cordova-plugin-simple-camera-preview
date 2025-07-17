@@ -1,7 +1,7 @@
 import UIKit
 import AVFoundation
 
-class PreviewLayerBuilder {
+class DualCameraRenderController {
     private var backPreviewLayer: AVCaptureVideoPreviewLayer?
     private var frontPreviewLayer: AVCaptureVideoPreviewLayer?
     private var pipView: UIView?
