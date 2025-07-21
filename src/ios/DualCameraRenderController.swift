@@ -16,11 +16,7 @@ class DualCameraRenderController {
         setupBackPreviewLayer(on: view, session: session)
         setupPiPView(on: view)
         setupFrontPreviewLayer(session: session)
-        
-        // Set initial orientation based on current device orientation
         updatePreviewForCurrentOrientation()
-        
-        // Add orientation change notification
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(orientationChanged),
