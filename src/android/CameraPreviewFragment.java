@@ -587,7 +587,7 @@ public class CameraPreviewFragment extends Fragment {
         if (directionOption != direction) {
             direction = directionOption;
         }
-        if (!lens.equals(lensOption)) {
+        if (!lensOption.equals(lens)) {
             lens = lensOption;
         }
         if (aspectRatioOption != aspectRatio) {
