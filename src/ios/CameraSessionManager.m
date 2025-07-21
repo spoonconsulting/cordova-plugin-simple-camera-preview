@@ -212,7 +212,7 @@
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
     dispatch_async(self.sessionQueue, ^{
-    AVCaptureConnection *captureConnection;
+        AVCaptureConnection *captureConnection;
         if (self.imageOutput != nil) {
             captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
             if ([captureConnection isVideoOrientationSupported]) {
