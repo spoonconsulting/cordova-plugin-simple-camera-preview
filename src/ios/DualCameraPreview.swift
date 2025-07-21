@@ -14,7 +14,6 @@ import CoreLocation
     @objc(deviceSupportDualMode:)
     func deviceSupportDualMode(command: CDVInvokedUrlCommand) {
         let supportsMultiCam = AVCaptureMultiCamSession.isMultiCamSupported
-        
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: supportsMultiCam)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
@@ -34,7 +33,7 @@ import CoreLocation
 
         DispatchQueue.main.async {
             if let container = self.webView.superview {
-                previewBuilder.setupPreview(on: container, session: sessionManager.session)
+                previewBuilder.setupPreview(on: container, session: sessionManager.session, sessionManager: sessionManager)
             } else {
                 let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
                 self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
@@ -60,7 +59,7 @@ import CoreLocation
             self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
         }
     }
-    
+
     func getGPSDictionaryForLocation() -> [String: Any]? {
         guard let location = currentLocation else { return nil }
         var gps: [String: Any] = [:]
@@ -120,7 +119,7 @@ import CoreLocation
         
         return gps
     }
-    
+
     @objc(captureDual:)
     func captureDual(_ command: CDVInvokedUrlCommand) {
         self.captureDualImagesWithCompletion {
@@ -209,7 +208,7 @@ import CoreLocation
         self.latestFrontImage = nil
         self.latestBackImage = nil
     }
-    
+
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
        if self.captureCompletion != nil {
            guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
@@ -219,7 +218,7 @@ import CoreLocation
            let context = CIContext()
            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
 
-           let orientation = self.imageOrientationForCurrentDevice()
+           let orientation = getImageOrientationForCapture(connection: connection)
            let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
 
            if output == sessionManager.backOutput {
@@ -230,10 +229,8 @@ import CoreLocation
 
            if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
                let merged = mergeImages(background: back, overlay: front)
-               let rotated = rotateImage(merged)
-
                DispatchQueue.main.async {
-                   completion(rotated, nil)
+                   completion(merged, nil)
                    self.captureCompletion = nil
                    self.latestBackImage = nil
                    self.latestFrontImage = nil
@@ -241,35 +238,72 @@ import CoreLocation
            }
        }
    }
-    
-    private func imageOrientationForCurrentDevice() -> UIImage.Orientation {
-        let deviceOrientation = UIDevice.current.orientation
-        switch deviceOrientation {
+
+    private func imageOrientation(for videoOrientation: AVCaptureVideoOrientation) -> UIImage.Orientation {
+        switch videoOrientation {
+        case .portrait:
+            return .up
         case .portraitUpsideDown:
+            return .down
+        case .landscapeRight:
+            return .right
+        case .landscapeLeft:
             return .left
+        @unknown default:
+            return .up
+        }
+    }
+
+    private func getImageOrientationForCapture(connection: AVCaptureConnection) -> UIImage.Orientation {
+        let deviceOrientation = UIDevice.current.orientation
+        let isLandscape = deviceOrientation == .landscapeLeft || deviceOrientation == .landscapeRight
+        
+        if !isLandscape {
+            return imageOrientation(for: connection.videoOrientation)
+        }
+            
+        switch deviceOrientation {
         case .landscapeLeft:
             return .up
         case .landscapeRight:
             return .down
-        case .portrait:
-            return .right
         default:
-            return .right
+            return .up
         }
     }
-    
+
+    private func getImageOrientationFromConnection(_ connection: AVCaptureConnection) -> UIImage.Orientation {
+        return imageOrientation(for: connection.videoOrientation)
+    }
+
     func mergeImages(background: UIImage, overlay: UIImage) -> UIImage {
         let size = background.size
-        let overlayWidth: CGFloat = size.width * 0.3
-        let overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
+        let deviceOrientation = UIDevice.current.orientation
+        let isLandscape = deviceOrientation == .landscapeLeft || deviceOrientation == .landscapeRight
         let padding: CGFloat = 16
+        var overlayWidth: CGFloat
+        var overlayHeight: CGFloat
+        var overlayRect: CGRect
 
-        let overlayRect = CGRect(
-            x: size.width - overlayWidth - padding,
+        overlayWidth = size.width * 0.3
+        overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
+        overlayRect = CGRect(
+            x: padding,
             y: padding,
             width: overlayWidth,
             height: overlayHeight
         )
+
+        if isLandscape {
+            overlayWidth = size.width * 0.3
+            overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
+            overlayRect = CGRect(
+                x: padding,
+                y: padding,
+                width: overlayWidth,
+                height: overlayHeight
+            )
+        }
 
         UIGraphicsBeginImageContextWithOptions(size, false, 0)
         background.draw(in: CGRect(origin: .zero, size: size))
@@ -277,28 +311,7 @@ import CoreLocation
         let merged = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
-        guard let merged = merged else {
-            return background
-        }
-        return merged
-    }
-    
-    func rotateImage(_ image: UIImage) -> UIImage {
-        let size = CGSize(width: image.size.height, height: image.size.width)
-        
-        UIGraphicsBeginImageContextWithOptions(size, false, image.scale)
-        guard let context = UIGraphicsGetCurrentContext() else {
-            return image
-        }
-
-        context.translateBy(x: 0, y: size.height)
-        context.rotate(by: -.pi / 2)
-        image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
-
-        let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        return rotatedImage ?? image
+        return merged ?? background
     }
     
 }

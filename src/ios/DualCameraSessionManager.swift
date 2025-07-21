@@ -4,7 +4,6 @@ import AVFoundation
 class DualCameraSessionManager {
     let session = AVCaptureMultiCamSession()
     private let queue = DispatchQueue(label: "dualMode.session.queue")
-
     private(set) var backInput: AVCaptureDeviceInput?
     private(set) var frontInput: AVCaptureDeviceInput?
     private(set) var backOutput = AVCaptureVideoDataOutput()
@@ -43,6 +42,22 @@ class DualCameraSessionManager {
         }
     }
 
+    func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+        queue.async {
+            if let backConnection = self.backOutput.connection(with: .video) {
+                if backConnection.isVideoOrientationSupported {
+                    backConnection.videoOrientation = orientation
+                }
+            }
+            
+            if let frontConnection = self.frontOutput.connection(with: .video) {
+                if frontConnection.isVideoOrientationSupported {
+                    frontConnection.videoOrientation = orientation
+                }
+            }
+        }
+    }
+
     private func setupBackCamera() {
         guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
           let backInput = try? AVCaptureDeviceInput(device: backCamera),
@@ -66,7 +81,7 @@ class DualCameraSessionManager {
 
             if let port = self.backVideoPort {
                 let connection = AVCaptureConnection(inputPorts: [port], output: backOutput)
-                connection.videoOrientation = .portrait
+                connection.videoOrientation = getCurrentVideoOrientation()
                 session.addConnection(connection)
             }
         }
@@ -95,7 +110,7 @@ class DualCameraSessionManager {
 
             if let port = self.frontVideoPort {
                 let connection = AVCaptureConnection(inputPorts: [port], output: frontOutput)
-                connection.videoOrientation = .portrait
+                connection.videoOrientation = getCurrentVideoOrientation()
                 connection.automaticallyAdjustsVideoMirroring = false
                 connection.isVideoMirrored = true
                 session.addConnection(connection)
@@ -145,4 +160,20 @@ class DualCameraSessionManager {
             }
         }
     }
-} 
+    
+    private func getCurrentVideoOrientation() -> AVCaptureVideoOrientation {
+        let orientation = UIDevice.current.orientation
+        switch orientation {
+        case .portrait:
+            return .portrait
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        case .landscapeLeft:
+            return .landscapeRight
+        case .landscapeRight:
+            return .landscapeLeft
+        default:
+            return .portrait
+        }
+    }
+}
