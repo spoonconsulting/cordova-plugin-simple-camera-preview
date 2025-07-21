@@ -10,11 +10,22 @@ import CoreLocation
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
     private var currentLocation: CLLocation?
+    var videoCallbackContext: CDVInvokedUrlCommand?
 
     @objc(deviceSupportDualMode:)
     func deviceSupportDualMode(command: CDVInvokedUrlCommand) {
         let supportsMultiCam = AVCaptureMultiCamSession.isMultiCamSupported
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: supportsMultiCam)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    }
+
+    @objc(initVideoCallback:)
+    func initVideoCallback(_ command: CDVInvokedUrlCommand) {
+        self.videoCallbackContext = command
+        let data: [String: Any] = ["videoCallbackInitialized": true]
+        
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: data)
+        pluginResult?.setKeepCallbackAs(true)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 
