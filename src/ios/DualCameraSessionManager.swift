@@ -1,7 +1,11 @@
 import Foundation
 import AVFoundation
 
-class DualCameraSessionManager {
+protocol DualCameraSessionManagerDelegate: AnyObject {
+    func sessionManager(_ manager: DualCameraSessionManager, didOutput sampleBuffer: CMSampleBuffer, from output: AVCaptureOutput)
+}
+
+class DualCameraSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     let session = AVCaptureMultiCamSession()
     private let queue = DispatchQueue(label: "dualMode.session.queue")
     private(set) var backInput: AVCaptureDeviceInput?
@@ -12,8 +16,14 @@ class DualCameraSessionManager {
     private(set) var frontVideoPort: AVCaptureInput.Port?
     private(set) var audioOutput: AVCaptureAudioDataOutput?
     private(set) var audioInput: AVCaptureInput?
+    private var videoRecorder: VideoRecorder?
+    var videoMixer = VideoMixer()
+    private var latestBackBuffer: CMSampleBuffer?
+    private var latestFrontBuffer: CMSampleBuffer?
+    weak var delegate: DualCameraSessionManagerDelegate?
 
-    func setupSession(delegate: AVCaptureVideoDataOutputSampleBufferDelegate & AVCaptureAudioDataOutputSampleBufferDelegate) {
+    func setupSession(delegate: DualCameraSessionManagerDelegate) {
+        self.delegate = delegate
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
@@ -21,11 +31,26 @@ class DualCameraSessionManager {
         setupFrontCamera()
         setupMicrophone()
 
-        backOutput.setSampleBufferDelegate(delegate, queue: queue)
-        frontOutput.setSampleBufferDelegate(delegate, queue: queue)
+        backOutput.setSampleBufferDelegate(self, queue: queue)
+        frontOutput.setSampleBufferDelegate(self, queue: queue)
         if let audioOutput = self.audioOutput {
-            audioOutput.setSampleBufferDelegate(delegate, queue: queue)
+            audioOutput.setSampleBufferDelegate(self, queue: queue)
         }
+    }
+    
+    func startRecording(with recorder: VideoRecorder) {
+        videoRecorder = recorder
+        
+        let isLandscape = UIDevice.current.orientation.isLandscape
+        if isLandscape {
+            videoMixer.pipFrame = CGRect(x: 0.03, y: 0.03, width: 0.25, height: 0.25)
+        } else {
+            videoMixer.pipFrame = CGRect(x: 0.05, y: 0.05, width: 0.3, height: 0.3)
+        }
+    }
+    
+    func stopRecording() {
+        videoRecorder = nil
     }
 
     func startSession() {
@@ -85,6 +110,37 @@ class DualCameraSessionManager {
                 session.addConnection(connection)
             }
         }
+    }
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        if let videoRecorder = self.videoRecorder {
+            if output == backOutput {
+                self.latestBackBuffer = sampleBuffer
+            } else if output == frontOutput {
+                self.latestFrontBuffer = sampleBuffer
+            } else if output == audioOutput {
+                videoRecorder.appendAudioBuffer(sampleBuffer)
+                return
+            }
+
+            if self.videoMixer.inputFormatDescription == nil,
+               let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) {
+                self.videoMixer.prepare(with: formatDesc, outputRetainedBufferCountHint: 6)
+            }
+
+            guard let front = latestFrontBuffer, let back = latestBackBuffer else { return }
+
+            guard let frontBuffer = CMSampleBufferGetImageBuffer(front),
+                  let backBuffer = CMSampleBufferGetImageBuffer(back) else { return }
+
+            if let merged = self.videoMixer.mix(fullScreenPixelBuffer: backBuffer, pipPixelBuffer: frontBuffer, fullScreenPixelBufferIsFrontCamera: false) {
+                videoRecorder.appendVideoPixelBuffer(merged, withPresentationTime: CMSampleBufferGetPresentationTimeStamp(back))
+                latestFrontBuffer = nil
+                latestBackBuffer = nil
+            }
+        }
+        
+        delegate?.sessionManager(self, didOutput: sampleBuffer, from: output)
     }
 
     private func setupFrontCamera() {
