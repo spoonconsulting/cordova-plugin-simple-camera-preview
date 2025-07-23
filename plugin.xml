@@ -76,6 +76,8 @@
     <source-file src="src/ios/DualCameraPreview.swift" />
     <source-file src="src/ios/DualCameraSessionManager.swift" />
     <source-file src="src/ios/DualCameraRenderController.swift" />
+    <source-file src="src/ios/VideoRecorder.swift" />
+    <source-file src="src/ios/VideoMixer.swift" />
 
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" />
