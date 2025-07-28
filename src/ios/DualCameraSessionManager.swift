@@ -73,6 +73,9 @@ class DualCameraSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDe
             self.videoRecorder = recorder
             self.isRecording = true
 
+            // Lock the video mixer orientation at the start of recording
+            self.videoMixer.lockOrientation()
+
             let isLandscape = UIDevice.current.orientation.isLandscape
             if isLandscape {
                 self.videoMixer.pipFrame = CGRect(x: 0.03, y: 0.03, width: 0.25, height: 0.25)
@@ -86,6 +89,9 @@ class DualCameraSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDe
         queue.async { [weak self] in
             guard let self = self else { return }
   
+            // Unlock the video mixer orientation when recording stops
+            self.videoMixer.unlockOrientation()
+            
             self.videoRecorder = nil
             self.isRecording = false
         }
@@ -130,6 +136,11 @@ class DualCameraSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     }
 
     func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+        // Don't change video orientation while recording
+        if isRecording {
+            return
+        }
+        
         queue.async { [weak self] in
             guard let self = self else { return }
    

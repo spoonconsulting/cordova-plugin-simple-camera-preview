@@ -87,7 +87,7 @@ import CoreLocation
                     )
 
                     if let container = self.webView.superview {
-                        previewBuilder.setupPreview(on: container, session: sessionManager.session, sessionManager: sessionManager)
+                        previewBuilder.setupPreview(on: container, session: sessionManager.session, sessionManager: sessionManager, dualCameraPreview: self)
                     } else {
                         let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
                         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
@@ -124,6 +124,8 @@ import CoreLocation
             if let sessionManager = self.sessionManager,
                sessionManager.isReady() {
                 sessionManager.stopSession()
+                // Ensure video mixer orientation is unlocked
+                sessionManager.videoMixer.unlockOrientation()
             }
 
             DispatchQueue.main.async {
@@ -645,5 +647,10 @@ import CoreLocation
             defer { stateLock.unlock() }
             _isRecording = newValue
         }
+    }
+    
+    // Public getter for recording state
+    var isCurrentlyRecording: Bool {
+        return isRecording
     }
 }

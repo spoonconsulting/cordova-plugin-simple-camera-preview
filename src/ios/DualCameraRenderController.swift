@@ -8,11 +8,13 @@ class DualCameraRenderController {
     private var containerView: UIView?
     private var session: AVCaptureMultiCamSession?
     private var sessionManager: DualCameraSessionManager?
+    private weak var dualCameraPreview: DualCameraPreview?
 
-    func setupPreview(on view: UIView, session: AVCaptureMultiCamSession, sessionManager: DualCameraSessionManager) {
+    func setupPreview(on view: UIView, session: AVCaptureMultiCamSession, sessionManager: DualCameraSessionManager, dualCameraPreview: DualCameraPreview) {
         self.containerView = view
         self.session = session
         self.sessionManager = sessionManager
+        self.dualCameraPreview = dualCameraPreview
         setupBackPreviewLayer(on: view, session: session)
         setupPiPView(on: view)
         setupFrontPreviewLayer(session: session)
@@ -39,6 +41,11 @@ class DualCameraRenderController {
     }
 
     @objc private func orientationChanged() {
+        // Don't change preview orientation while recording
+        if let dualCameraPreview = dualCameraPreview, dualCameraPreview.isCurrentlyRecording {
+            return
+        }
+        
         guard let containerView = containerView else { return }
         
         DispatchQueue.main.async {
@@ -76,6 +83,11 @@ class DualCameraRenderController {
     }
     
     private func updateFrontCameraOrientation() {
+        // Don't change camera orientation while recording
+        if let dualCameraPreview = dualCameraPreview, dualCameraPreview.isCurrentlyRecording {
+            return
+        }
+        
         guard let session = session else { return }
         
         let orientation = UIDevice.current.orientation

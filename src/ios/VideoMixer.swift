@@ -10,6 +10,7 @@ class VideoMixer {
     private var outputPixelBufferPool: CVPixelBufferPool?
     private let metalDevice = MTLCreateSystemDefaultDevice()
     private var textureCache: CVMetalTextureCache?
+    private var lockedOrientation: UIDeviceOrientation?
     private lazy var commandQueue: MTLCommandQueue? = {
         guard let metalDevice = metalDevice else {
             return nil
@@ -64,7 +65,16 @@ class VideoMixer {
         outputFormatDescription = nil
         inputFormatDescription = nil
         textureCache = nil
+        lockedOrientation = nil
         isPrepared = false
+    }
+    
+    func lockOrientation() {
+        lockedOrientation = UIDevice.current.orientation
+    }
+    
+    func unlockOrientation() {
+        lockedOrientation = nil
     }
     
     struct MixerParameters {
@@ -135,7 +145,9 @@ class VideoMixer {
     }
     
     private func getAdjustedPipFrame(for fullScreenTexture: MTLTexture) -> CGRect {
-        let isLandscape = UIDevice.current.orientation.isLandscape
+        // Use locked orientation during recording, otherwise use current orientation
+        let orientationToUse = lockedOrientation ?? UIDevice.current.orientation
+        let isLandscape = orientationToUse.isLandscape
         let textureWidth = Float(fullScreenTexture.width)
         let textureHeight = Float(fullScreenTexture.height)
         
