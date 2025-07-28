@@ -491,7 +491,8 @@ import CoreLocation
         self.recordingCompletion = completion
         self.isRecording = true
 
-        self.videoRecorder?.startWriting(audioEnabled: recordWithAudio) { [weak self] error in
+        let recordingOrientation = getValidRecordingOrientation()
+        self.videoRecorder?.startWriting(audioEnabled: recordWithAudio, recordingOrientation: recordingOrientation) { [weak self] error in
             guard let self = self else { return }
 
             if let error = error {
@@ -516,6 +517,19 @@ import CoreLocation
                     repeats: false
                 )
             }
+        }
+    }
+    
+    private func getValidRecordingOrientation() -> UIDeviceOrientation {
+        let currentOrientation = UIDevice.current.orientation
+        
+        switch currentOrientation {
+        case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+            return currentOrientation
+        case .faceUp, .faceDown, .unknown:
+            return .portrait
+        @unknown default:
+            return .portrait
         }
     }
     
@@ -649,7 +663,6 @@ import CoreLocation
         }
     }
     
-    // Public getter for recording state
     var isCurrentlyRecording: Bool {
         return isRecording
     }

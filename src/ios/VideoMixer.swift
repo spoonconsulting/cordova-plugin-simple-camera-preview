@@ -10,7 +10,7 @@ class VideoMixer {
     private var outputPixelBufferPool: CVPixelBufferPool?
     private let metalDevice = MTLCreateSystemDefaultDevice()
     private var textureCache: CVMetalTextureCache?
-    private var lockedOrientation: UIDeviceOrientation?
+    internal var lockedOrientation: UIDeviceOrientation?
     private lazy var commandQueue: MTLCommandQueue? = {
         guard let metalDevice = metalDevice else {
             return nil
@@ -36,11 +36,13 @@ class VideoMixer {
         }
     }
     
-    func prepare(with videoFormatDescription: CMFormatDescription, outputRetainedBufferCountHint: Int) {
+    func prepare(with videoFormatDescription: CMFormatDescription, outputRetainedBufferCountHint: Int, targetWidth: Int32? = nil, targetHeight: Int32? = nil) {
         reset()
         
         (outputPixelBufferPool, _, outputFormatDescription) = allocateOutputBufferPool(with: videoFormatDescription,
-                                                                                       outputRetainedBufferCountHint: outputRetainedBufferCountHint)
+                                                                                       outputRetainedBufferCountHint: outputRetainedBufferCountHint,
+                                                                                       targetWidth: targetWidth,
+                                                                                       targetHeight: targetHeight)
         if outputPixelBufferPool == nil {
             return
         }
@@ -70,7 +72,16 @@ class VideoMixer {
     }
     
     func lockOrientation() {
-        lockedOrientation = UIDevice.current.orientation
+        let currentOrientation = UIDevice.current.orientation
+        
+        switch currentOrientation {
+        case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+            lockedOrientation = currentOrientation
+        case .faceUp, .faceDown, .unknown:
+            lockedOrientation = .portrait
+        @unknown default:
+            lockedOrientation = .portrait
+        }
     }
     
     func unlockOrientation() {
@@ -145,14 +156,23 @@ class VideoMixer {
     }
     
     private func getAdjustedPipFrame(for fullScreenTexture: MTLTexture) -> CGRect {
-        // Use locked orientation during recording, otherwise use current orientation
         let orientationToUse = lockedOrientation ?? UIDevice.current.orientation
-        let isLandscape = orientationToUse.isLandscape
+        
+        let validOrientation: UIDeviceOrientation
+        switch orientationToUse {
+        case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+            validOrientation = orientationToUse
+        case .faceUp, .faceDown, .unknown:
+            validOrientation = .portrait
+        @unknown default:
+            validOrientation = .portrait
+        }
+        
+        let isLandscape = validOrientation.isLandscape
         let textureWidth = Float(fullScreenTexture.width)
         let textureHeight = Float(fullScreenTexture.height)
         
         if isLandscape {
-            // Landscape mode: adjust PiP position and size
             let pipWidth = textureWidth * Float(pipFrame.size.width)
             let pipHeight = textureHeight * Float(pipFrame.size.height)
             let pipX = textureWidth * Float(pipFrame.origin.x)
@@ -160,7 +180,6 @@ class VideoMixer {
             
             return CGRect(x: CGFloat(pipX), y: CGFloat(pipY), width: CGFloat(pipWidth), height: CGFloat(pipHeight))
         } else {
-            // Portrait mode: use original frame calculation
             let pipWidth = textureWidth * Float(pipFrame.size.width)
             let pipHeight = textureHeight * Float(pipFrame.size.height)
             let pipX = textureWidth * Float(pipFrame.origin.x)
@@ -179,7 +198,6 @@ class VideoMixer {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
         
-        // Create a Metal texture from the image buffer
         var cvTextureOut: CVMetalTexture?
         CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, textureCache, pixelBuffer, nil, .bgra8Unorm, width, height, 0, &cvTextureOut)
         guard let cvTexture = cvTextureOut, let texture = CVMetalTextureGetTexture(cvTexture) else {
@@ -192,7 +210,7 @@ class VideoMixer {
         return texture
     }
     
-    func allocateOutputBufferPool(with inputFormatDescription: CMFormatDescription, outputRetainedBufferCountHint: Int) -> (
+    func allocateOutputBufferPool(with inputFormatDescription: CMFormatDescription, outputRetainedBufferCountHint: Int, targetWidth: Int32? = nil, targetHeight: Int32? = nil) -> (
         outputBufferPool: CVPixelBufferPool?,
         outputColorSpace: CGColorSpace?,
         outputFormatDescription: CMFormatDescription?) {
@@ -204,11 +222,15 @@ class VideoMixer {
                 return (nil, nil, nil)
             }
             
+            // Use target dimensions if provided, otherwise use input dimensions
             let inputDimensions = CMVideoFormatDescriptionGetDimensions(inputFormatDescription)
+            let outputWidth = targetWidth ?? inputDimensions.width
+            let outputHeight = targetHeight ?? inputDimensions.height
+            
             var pixelBufferAttributes: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: UInt(inputMediaSubType),
-                kCVPixelBufferWidthKey as String: Int(inputDimensions.width),
-                kCVPixelBufferHeightKey as String: Int(inputDimensions.height),
+                kCVPixelBufferWidthKey as String: Int(outputWidth),
+                kCVPixelBufferHeightKey as String: Int(outputHeight),
                 kCVPixelBufferIOSurfacePropertiesKey as String: [:]
             ]
             

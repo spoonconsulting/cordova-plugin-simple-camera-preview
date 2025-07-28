@@ -14,7 +14,7 @@ class VideoRecorder {
     private let stateLock = NSLock()
     private var _isWriting = false
 
-    func startWriting(audioEnabled: Bool, completion: @escaping (Error?) -> Void) {
+    func startWriting(audioEnabled: Bool, recordingOrientation: UIDeviceOrientation? = nil, completion: @escaping (Error?) -> Void) {
         writerQueue.async { [weak self] in
             guard let self = self else {
                 completion(NSError(domain: "VideoRecorder", code: 1000, userInfo: [NSLocalizedDescriptionKey: "VideoRecorder deallocated"]))
@@ -40,7 +40,21 @@ class VideoRecorder {
                 self.outputURL = outputDirectory.appendingPathComponent(fileName)
                 self.assetWriter = try AVAssetWriter(outputURL: self.outputURL!, fileType: .mov)
                 
-                let isLandscape = UIDevice.current.orientation.isLandscape
+                // Use provided orientation or fall back to current device orientation
+                let orientationToUse = recordingOrientation ?? UIDevice.current.orientation
+                
+                // Ensure we use a valid orientation for recording
+                let validOrientation: UIDeviceOrientation
+                switch orientationToUse {
+                case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+                    validOrientation = orientationToUse
+                case .faceUp, .faceDown, .unknown:
+                    validOrientation = .portrait
+                @unknown default:
+                    validOrientation = .portrait
+                }
+                
+                let isLandscape = validOrientation.isLandscape
                 let videoWidth = isLandscape ? 1920 : 1080
                 let videoHeight = isLandscape ? 1080 : 1920
 

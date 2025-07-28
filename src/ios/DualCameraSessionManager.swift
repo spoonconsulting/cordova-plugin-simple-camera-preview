@@ -204,7 +204,23 @@ class DualCameraSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDe
 
             if self.videoMixer.inputFormatDescription == nil,
                let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) {
-                self.videoMixer.prepare(with: formatDesc, outputRetainedBufferCountHint: 6)
+                let orientationToUse = self.videoMixer.lockedOrientation ?? UIDevice.current.orientation
+                
+                let validOrientation: UIDeviceOrientation
+                switch orientationToUse {
+                case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+                    validOrientation = orientationToUse
+                case .faceUp, .faceDown, .unknown:
+                    validOrientation = .portrait
+                @unknown default:
+                    validOrientation = .portrait
+                }
+                
+                let isLandscape = validOrientation.isLandscape
+                let targetWidth: Int32 = isLandscape ? 1920 : 1080
+                let targetHeight: Int32 = isLandscape ? 1080 : 1920
+                
+                self.videoMixer.prepare(with: formatDesc, outputRetainedBufferCountHint: 6, targetWidth: targetWidth, targetHeight: targetHeight)
             }
 
             guard let front = latestFrontBuffer, let back = latestBackBuffer else { return }
