@@ -2,14 +2,21 @@ import UIKit
 import AVFoundation
 import CoreLocation
 
-@objc(DualCameraPreview) class DualCameraPreview: CDVPlugin, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
-    
+@objc(DualCameraPreview) class DualCameraPreview: CDVPlugin, DualCameraSessionManagerDelegate {
     private var sessionManager: DualCameraSessionManager?
     private var previewBuilder: DualCameraRenderController?
     private var latestBackImage: UIImage?
     private var latestFrontImage: UIImage?
     private var captureCompletion: ((UIImage?, Error?) -> Void)?
     private var currentLocation: CLLocation?
+    var videoCallbackContext: CDVInvokedUrlCommand?
+    private var videoRecorder: VideoRecorder?
+    private var recordingCompletion: ((String, String?, Error?) -> Void)?
+    private var recordingTimer: Timer?
+     private let sessionQueue = DispatchQueue(label: "dual.camera.session.queue", qos: .userInitiated)
+    private let stateLock = NSLock()
+    private var _isSessionEnabled = false
+    private var _isRecording = false
 
     @objc(deviceSupportDualMode:)
     func deviceSupportDualMode(command: CDVInvokedUrlCommand) {
@@ -18,45 +25,121 @@ import CoreLocation
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 
+    @objc(initVideoCallback:)
+    func initVideoCallback(_ command: CDVInvokedUrlCommand) {
+        self.videoCallbackContext = command
+        let data: [String: Any] = ["videoCallbackInitialized": true]
+        
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: data)
+        pluginResult?.setKeepCallbackAs(true)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    }
+
     @objc(enableDualMode:)
     func enableDualMode(_ command: CDVInvokedUrlCommand) {
-        sessionManager = DualCameraSessionManager()
-        previewBuilder = DualCameraRenderController()
 
-        guard let sessionManager = sessionManager, let previewBuilder = previewBuilder else {
-            let pluginResult = CDVPluginResult(status: .error, messageAs: "Failed to initialize session.")
+        if isSessionEnabled {
+            let pluginResult = CDVPluginResult(status: .error, messageAs: "Dual mode already enabled")
             self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             return
         }
 
-        sessionManager.setupSession(delegate: self)
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+            
 
-        DispatchQueue.main.async {
-            if let container = self.webView.superview {
-                previewBuilder.setupPreview(on: container, session: sessionManager.session, sessionManager: sessionManager)
-            } else {
-                let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
-                self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            guard !self.isSessionEnabled else {
+                DispatchQueue.main.async {
+                    let pluginResult = CDVPluginResult(status: .error, messageAs: "Dual mode already enabled")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
                 return
             }
 
-            sessionManager.startSession()
-            let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode enabled successfully")
-            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            self.sessionManager = DualCameraSessionManager()
+            self.previewBuilder = DualCameraRenderController()
+
+            guard let sessionManager = self.sessionManager, let previewBuilder = self.previewBuilder else {
+                DispatchQueue.main.async {
+                    let pluginResult = CDVPluginResult(status: .error, messageAs: "Failed to initialize session.")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+                return
+            }
+
+            sessionManager.setupSession(delegate: self) { [weak self] success in
+                guard let self = self else { return }
+
+                if !success {
+                    DispatchQueue.main.async {
+                        let pluginResult = CDVPluginResult(status: .error, messageAs: "Failed to setup dual camera session")
+                        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                    }
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    NotificationCenter.default.addObserver(
+                        self,
+                        selector: #selector(self.handleOrientationChange),
+                        name: UIDevice.orientationDidChangeNotification,
+                        object: nil
+                    )
+
+                    if let container = self.webView.superview {
+                        previewBuilder.setupPreview(on: container, session: sessionManager.session, sessionManager: sessionManager, dualCameraPreview: self)
+                    } else {
+                        let pluginResult = CDVPluginResult(status: .error, messageAs: "Container view not set")
+                        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                        return
+                    }
+
+                    sessionManager.startSession()
+                    self.isSessionEnabled = true
+                    
+                    let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode enabled successfully")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+            }
         }
     }
 
     @objc(disableDualMode:)
     func disableDualMode(_ command: CDVInvokedUrlCommand) {
-        sessionManager?.stopSession()
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
 
-        DispatchQueue.main.async {
-            self.previewBuilder?.teardownPreview()
-            self.sessionManager = nil
-            self.previewBuilder = nil
-            
-            let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
-            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            guard self.isSessionEnabled else {
+                DispatchQueue.main.async {
+                    let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode already disabled")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+                return
+            }
+
+            if self.isRecording {
+                self.stopDualVideoRecording()
+            }
+
+            if let sessionManager = self.sessionManager,
+               sessionManager.isReady() {
+                sessionManager.stopSession()
+                // Ensure video mixer orientation is unlocked
+                sessionManager.videoMixer.unlockOrientation()
+            }
+
+            DispatchQueue.main.async {
+                NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.previewBuilder?.teardownPreview()
+                    self.sessionManager = nil
+                    self.previewBuilder = nil
+                    self.isSessionEnabled = false
+                    let pluginResult = CDVPluginResult(status: .ok, messageAs: "Dual mode disabled successfully")
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+            }
         }
     }
 
@@ -122,6 +205,14 @@ import CoreLocation
 
     @objc(captureDual:)
     func captureDual(_ command: CDVInvokedUrlCommand) {
+        guard isSessionEnabled,
+              let sessionManager = sessionManager,
+              sessionManager.isReady() else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Session not ready")
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+
         self.captureDualImagesWithCompletion {
             [weak self] mergedImage, error in
             guard let self = self else { return }
@@ -157,7 +248,7 @@ import CoreLocation
             }
             let mutableDict = NSMutableDictionary(dictionary: metaDict)
             
-            if let gpsData = getGPSDictionaryForLocation() {
+            if let gpsData = self.getGPSDictionaryForLocation() {
                 mutableDict[kCGImagePropertyGPSDictionary as String] = gpsData
             }
             
@@ -209,35 +300,52 @@ import CoreLocation
         self.latestBackImage = nil
     }
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-       if self.captureCompletion != nil {
-           guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-                 let sessionManager = self.sessionManager else { return }
+    func sessionManager(_ manager: DualCameraSessionManager, didOutput sampleBuffer: CMSampleBuffer, from output: AVCaptureOutput) {
+        if self.captureCompletion != nil {
+           guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
            let ciImage = CIImage(cvImageBuffer: imageBuffer)
            let context = CIContext()
            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
 
-           let orientation = getImageOrientationForCapture(connection: connection)
+           let orientation = getImageOrientationForCapture(connection: nil)
            let image = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: orientation)
 
-           if output == sessionManager.backOutput {
+           if output == manager.backOutput {
                latestBackImage = image
-           } else if output == sessionManager.frontOutput {
+           } else if output == manager.frontOutput {
                latestFrontImage = image
            }
 
            if let front = latestFrontImage, let back = latestBackImage, let completion = captureCompletion {
                let merged = mergeImages(background: back, overlay: front)
+               let finalImage: UIImage
+               if !UIDevice.current.orientation.isLandscape {
+                   finalImage = rotateImageToPortrait(merged)
+               } else {
+                   finalImage = merged
+               }
                DispatchQueue.main.async {
-                   completion(merged, nil)
+                   completion(finalImage, nil)
                    self.captureCompletion = nil
                    self.latestBackImage = nil
                    self.latestFrontImage = nil
                }
-           }
-       }
-   }
+            }
+        }
+    }
+
+    private func rotateImageToPortrait(_ image: UIImage) -> UIImage {
+        let size = CGSize(width: image.size.height, height: image.size.width)
+        UIGraphicsBeginImageContextWithOptions(size, false, image.scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return image }
+        context.translateBy(x: 0, y: size.height)
+        context.rotate(by: -.pi / 2)
+        image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
+        let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return rotatedImage ?? image
+    }
 
     private func imageOrientation(for videoOrientation: AVCaptureVideoOrientation) -> UIImage.Orientation {
         switch videoOrientation {
@@ -254,12 +362,16 @@ import CoreLocation
         }
     }
 
-    private func getImageOrientationForCapture(connection: AVCaptureConnection) -> UIImage.Orientation {
+    private func getImageOrientationForCapture(connection: AVCaptureConnection?) -> UIImage.Orientation {
         let deviceOrientation = UIDevice.current.orientation
         let isLandscape = deviceOrientation == .landscapeLeft || deviceOrientation == .landscapeRight
         
         if !isLandscape {
-            return imageOrientation(for: connection.videoOrientation)
+            if let connection = connection {
+                return imageOrientation(for: connection.videoOrientation)
+            } else {
+                return .right
+            }
         }
             
         switch deviceOrientation {
@@ -287,22 +399,17 @@ import CoreLocation
 
         overlayWidth = size.width * 0.3
         overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
-        overlayRect = CGRect(
-            x: padding,
-            y: padding,
-            width: overlayWidth,
-            height: overlayHeight
-        )
 
         if isLandscape {
-            overlayWidth = size.width * 0.3
-            overlayHeight = overlay.size.height * (overlayWidth / overlay.size.width)
-            overlayRect = CGRect(
-                x: padding,
-                y: padding,
-                width: overlayWidth,
-                height: overlayHeight
-            )
+            overlayRect = CGRect(x: padding,
+                                 y: padding,
+                                 width: overlayWidth,
+                                 height: overlayHeight)
+        } else {
+            overlayRect = CGRect(x: size.width - overlayWidth - padding,
+                                 y: padding,
+                                 width: overlayWidth,
+                                 height: overlayHeight)
         }
 
         UIGraphicsBeginImageContextWithOptions(size, false, 0)
@@ -314,13 +421,249 @@ import CoreLocation
         return merged ?? background
     }
     
-}
-
-extension CALayer {
-    func snapshot() -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: self.bounds.size)
-        return renderer.image { ctx in
-            self.render(in: ctx.cgContext)
+    @objc(startVideoCaptureDual:)
+     func startVideoCaptureDual(_ command: CDVInvokedUrlCommand) {
+        guard let options = command.arguments.first as? [String: Any] else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Missing options")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
         }
+        
+        let recordWithAudio = options["recordWithAudio"] as? Bool ?? true
+        let videoDurationMs = options["videoDurationMs"] as? Int ?? 3000
+        
+        guard isSessionEnabled,
+              let sessionManager = self.sessionManager,
+              sessionManager.isReady() else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Dual mode not enabled or session not ready")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+
+        if isRecording {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Recording already in progress")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            let event: [String: Any] = ["recording": true]
+            let recordingStarted = CDVPluginResult(status: .ok, messageAs: event)!
+            recordingStarted.setKeepCallbackAs(true)
+            self.commandDelegate.send(recordingStarted, callbackId: callbackId)
+        } else {
+            let errorResult = CDVPluginResult(status: .error, messageAs: "Video callback context not initialized")!
+            self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+            return
+        }
+        
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            self.startDualVideoRecordingWithAudio(recordWithAudio, duration: videoDurationMs) { [weak self] (videoPath, thumbnailPath, error) in
+                guard let self = self else { return }
+                if let error = error {
+                    let errorResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)!
+                    self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                } else {
+                    let result: [String: Any] = [
+                        "nativePath": videoPath,
+                        "thumbnail": thumbnailPath ?? NSNull()
+                    ]
+                    let pluginResult = CDVPluginResult(status: .ok, messageAs: result)!
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+            }
+        }
+    }
+
+    @objc func startDualVideoRecordingWithAudio(
+        _ recordWithAudio: Bool,
+        duration: Int,
+        completion: @escaping (String, String?, Error?) -> Void
+    ) {
+        guard !isRecording else {
+            completion("", nil, NSError(domain: "DualCamera", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Already recording"]))
+            return
+        }
+
+        self.videoRecorder = VideoRecorder()
+        self.recordingCompletion = completion
+        self.isRecording = true
+
+        let recordingOrientation = getValidRecordingOrientation()
+        self.videoRecorder?.startWriting(audioEnabled: recordWithAudio, recordingOrientation: recordingOrientation) { [weak self] error in
+            guard let self = self else { return }
+
+            if let error = error {
+                self.isRecording = false
+                completion("", nil, error)
+                return
+            }
+
+            if let recorder = self.videoRecorder,
+               let sessionManager = self.sessionManager,
+               sessionManager.isReady() {
+                sessionManager.startRecording(with: recorder)
+            }
+
+            let durationInSeconds = TimeInterval(duration) / 1000.0
+            DispatchQueue.main.async {
+                self.recordingTimer = Timer.scheduledTimer(
+                    timeInterval: durationInSeconds,
+                    target: self,
+                    selector: #selector(self.stopVideoCaptureDualTimer),
+                    userInfo: nil,
+                    repeats: false
+                )
+            }
+        }
+    }
+    
+    private func getValidRecordingOrientation() -> UIDeviceOrientation {
+        let currentOrientation = UIDevice.current.orientation
+        
+        switch currentOrientation {
+        case .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight:
+            return currentOrientation
+        case .faceUp, .faceDown, .unknown:
+            return .portrait
+        @unknown default:
+            return .portrait
+        }
+    }
+    
+    @objc(stopVideoCaptureDual:)
+    func stopVideoCaptureDual(_ command: CDVInvokedUrlCommand) {
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            if self.isSessionEnabled && self.isRecording {
+                self.stopDualVideoRecording()
+                DispatchQueue.main.async {
+                    let result = CDVPluginResult(status: .ok)!
+                    self.commandDelegate.send(result, callbackId: command.callbackId)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    let errorResult = CDVPluginResult(status: .error, messageAs: "Not recording or dual mode not enabled")!
+                    self.commandDelegate.send(errorResult, callbackId: command.callbackId)
+                }
+            }
+        }
+    }
+    
+    @objc func stopVideoCaptureDualTimer() {
+        sessionQueue.async { [weak self] in
+            self?.stopDualVideoRecording()
+        }
+    }
+    
+    func stopDualVideoRecording() {
+        guard isRecording else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.recordingTimer?.invalidate()
+            self?.recordingTimer = nil
+        }
+
+        if let sessionManager = sessionManager,
+           sessionManager.isReady() {
+            sessionManager.stopRecording()
+        }
+
+        self.videoRecorder?.stopWriting { [weak self] path, thumb, err in
+            guard let self = self else { return }
+
+            self.isRecording = false
+            self.recordingCompletion?(path, thumb, err)
+            self.recordingCompletion = nil
+
+            if let error = err {
+                self.dualModeRecordingDidFail(withError: error)
+            } else {
+                self.dualModeRecordingDidFinish(withVideoPath: path, thumbnailPath: thumb)
+            }
+            self.videoRecorder = nil
+        }
+    }
+
+    @objc func dualModeRecordingDidFinish(withVideoPath videoPath: String, thumbnailPath: String?) {
+        let result: [String: Any] = [
+            "nativePath": videoPath,
+            "thumbnail": thumbnailPath ?? NSNull()
+        ]
+        
+        let pluginResult = CDVPluginResult(status: .ok, messageAs: result)!
+        pluginResult.setKeepCallbackAs(true)
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            self.commandDelegate.send(pluginResult, callbackId: callbackId)
+        } else {
+            print("videoCallbackContext not set; cannot send result.")
+        }
+    }
+
+    @objc func dualModeRecordingDidFail(withError error: Error) {
+        let pluginResult = CDVPluginResult(status: .error, messageAs: error.localizedDescription)!
+        
+        if let callbackId = self.videoCallbackContext?.callbackId {
+            self.commandDelegate.send(pluginResult, callbackId: callbackId)
+        } else {
+            print("videoCallbackContext not set; cannot send error.")
+        }
+    }
+    
+    @objc private func handleOrientationChange() {
+        guard isSessionEnabled,
+              let sessionManager = sessionManager,
+              sessionManager.isReady() else {
+            return
+        }
+
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            if self.isRecording {
+                let isLandscape = UIDevice.current.orientation.isLandscape
+                if isLandscape {
+                    sessionManager.videoMixer.pipFrame = CGRect(x: 0.03, y: 0.03, width: 0.25, height: 0.25)
+                } else {
+                    sessionManager.videoMixer.pipFrame = CGRect(x: 0.05, y: 0.05, width: 0.3, height: 0.3)
+                }
+            }
+        }
+    }
+
+    private var isSessionEnabled: Bool {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _isSessionEnabled
+        }
+
+        set {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            _isSessionEnabled = newValue
+        }
+    }
+    
+    private var isRecording: Bool {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _isRecording
+        }
+
+        set {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            _isRecording = newValue
+        }
+    }
+    
+    var isCurrentlyRecording: Bool {
+        return isRecording
     }
 }
