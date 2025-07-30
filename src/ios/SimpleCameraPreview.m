@@ -176,12 +176,23 @@ BOOL torchActivated = false;
 
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
     BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
-    if (self.sessionManager != nil) {
-        torchActivated = torchState;
-        [self.sessionManager torchSwitch:torchState? 1 : 0];
+    if (self.sessionManager == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
     }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    
+    torchActivated = torchState;
+    [self.sessionManager torchSwitch:torchState? 1 : 0 completion:^(BOOL success) {
+        if (success) {
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            return;
+        }
+
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch torch"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
 }
 
 - (void) switchCameraTo:(CDVInvokedUrlCommand*)command {
