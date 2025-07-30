@@ -229,15 +229,24 @@
     });
 }
 
-- (void) torchSwitch:(NSInteger)torchState {
+- (void) torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success))completion {
     if ([self.device hasTorch] && [self.device isTorchAvailable]) {
         dispatch_async(self.sessionQueue, ^{
             NSError *error = nil;
+            BOOL success = NO;
             if ([self.device lockForConfiguration:&error]) {
                 self.device.torchMode = torchState;
                 [self.device unlockForConfiguration];
+                success = YES;
+            }
+            if (completion) {
+                completion(success);
             }
         });
+    } else {
+        if (completion) {
+            completion(NO);
+        }
     }
 }
 
