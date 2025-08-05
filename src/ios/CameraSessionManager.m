@@ -140,10 +140,13 @@
                     orientation=[self getCurrentOrientation];
                 });
                 [self updateOrientation:orientation];
-                completion(success);
+                if (completion)
+                    completion(success);
+       
             });
         }else{
-            completion(false);
+            if (completion)
+                completion(false);
         }
     }];
 }
@@ -239,14 +242,12 @@
                 [self.device unlockForConfiguration];
                 success = YES;
             }
-            if (completion) {
+            if (completion)
                 completion(success);
-            }
         });
     } else {
-        if (completion) {
+        if (completion)
             completion(NO);
-        }
     }
 }
 
@@ -350,15 +351,22 @@
     }
 }
 
-- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
+- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
     dispatch_async(self.sessionQueue, ^{
         NSError *error = nil;
+        BOOL success = NO;
         self.defaultFlashMode = flashMode;
         if ([self.device hasFlash] && [self.device lockForConfiguration:&error]) {
             photoSettings.flashMode = flashMode;
             [self.device unlockForConfiguration];
+            success = YES;
+            if(completion)
+                completion(success);
+
         } else if (error) {
             NSLog(@"Error locking device for flash config: %@", error);
+            if (completion)
+                completion(NO);
         }
     });
 }
