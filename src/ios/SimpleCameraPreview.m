@@ -280,7 +280,6 @@ BOOL torchActivated = false;
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
-            return;
         }
     }];
 }

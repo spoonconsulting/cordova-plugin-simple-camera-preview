@@ -140,13 +140,14 @@
                     orientation=[self getCurrentOrientation];
                 });
                 [self updateOrientation:orientation];
-                if (completion)
+                if (completion){
                     completion(success);
-       
+                }
             });
         }else{
-            if (completion)
+            if (completion){
                 completion(false);
+            }
         }
     }];
 }
@@ -236,18 +237,18 @@
     if ([self.device hasTorch] && [self.device isTorchAvailable]) {
         dispatch_async(self.sessionQueue, ^{
             NSError *error = nil;
-            BOOL success = NO;
             if ([self.device lockForConfiguration:&error]) {
                 self.device.torchMode = torchState;
                 [self.device unlockForConfiguration];
-                success = YES;
             }
-            if (completion)
-                completion(success);
+            if (completion){
+                completion(YES);
+            }
         });
     } else {
-        if (completion)
+        if (completion){
             completion(NO);
+        }
     }
 }
 
@@ -333,7 +334,6 @@
     });
 }
 
-
 - (void)stopRecording {
     dispatch_async(self.sessionQueue, ^{
         if (self.movieFileOutput.isRecording) {
@@ -354,19 +354,19 @@
 - (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
     dispatch_async(self.sessionQueue, ^{
         NSError *error = nil;
-        BOOL success = NO;
         self.defaultFlashMode = flashMode;
         if ([self.device hasFlash] && [self.device lockForConfiguration:&error]) {
             photoSettings.flashMode = flashMode;
             [self.device unlockForConfiguration];
-            success = YES;
-            if(completion)
-                completion(success);
+            if(completion){
+                completion(YES);
+            }
 
         } else if (error) {
             NSLog(@"Error locking device for flash config: %@", error);
-            if (completion)
+            if (completion){
                 completion(NO);
+            }
         }
     });
 }
