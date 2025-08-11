@@ -259,15 +259,13 @@ BOOL torchActivated = false;
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     if (self.sessionManager != nil)
     [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings completion:^(BOOL success) {
-        if (success) {
-            CDVPluginResult *pluginResult;
-            if (self.cameraRenderController != NULL) {
-                self.onPictureTakenHandlerId = command.callbackId;
-                [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
-            } else {
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            }
+        CDVPluginResult *pluginResult;
+        if (self.cameraRenderController != NULL) {
+            self.onPictureTakenHandlerId = command.callbackId;
+            [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        } else {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
     }];
 }
