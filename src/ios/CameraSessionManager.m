@@ -240,13 +240,18 @@
             if ([self.device lockForConfiguration:&error]) {
                 self.device.torchMode = torchState;
                 [self.device unlockForConfiguration];
+                if (completion){
+                    completion(YES);
+                }
             }
-            if (completion){
-                completion(YES);
+            else if (error) {
+                if (completion) {
+                    completion(NO);
+                }
             }
         });
     } else {
-        if (completion){
+        if (completion) {
             completion(NO);
         }
     }
