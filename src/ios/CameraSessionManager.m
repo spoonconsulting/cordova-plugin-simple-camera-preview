@@ -215,22 +215,20 @@
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
-    dispatch_async(self.sessionQueue, ^{
-        AVCaptureConnection *captureConnection;
-        if (self.imageOutput != nil) {
-            captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
-            if ([captureConnection isVideoOrientationSupported]) {
-                [captureConnection setVideoOrientation:orientation];
-            }
+    AVCaptureConnection *captureConnection;
+    if (self.imageOutput != nil) {
+        captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
         }
+    }
 
-        if (self.dataOutput != nil) {
-            captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
-            if ([captureConnection isVideoOrientationSupported]) {
-                [captureConnection setVideoOrientation:orientation];
-            }
+    if (self.dataOutput != nil) {
+        captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
         }
-    });
+    }
 }
 
 - (void) torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success))completion {
