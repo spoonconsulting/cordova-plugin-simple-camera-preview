@@ -10,6 +10,7 @@
 - (void) torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success))completion;
 - (void) switchCameraTo:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
 - (BOOL) deviceHasUltraWideCamera;
+- (BOOL) deviceHasFlash;
 - (void) deallocSession;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (void) startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDuration;

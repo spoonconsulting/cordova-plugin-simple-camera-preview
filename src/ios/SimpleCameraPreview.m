@@ -247,19 +247,10 @@ BOOL torchActivated = false;
 }
 
 - (void) deviceHasFlash:(CDVInvokedUrlCommand*)command{
-    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
-                                                                                                                            mediaType:AVMediaTypeVideo
-                                                                                                                             position:AVCaptureDevicePositionBack];
-    NSArray *captureDevices = [captureDeviceDiscoverySession devices];
     BOOL hasTorch = NO;
-    
-    for (AVCaptureDevice *device in captureDevices) {
-        if ([device hasTorch]) {
-            hasTorch = YES;
-            break;
-        }
+    if (self.sessionManager != nil) {
+        hasTorch = [self.sessionManager deviceHasFlash];
     }
-    
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasTorch];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }

@@ -351,6 +351,14 @@
     }
 }
 
+- (BOOL)deviceHasFlash {
+    BOOL hasFlash = NO;
+    if (self.device != nil){
+        hasFlash = [self.device hasFlash] && [self.device hasTorch];
+    }
+    return hasFlash;
+}
+
 - (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
     dispatch_async(self.sessionQueue, ^{
         NSError *error = nil;
