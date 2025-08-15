@@ -176,12 +176,20 @@ BOOL torchActivated = false;
 
 - (void) torchSwitch:(CDVInvokedUrlCommand*)command{
     BOOL torchState = [[command.arguments objectAtIndex:0] boolValue];
-    if (self.sessionManager != nil) {
-        torchActivated = torchState;
-        [self.sessionManager torchSwitch:torchState? 1 : 0];
+    if (self.sessionManager == nil) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        return;
     }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    
+    torchActivated = torchState;
+    [self.sessionManager torchSwitch:torchState? 1 : 0 completion:^(BOOL success) {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch torch"];
+        if (success) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        }
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
 }
 
 - (void) switchCameraTo:(CDVInvokedUrlCommand*)command {
@@ -236,19 +244,10 @@ BOOL torchActivated = false;
 }
 
 - (void) deviceHasFlash:(CDVInvokedUrlCommand*)command{
-    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
-                                                                                                                            mediaType:AVMediaTypeVideo
-                                                                                                                             position:AVCaptureDevicePositionBack];
-    NSArray *captureDevices = [captureDeviceDiscoverySession devices];
     BOOL hasTorch = NO;
-    
-    for (AVCaptureDevice *device in captureDevices) {
-        if ([device hasTorch]) {
-            hasTorch = YES;
-            break;
-        }
+    if (self.sessionManager != nil) {
+        hasTorch = [self.sessionManager deviceHasFlash];
     }
-    
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasTorch];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -259,16 +258,16 @@ BOOL torchActivated = false;
         useFlash = false;
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     if (self.sessionManager != nil)
-        [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings];
-
-    CDVPluginResult *pluginResult;
-    if (self.cameraRenderController != NULL) {
-        self.onPictureTakenHandlerId = command.callbackId;
-        [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
-    } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }
+    [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings completion:^(BOOL success) {
+        CDVPluginResult *pluginResult;
+        if (self.cameraRenderController != NULL) {
+            self.onPictureTakenHandlerId = command.callbackId;
+            [self.sessionManager.imageOutput capturePhotoWithSettings:self.photoSettings delegate:self];
+        } else {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }
+    }];
 }
 
 - (NSDictionary *)getGPSDictionaryForLocation {
