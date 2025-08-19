@@ -1,3 +1,6 @@
+## [2.0.45](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.44...2.0.45) (2025-08-19)
+* **IOS:** Fix torch and flash issues
+
 ## [2.0.44](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.43...2.0.44) (2025-07-15)
 * **Android:** Fix lens error
 
