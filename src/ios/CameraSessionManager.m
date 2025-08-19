@@ -140,10 +140,14 @@
                     orientation=[self getCurrentOrientation];
                 });
                 [self updateOrientation:orientation];
-                completion(success);
+                if (completion){
+                    completion(success);
+                }
             });
         }else{
-            completion(false);
+            if (completion){
+                completion(false);
+            }
         }
     }];
 }
@@ -211,33 +215,43 @@
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
-    dispatch_async(self.sessionQueue, ^{
-        AVCaptureConnection *captureConnection;
-        if (self.imageOutput != nil) {
-            captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
-            if ([captureConnection isVideoOrientationSupported]) {
-                [captureConnection setVideoOrientation:orientation];
-            }
+    AVCaptureConnection *captureConnection;
+    if (self.imageOutput != nil) {
+        captureConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
         }
+    }
 
-        if (self.dataOutput != nil) {
-            captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
-            if ([captureConnection isVideoOrientationSupported]) {
-                [captureConnection setVideoOrientation:orientation];
-            }
+    if (self.dataOutput != nil) {
+        captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
+        if ([captureConnection isVideoOrientationSupported]) {
+            [captureConnection setVideoOrientation:orientation];
         }
-    });
+    }
 }
 
-- (void) torchSwitch:(NSInteger)torchState {
+- (void) torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success))completion {
     if ([self.device hasTorch] && [self.device isTorchAvailable]) {
         dispatch_async(self.sessionQueue, ^{
             NSError *error = nil;
             if ([self.device lockForConfiguration:&error]) {
                 self.device.torchMode = torchState;
                 [self.device unlockForConfiguration];
+                if (completion){
+                    completion(YES);
+                }
+            }
+            else if (error) {
+                if (completion) {
+                    completion(NO);
+                }
             }
         });
+    } else {
+        if (completion) {
+            completion(NO);
+        }
     }
 }
 
@@ -323,7 +337,6 @@
     });
 }
 
-
 - (void)stopRecording {
     dispatch_async(self.sessionQueue, ^{
         if (self.movieFileOutput.isRecording) {
@@ -341,15 +354,30 @@
     }
 }
 
-- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
+- (BOOL)deviceHasFlash {
+    BOOL hasFlash = NO;
+    if (self.device != nil){
+        hasFlash = [self.device hasFlash] && [self.device hasTorch];
+    }
+    return hasFlash;
+}
+
+- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
     dispatch_async(self.sessionQueue, ^{
         NSError *error = nil;
         self.defaultFlashMode = flashMode;
         if ([self.device hasFlash] && [self.device lockForConfiguration:&error]) {
             photoSettings.flashMode = flashMode;
             [self.device unlockForConfiguration];
+            if(completion){
+                completion(YES);
+            }
+
         } else if (error) {
             NSLog(@"Error locking device for flash config: %@", error);
+            if (completion){
+                completion(NO);
+            }
         }
     });
 }
