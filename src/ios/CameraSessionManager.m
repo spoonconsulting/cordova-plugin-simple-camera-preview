@@ -232,7 +232,10 @@
 }
 
 - (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion {
-    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
+    BOOL hasTorch = [self.device hasTorch];
+    BOOL isTorchAvailable = [self.device isTorchAvailable];
+    
+    if (hasTorch && isTorchAvailable) {
         dispatch_async(self.sessionQueue, ^{
             NSError *error = nil;
             if ([self.device lockForConfiguration:&error]) {
@@ -250,8 +253,18 @@
         });
     } else {
         if (completion) {
-            completion(NO, nil);
-        }
+            NSString *reason = [NSString stringWithFormat:
+                            @"Torch is not available on this device (hasTorch=%@, isTorchAvailable=%@)",
+                            hasTorch ? @"YES" : @"NO",
+                            isTorchAvailable ? @"YES" : @"NO"];
+            
+            NSError *error = [NSError errorWithDomain:@"TorchErrorDomain"
+                                    code:-1
+                                    userInfo:@{
+                                    NSLocalizedDescriptionKey: reason
+                                }];
+            completion(NO, error);
+       }
     }
 }
 
