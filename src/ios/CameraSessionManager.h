@@ -7,7 +7,7 @@
 - (CameraSessionManager *)init;
 - (void) setupSession:(NSDictionary *)options completion:(void(^)(BOOL started))completion photoSettings:(AVCapturePhotoSettings *)photoSettings;
 - (void) setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void(^) (BOOL success)) completion;
-- (void) torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success))completion;
+- (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion;
 - (void) switchCameraTo:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
 - (BOOL) deviceHasUltraWideCamera;
 - (BOOL) deviceHasFlash;
