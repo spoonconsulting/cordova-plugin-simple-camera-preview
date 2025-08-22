@@ -253,17 +253,16 @@
         });
     } else {
         if (completion) {
-            NSString *reason = [NSString stringWithFormat:
-                            @"Torch is not available on this device (hasTorch=%@, isTorchAvailable=%@)",
-                            hasTorch ? @"YES" : @"NO",
-                            isTorchAvailable ? @"YES" : @"NO"];
+            NSString *errorDescription = [NSString stringWithFormat : @"Torch is not available on this device (hasTorch=%@, isTorchAvailable=%@)",
+                                                  hasTorch ? @"YES" : @"NO",
+                                          isTorchAvailable ? @"YES" : @"NO"];
             
             NSError *error = [NSError errorWithDomain:@"TorchErrorDomain"
                                     code:-1
                                     userInfo:@{
-                                    NSLocalizedDescriptionKey: reason
-                                }];
-            completion(NO, error);
+                                    NSLocalizedDescriptionKey: errorDescription
+                                   }];
+           completion(NO, error);
        }
     }
 }
