@@ -183,8 +183,10 @@ BOOL torchActivated = false;
     }
     
     torchActivated = torchState;
-    [self.sessionManager torchSwitch:torchState? 1 : 0 completion:^(BOOL success) {
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to switch torch"];
+    [self.sessionManager torchSwitch:torchState? 1 : 0 completion:^(BOOL success, NSError *error) {
+        CDVPluginResult* pluginResult;
+        NSString *errorMessage = error ? error.localizedDescription : @"Failed to switch torch";
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
         if (success) {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         }
@@ -553,6 +555,5 @@ BOOL torchActivated = false;
         });
     }];
 }
-
 
 @end

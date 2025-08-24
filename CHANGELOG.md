@@ -1,3 +1,6 @@
+## [2.0.46](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.45...2.0.46) (2025-08-22)
+* **IOS:** Improve torch error reporting 
+
 ## [2.0.45](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.44...2.0.45) (2025-08-19)
 * **IOS:** Fix torch and flash issues
 
