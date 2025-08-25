@@ -1,3 +1,6 @@
+## [2.0.47](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.46...2.0.47) (2025-08-24)
+* **IOS:** Fix capture bug for ipad
+
 ## [2.0.46](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.45...2.0.46) (2025-08-22)
 * **IOS:** Improve torch error reporting 
 

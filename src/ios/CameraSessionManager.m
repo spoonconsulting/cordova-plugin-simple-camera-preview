@@ -384,11 +384,15 @@
             if(completion){
                 completion(YES);
             }
-
         } else if (error) {
             NSLog(@"Error locking device for flash config: %@", error);
             if (completion){
                 completion(NO);
+            }
+        } else {
+            NSLog(@"Device doesn't have flash, skipping flash configuration");
+            if (completion){
+                completion(YES);
             }
         }
     });
