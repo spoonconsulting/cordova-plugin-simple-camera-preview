@@ -366,6 +366,12 @@
     }
 }
 
+- (BOOL)deviceHasFrontCamera {
+    AVCaptureDeviceDiscoverySession *discoverySession =
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
+    return discoverySession.devices.count > 0;
+}
+
 - (BOOL)deviceHasFlash {
     BOOL hasFlash = NO;
     if (self.device != nil){

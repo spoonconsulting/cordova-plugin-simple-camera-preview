@@ -10,6 +10,7 @@
 - (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion;
 - (void) switchCameraTo:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
 - (BOOL) deviceHasUltraWideCamera;
+- (BOOL) deviceHasFrontCamera;
 - (BOOL) deviceHasFlash;
 - (void) deallocSession;
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
