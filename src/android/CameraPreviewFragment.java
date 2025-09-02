@@ -93,6 +93,10 @@ interface HasUltraWideCameraCallback {
     void onResult(boolean result);
 }
 
+interface HasFrontCameraCallback {
+    void onResult(boolean result);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -227,6 +231,30 @@ public class CameraPreviewFragment extends Fragment {
         }
 
         hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
+    }
+
+    public void deviceHasFrontCamera(HasFrontCameraCallback hasFrontCameraCallback) {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        ProcessCameraProvider cameraProvider = null;
+        try {
+            cameraProvider = cameraProviderFuture.get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
+            e.printStackTrace();
+            hasFrontCameraCallback.onResult(false);
+            return;
+        }
+
+        List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+        
+        for (CameraInfo cameraInfo : cameraInfos) {
+            if (cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_FRONT) {
+                hasFrontCameraCallback.onResult(true);
+                return;
+            }
+        }
+        
+        hasFrontCameraCallback.onResult(false);
     }
 
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
