@@ -82,7 +82,7 @@ SimpleCameraPreview.deviceHasUltraWideCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasUltraWideCamera", []);
 };
 
-SimpleCameraPreview.deviceHasFrontCamera = function (onSuccess, onError){
+SimpleCameraPreview.deviceHasFrontCamera = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFrontCamera", []);
 }
 

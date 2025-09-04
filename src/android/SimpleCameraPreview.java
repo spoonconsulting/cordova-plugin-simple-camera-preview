@@ -380,6 +380,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasFrontCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
         fragment.deviceHasFrontCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
