@@ -1,3 +1,40 @@
+## [2.0.47](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.46...2.0.47) (2025-08-24)
+* **IOS:** Fix capture bug for ipad
+
+## [2.0.46](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.45...2.0.46) (2025-08-22)
+* **IOS:** Improve torch error reporting 
+
+## [2.0.45](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.44...2.0.45) (2025-08-19)
+* **IOS:** Fix torch and flash issues
+
+## [2.0.44](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.43...2.0.44) (2025-07-15)
+* **Android:** Fix lens error
+
+## [2.0.43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.42...2.0.43) (2025-07-04)
+* **iOS:** Replace OpenGL ES rendering with MetalKit for camera preview
+
+## [2.0.42](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.41...2.0.42) (2025-06-27)
+* **iOS:** Fix front camera for device without 4k 
+
+## [2.0.41](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.40...2.0.41) (2025-05-28)
+* **iOS:** Allow use of camera when on call and prevent crashing when cancelling scan
+
+## [2.0.40](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.39...2.0.40) (2025-05-23)
+* **Android:** Add Aspect Ratio option
+* **iOS:** Add Aspect Ratio option
+
+## [2.0.39](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.38...2.0.39) (2025-05-06)
+* **Android:** Enhance torch error reporting
+
+## [2.0.38](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.37...2.0.38) (2025-04-21)
+* **Android:** Refactoring
+
+## [2.0.37](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.36...2.0.37) (2025-04-17)
+* **Android:** Change flash state synchronously
+
+## [2.0.36](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.35...2.0.36) (2025-04-16)
+* **iOS:** Improve camera startup delay
+
 ## [2.0.35](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.34...2.0.35) (2025-03-17)
 * **iOS:** Skip Ultra-Wide Availability Check When Switching from Back to Front
 

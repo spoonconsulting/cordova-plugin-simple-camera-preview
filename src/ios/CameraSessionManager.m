@@ -4,13 +4,14 @@
 - (CameraSessionManager *)init {
     if (self = [super init]) {
         // Create the AVCaptureSession
-        self.session = [[AVCaptureSession alloc] init];
+        self.session = [AVCaptureSession new];
+        self.audioConfigured = false;
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
         }
-        self.filterLock = [[NSLock alloc] init];
-        self.movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+        self.filterLock = [NSLock new];
+        self.movieFileOutput = [AVCaptureMovieFileOutput new];
     }
     return self;
 }
@@ -54,25 +55,28 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
-                AVCaptureDevice *videoDevice;
-                videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
                 if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
-                        videoDevice = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                        self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
                     }
                 }
-                
-                if ([videoDevice hasFlash]) {
-                    if ([videoDevice lockForConfiguration:&error]) {
+
+                self.aspectRatio = @"3:4";
+                NSString *aspectRatio = options[@"aspectRatio"];
+                   if (aspectRatio && [aspectRatio length] > 0) {
+                       self.aspectRatio = aspectRatio;
+                   }
+
+                if ([self.device hasFlash]) {
+                    if ([self.device lockForConfiguration:&error]) {
                         photoSettings.flashMode = AVCaptureFlashModeAuto;
-                        [videoDevice unlockForConfiguration];
+                        [self.device unlockForConfiguration];
                     } else {
                         NSLog(@"%@", error);
                         success = FALSE;
                     }
                 }
-                
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
                 
                 if (error) {
                     NSLog(@"%@", error);
@@ -81,34 +85,39 @@
                 
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
-                    if (targetSize > 0) {
-                        AVCaptureSessionPreset calculatedPreset = [CameraSessionManager calculateResolution:targetSize];
-                        if ([self.session canSetSessionPreset:calculatedPreset]) {
-                            [self.session setSessionPreset:calculatedPreset];
-                        }
+                    self.targetSize = targetSize;
+                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+                    if ([self.session canSetSessionPreset:calculatedPreset]) {
+                        [self.session setSessionPreset:calculatedPreset];
                     }
                 }
+
+                [self.session beginConfiguration];
+
+                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:&error];
                 
                 if ([self.session canAddInput:videoDeviceInput]) {
                     [self.session addInput:videoDeviceInput];
                     self.videoDeviceInput = videoDeviceInput;
                 }
-                
-                AVCapturePhotoOutput *imageOutput = [[AVCapturePhotoOutput alloc] init];
+
+                AVCapturePhotoOutput *imageOutput = [AVCapturePhotoOutput new];
                 if ([self.session canAddOutput:imageOutput]) {
                     [self.session addOutput:imageOutput];
                     self.imageOutput = imageOutput;
                 }
                 
-                AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
-                
-                AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
-                NSError *audioError = nil;
-                AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
-                if (audioInput && [self.session canAddInput:audioInput]) {
-                    [self.session addInput:audioInput];
-                } else {
-                    NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                AVCaptureVideoDataOutput *dataOutput = [AVCaptureVideoDataOutput new];
+                if ([[AVAudioSession sharedInstance] inputNumberOfChannels] == 0) {
+                    AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+                    NSError *audioError = nil;
+                    AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&audioError];
+                    if (audioInput && [self.session canAddInput:audioInput]) {
+                        [self.session addInput:audioInput];
+                    } else {
+                        NSLog(@"Error adding audio input: %@", audioError.localizedDescription);
+                    }
+                    self.audioConfigured = true;
                 }
 
                 if ([self.session canAddOutput:self.movieFileOutput]) {
@@ -123,33 +132,86 @@
                     
                     [self.session addOutput:dataOutput];
                 }
+
+                [self.session commitConfiguration];
+
                 __block AVCaptureVideoOrientation orientation;
                 dispatch_sync(dispatch_get_main_queue(), ^{
                     orientation=[self getCurrentOrientation];
                 });
                 [self updateOrientation:orientation];
-                self.device = videoDevice;
-                
-                completion(success);
+                if (completion){
+                    completion(success);
+                }
             });
         }else{
-            completion(false);
+            if (completion){
+                completion(false);
+            }
         }
     }];
 }
 
-+ (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize {
-    if (targetSize >= 3840) {
-        return AVCaptureSessionPreset3840x2160;
-    } else if (targetSize >= 1920) {
-        return AVCaptureSessionPreset1920x1080;
-    } else if (targetSize >= 1280) {
-        return AVCaptureSessionPreset1280x720;
-    } else if (targetSize >= 640) {
-        return AVCaptureSessionPreset640x480;
-    } else {
-        return AVCaptureSessionPreset352x288;
+- (void) startSession {
+    dispatch_async(self.sessionQueue, ^{
+        if (![self.session isRunning]) {
+            [self.session startRunning];
+        }
+    });
+}
+
+- (AVCaptureSessionPreset) calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio {
+    // Define the available presets along with their native widths and aspect ratios.
+    NSArray<NSDictionary *> *presets = @[
+        @{@"preset": AVCaptureSessionPreset3840x2160, @"width": @(3840), @"aspect": @"9:16"},
+        @{@"preset": AVCaptureSessionPreset1920x1080, @"width": @(1920), @"aspect": @"9:16"},
+        @{@"preset": AVCaptureSessionPreset1280x720,  @"width": @(1280), @"aspect": @"9:16"},
+        @{@"preset": AVCaptureSessionPreset640x480,   @"width": @(640),  @"aspect": @"3:4"},
+        @{@"preset": AVCaptureSessionPreset352x288,   @"width": @(352),  @"aspect": @"3:4"},
+    ];
+    
+    // Normalize the requested aspect ratio: only "9:16" is treated as such, all other inputs become "3:4".
+    NSString *normalizedAspect = [aspectRatio isEqualToString:@"9:16"] ? @"9:16" : @"3:4";
+
+    // Filter out presets that don’t match the normalized aspect ratio.
+    NSPredicate *aspectFilter = [NSPredicate predicateWithFormat:@"aspect == %@", normalizedAspect];
+    NSArray<NSDictionary *> *candidates = [presets filteredArrayUsingPredicate:aspectFilter];
+    
+    // If no positive targetSize is provided, choose a default:
+    //    - For "3:4", return the AVCaptureSessionPresetPhoto (highest-quality still image).
+    //    - For "9:16", return the first (i.e., highest-resolution) candidate.
+    if (targetSize <= 0) {
+        if ([normalizedAspect isEqualToString:@"3:4"])
+            return AVCaptureSessionPresetPhoto;
+        else
+            return [self validateCameraPreset: (AVCaptureSessionPreset)candidates.firstObject[@"preset"]];
     }
+    
+    // Otherwise, find which candidate's width is closest to the requested targetSize.
+    NSDictionary *bestMatch = nil;
+    NSInteger bestDiff = NSIntegerMax;
+    for (NSDictionary *info in candidates) {
+        NSInteger width = [info[@"width"] integerValue];
+        NSInteger diff = llabs((long)(width - targetSize));
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestMatch = info;
+        }
+    }
+
+    // Return the preset of the closest match.
+    if (bestMatch) {
+        return [self validateCameraPreset: bestMatch[@"preset"]];
+    } else {
+        return [self validateCameraPreset: candidates.firstObject[@"preset"]];
+    }
+}
+
+- (AVCaptureSessionPreset) validateCameraPreset:(AVCaptureSessionPreset)preset {
+    if ([self.aspectRatio isEqualToString:@"9:16"]) {
+        return [self.device supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPreset1280x720;
+    }
+    return [self.device supportsAVCaptureSessionPreset:preset] ? preset : AVCaptureSessionPresetPhoto;
 }
 
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation {
@@ -160,6 +222,7 @@
             [captureConnection setVideoOrientation:orientation];
         }
     }
+
     if (self.dataOutput != nil) {
         captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([captureConnection isVideoOrientationSupported]) {
@@ -167,28 +230,52 @@
         }
     }
 }
-- (NSInteger)getFlashMode:(AVCapturePhotoSettings *)photoSettings {
 
-    if ([self.device hasFlash]) {
-        return photoSettings.flashMode;
-    }
-
-    return -1;
-}
-
-- (void) torchSwitch:(NSInteger)torchState{
-    NSError *error = nil;
-    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        if ([self.device lockForConfiguration:&error]) {
-            self.device.torchMode = torchState;
-            [self.device unlockForConfiguration];
-        }
+- (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion {
+    BOOL hasTorch = [self.device hasTorch];
+    BOOL isTorchAvailable = [self.device isTorchAvailable];
+    
+    if (hasTorch && isTorchAvailable) {
+        dispatch_async(self.sessionQueue, ^{
+            NSError *error = nil;
+            if ([self.device lockForConfiguration:&error]) {
+                self.device.torchMode = torchState;
+                [self.device unlockForConfiguration];
+                if (completion){
+                    completion(YES, nil);
+                }
+            }
+            else if (error) {
+                if (completion) {
+                    completion(NO, error);
+                }
+            }
+        });
+    } else {
+        if (completion) {
+            NSString *errorDescription = [NSString stringWithFormat : @"Torch is not available on this device (hasTorch=%@, isTorchAvailable=%@)",
+                                                  hasTorch ? @"YES" : @"NO",
+                                          isTorchAvailable ? @"YES" : @"NO"];
+            
+            NSError *error = [NSError errorWithDomain:@"TorchErrorDomain"
+                                    code:-1
+                                    userInfo:@{
+                                    NSLocalizedDescriptionKey: errorDescription
+                                   }];
+           completion(NO, error);
+       }
     }
 }
 
 - (void)switchCameraTo:(NSDictionary*)cameraOptions completion:(void (^)(BOOL success))completion {
     NSString* cameraMode = cameraOptions[@"lens"];
     NSString* cameraDirection = cameraOptions[@"direction"];
+    NSString* aspectRatio = cameraOptions[@"aspectRatio"];
+
+    if (aspectRatio && [aspectRatio length] > 0)
+        self.aspectRatio = aspectRatio;
+    else
+        self.aspectRatio = @"3:4";
 
     if (![self deviceHasUltraWideCamera] && [cameraMode isEqualToString:@"wide"]) {
         if (completion) {
@@ -202,35 +289,34 @@
     dispatch_async(self.sessionQueue, ^{
         BOOL cameraSwitched = FALSE;
         if (@available(iOS 13.0, *)) {
-            AVCaptureDevice *ultraWideCamera;
             if([cameraMode isEqualToString:@"wide"]) {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
             } else {
-                ultraWideCamera = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
             }
-            if (ultraWideCamera) {
+            AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+            if ([self.session canSetSessionPreset:calculatedPreset]) {
+                [self.session setSessionPreset:calculatedPreset];
+            } else {
+                NSLog(@"Failed to set session preset: %@", calculatedPreset);
+            }
+            if (self.device) {
                 // Remove the current input
                 [self.session removeInput:self.videoDeviceInput];
                 
                 // Create a new input with the ultra-wide camera
                 NSError *error = nil;
-                AVCaptureDeviceInput *ultraWideVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:ultraWideCamera error:&error];
-                
-                if (!error) {
+                AVCaptureDeviceInput *selectedCameraInput = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:&error];
+                if (!error && [self.session canAddInput:selectedCameraInput]) {
                     // Add the new input to the session
-                    if ([self.session canAddInput:ultraWideVideoDeviceInput]) {
-                        [self.session addInput:ultraWideVideoDeviceInput];
-                        self.videoDeviceInput = ultraWideVideoDeviceInput;
-                        __block AVCaptureVideoOrientation orientation;
-                        dispatch_sync(dispatch_get_main_queue(), ^{
-                            orientation = [self getCurrentOrientation];
-                        });
-                        [self updateOrientation:orientation];
-                        self.device = ultraWideCamera;
-                        cameraSwitched = TRUE;
-                    } else {
-                        NSLog(@"Failed to add ultra-wide input to session");
-                    }
+                    [self.session addInput:selectedCameraInput];
+                    self.videoDeviceInput = selectedCameraInput;
+                    __block AVCaptureVideoOrientation orientation;
+                    dispatch_sync(dispatch_get_main_queue(), ^{
+                        orientation = [self getCurrentOrientation];
+                    });
+                    [self updateOrientation:orientation];
+                    cameraSwitched = TRUE;
                 } else {
                     NSLog(@"Error creating ultra-wide device input: %@", error.localizedDescription);
                 }
@@ -238,36 +324,37 @@
                 NSLog(@"Ultra-wide camera not found");
             }
         }
-        
+        self.isCameraDirectionFront = self.defaultCamera == AVCaptureDevicePositionFront;
         completion ? completion(cameraSwitched): NULL;
     });
 }
 
 - (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDurationMs {
-    if (!self.movieFileOutput.isRecording) {
-        AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
-        if ([connection isVideoOrientationSupported]) {
-            connection.videoOrientation = [self getCurrentOrientation];
+    dispatch_async(self.sessionQueue, ^{
+        if (!self.movieFileOutput.isRecording) {
+            AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+            if ([connection isVideoOrientationSupported]) {
+                connection.videoOrientation = [self getCurrentOrientation];
+            }
+            
+            [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
+            
+            int64_t delayInNs = (int64_t)((videoDurationMs / 1000.0) * NSEC_PER_SEC);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delayInNs), self.sessionQueue, ^{
+               if (self.movieFileOutput.isRecording) {
+                   [self.movieFileOutput stopRecording];
+               }
+            });
         }
-        [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
-        
-        NSInteger videoDurationInSec = videoDurationMs / 1000;
-        _videoTimer = [NSTimer scheduledTimerWithTimeInterval:videoDurationInSec
-                                        target:self
-                                        selector:@selector(stopRecording)
-                                        userInfo:nil
-                                        repeats:NO];
-    }
+    });
 }
 
 - (void)stopRecording {
-    if (self.movieFileOutput.isRecording) {
-        [self.movieFileOutput stopRecording];
-    }
-    if (_videoTimer != nil) {
-        [_videoTimer invalidate];
-        _videoTimer = nil;
-    }
+    dispatch_async(self.sessionQueue, ^{
+        if (self.movieFileOutput.isRecording) {
+            [self.movieFileOutput stopRecording];
+        }
+    });
 }
 
 - (BOOL)deviceHasUltraWideCamera {
@@ -279,24 +366,38 @@
     }
 }
 
-- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
-    NSError *error = nil;
-    // Let's save the setting even if we can't set it up on this camera.
-    self.defaultFlashMode = flashMode;
-    
-    if ([self.device hasFlash]) {
-        
-        if ([self.device lockForConfiguration:&error]) {
-            photoSettings.flashMode = self.defaultFlashMode;
-            [self.device unlockForConfiguration];
-            
-        } else {
-            NSLog(@"%@", error);
-        }
-    } else {
-        NSLog(@"Camera has no flash or flash mode not supported");
+- (BOOL)deviceHasFlash {
+    BOOL hasFlash = NO;
+    if (self.device != nil){
+        hasFlash = [self.device hasFlash] && [self.device hasTorch];
     }
+    return hasFlash;
 }
+
+- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
+    dispatch_async(self.sessionQueue, ^{
+        NSError *error = nil;
+        self.defaultFlashMode = flashMode;
+        if ([self.device hasFlash] && [self.device lockForConfiguration:&error]) {
+            photoSettings.flashMode = flashMode;
+            [self.device unlockForConfiguration];
+            if(completion){
+                completion(YES);
+            }
+        } else if (error) {
+            NSLog(@"Error locking device for flash config: %@", error);
+            if (completion){
+                completion(NO);
+            }
+        } else {
+            NSLog(@"Device doesn't have flash, skipping flash configuration");
+            if (completion){
+                completion(YES);
+            }
+        }
+    });
+}
+
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
 - (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position captureDeviceType:(AVCaptureDeviceType) captureDeviceType {
     AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ captureDeviceType] mediaType:AVMediaTypeVideo position:self.defaultCamera];
@@ -318,18 +419,18 @@
 }
 
 - (void)deallocSession {
-  if (self.session.running) {
-    [self.session stopRunning];
-  }
-  self.session = nil;
-  self.videoDeviceInput = nil;
-  self.imageOutput = nil;
-  self.dataOutput = nil;
-  self.filterLock = nil;
-  if (self.sessionQueue) {
+  dispatch_async(self.sessionQueue, ^{
+    if (self.session.running) {
+      [self.session stopRunning];
+    }
+    self.session = nil;
+    self.videoDeviceInput = nil;
+    self.imageOutput = nil;
+    self.dataOutput = nil;
+    self.filterLock = nil;
+    self.device = nil;
     self.sessionQueue = nil;
-  }
-  self.device = nil;
+  });
 }
 
 @end
