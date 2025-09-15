@@ -235,26 +235,27 @@ public class CameraPreviewFragment extends Fragment {
 
     public void deviceHasFrontCamera(HasFrontCameraCallback hasFrontCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-        ProcessCameraProvider cameraProvider = null;
-        try {
-            cameraProvider = cameraProviderFuture.get();
-        } catch (ExecutionException | InterruptedException e) {
-            Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-            e.printStackTrace();
-            hasFrontCameraCallback.onResult(false);
-            return;
-        }
-
-        List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
-        
-        for (CameraInfo cameraInfo : cameraInfos) {
-            if (cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_FRONT) {
-                hasFrontCameraCallback.onResult(true);
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
+                e.printStackTrace();
+                hasFrontCameraCallback.onResult(false);
                 return;
             }
-        }
-        
-        hasFrontCameraCallback.onResult(false);
+
+            List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+            for (CameraInfo cameraInfo : cameraInfos) {
+                if (cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_FRONT) {
+                    hasFrontCameraCallback.onResult(true);
+                    return;
+                }
+            }
+
+            hasFrontCameraCallback.onResult(false);
+        }, ContextCompat.getMainExecutor(getActivity()));
     }
 
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
