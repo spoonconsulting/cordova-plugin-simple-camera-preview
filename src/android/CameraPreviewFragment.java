@@ -100,7 +100,6 @@ public class CameraPreviewFragment extends Fragment {
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     Recording recording = null;
-    ProcessCameraProvider cameraProvider = null;
     private Camera camera;
     private CameraStartedCallback startCameraCallback;
     private Location location;
