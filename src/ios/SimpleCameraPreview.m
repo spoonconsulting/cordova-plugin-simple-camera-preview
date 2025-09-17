@@ -245,6 +245,15 @@ BOOL torchActivated = false;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) deviceHasFrontCamera:(CDVInvokedUrlCommand *)command{
+    BOOL hasFrontCamera = NO;
+    if (self.sessionManager != nil) {
+        hasFrontCamera = [self.sessionManager deviceHasFrontCamera];
+    }
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:hasFrontCamera];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) deviceHasFlash:(CDVInvokedUrlCommand*)command{
     BOOL hasTorch = NO;
     if (self.sessionManager != nil) {
