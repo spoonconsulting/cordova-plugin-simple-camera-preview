@@ -83,6 +83,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "deviceHasUltraWideCamera":
                     return deviceHasUltraWideCamera(callbackContext);
 
+                case "deviceHasFrontCamera":
+                    return deviceHasFrontCamera(callbackContext);
+
                 case "switchCameraTo":
                     return switchCameraTo((JSONObject) args.get(0), callbackContext);
                 default:
@@ -370,6 +373,19 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
         fragment.deviceHasUltraWideCamera((boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
+    }
+
+    private boolean deviceHasFrontCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        fragment.deviceHasFrontCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });
