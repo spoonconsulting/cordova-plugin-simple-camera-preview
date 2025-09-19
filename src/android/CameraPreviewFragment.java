@@ -539,14 +539,15 @@ public class CameraPreviewFragment extends Fragment {
             ProcessCameraProvider cameraProvider = null;
             try {
                 cameraProvider = cameraProviderFuture.get();
-                setUpCamera(options, cameraProvider);
-                preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
-                cameraSwitchedCallback.onSwitch(true);
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
                 e.printStackTrace();
                 cameraSwitchedCallback.onSwitch(false);
             }
+            setUpCamera(options, cameraProvider);
+            preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+            cameraSwitchedCallback.onSwitch(true);
+           
         }, ContextCompat.getMainExecutor(getActivity()));
     }
 
