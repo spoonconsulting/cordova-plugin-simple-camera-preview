@@ -347,7 +347,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean capture(boolean useFlash, CallbackContext callbackContext) {
         if (fragment == null) {
-            callbackContext.error("Camera is closed");
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, false);
+            callbackContext.sendPluginResult(pluginResult);
             return true;
         }
 
@@ -364,6 +365,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasFlash(CallbackContext callbackContext) {
+        if (fragment == null) {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, false);
+            callbackContext.sendPluginResult(pluginResult);
+            return true;
+        }
+
         fragment.hasFlash((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
@@ -372,6 +379,12 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, false);
+            callbackContext.sendPluginResult(pluginResult);
+            return true;
+        }
+
         fragment.deviceHasUltraWideCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
@@ -381,7 +394,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean deviceHasFrontCamera(CallbackContext callbackContext) {
         if (fragment == null) {
-            callbackContext.error("Camera is closed");
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, false);
+            callbackContext.sendPluginResult(pluginResult);
             return true;
         }
 
