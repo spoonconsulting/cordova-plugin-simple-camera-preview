@@ -543,6 +543,7 @@ public class CameraPreviewFragment extends Fragment {
                 Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
                 e.printStackTrace();
                 cameraSwitchedCallback.onSwitch(false);
+                return;
             }
             setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
