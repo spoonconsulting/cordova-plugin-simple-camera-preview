@@ -364,6 +364,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasFlash(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
         fragment.hasFlash((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
@@ -372,6 +377,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+           callbackContext.error("Camera is closed");
+            return true;
+        }
+
         fragment.deviceHasUltraWideCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
