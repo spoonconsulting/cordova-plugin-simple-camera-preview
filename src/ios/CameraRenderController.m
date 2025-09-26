@@ -120,12 +120,7 @@
     id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
     [encoder setRenderPipelineState:self.pipelineState];
     [encoder setFragmentTexture:self.cameraTexture atIndex:0];
-
-    BOOL flip = NO; 
-    if (self.sessionManager.isCameraDirectionFront) {
-        flip = YES;
-    }
-
+    BOOL flip = (self.sessionManager.isCameraDirectionFront) ? YES : NO;
     memcpy(self.flipBuffer.contents, &flip, sizeof(BOOL));
     [encoder setVertexBuffer:self.flipBuffer offset:0 atIndex:0];
 
