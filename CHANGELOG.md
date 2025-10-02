@@ -1,3 +1,6 @@
+## [2.0.50](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.49...2.0.50) (2025-10-02)
+* **Android:** Improve camera handling
+
 ## [2.0.49](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.48...2.0.49) (2025-09-25)
 * **Android:** Update camera-x plugin to version to 1.5, to support Android new 16Kb pages
 
