@@ -55,6 +55,7 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
+                self.isCameraDirectionFront = (self.defaultCamera == AVCaptureDevicePositionFront);
                 self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
                 if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
