@@ -545,6 +545,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
                         cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        ViewGroup parent = (ViewGroup) webView.getView().getParent();
+                        parent.bringToFront();
                     } else {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
