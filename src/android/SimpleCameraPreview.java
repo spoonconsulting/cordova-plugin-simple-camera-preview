@@ -83,6 +83,9 @@ public class SimpleCameraPreview extends CordovaPlugin {
                 case "deviceHasUltraWideCamera":
                     return deviceHasUltraWideCamera(callbackContext);
 
+                case "deviceHasFrontCamera":
+                    return deviceHasFrontCamera(callbackContext);
+
                 case "switchCameraTo":
                     return switchCameraTo((JSONObject) args.get(0), callbackContext);
                 default:
@@ -249,10 +252,10 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         String lens = "default";
         try {
-            if (options.getString("lens") != null && !options.getString("lens").equals("null")) {
+            if (options.getString("lens") != null && !options.getString("lens").equals("null") && !options.getString("lens").isEmpty()) {
                 lens = options.getString("lens");
             }
-        } catch (JSONException | NumberFormatException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
@@ -361,6 +364,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasFlash(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
         fragment.hasFlash((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
@@ -369,7 +377,25 @@ public class SimpleCameraPreview extends CordovaPlugin {
     }
 
     private boolean deviceHasUltraWideCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+           callbackContext.error("Camera is closed");
+            return true;
+        }
+
         fragment.deviceHasUltraWideCamera((boolean result) -> {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
+            callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
+    }
+
+    private boolean deviceHasFrontCamera(CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed");
+            return true;
+        }
+
+        fragment.deviceHasFrontCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
         });

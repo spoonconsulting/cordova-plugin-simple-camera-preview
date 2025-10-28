@@ -93,6 +93,10 @@ interface HasUltraWideCameraCallback {
     void onResult(boolean result);
 }
 
+interface HasFrontCameraCallback {
+    void onResult(boolean result);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -100,7 +104,6 @@ public class CameraPreviewFragment extends Fragment {
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     Recording recording = null;
-    ProcessCameraProvider cameraProvider = null;
     private Camera camera;
     private CameraStartedCallback startCameraCallback;
     private Location location;
@@ -166,67 +169,97 @@ public class CameraPreviewFragment extends Fragment {
 
     public void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "startCamera: " + e.getMessage());
+                e.printStackTrace();
+                startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
+                return;
+            }
 
-        try {
-            cameraProvider = cameraProviderFuture.get();
-        } catch (ExecutionException | InterruptedException e) {
-            Log.e(TAG, "startCamera: " + e.getMessage());
-            e.printStackTrace();
-            startCameraCallback.onCameraStarted(new Exception("Unable to start camera"));
-            return;
-        }
-        JSONObject options = new JSONObject();
-        try {
-            options.put("lens", lens);
-        } catch (JSONException e) {
-            startCameraCallback.onCameraStarted(new Exception("Unable to set the lens option"));
-        }
-        try {
-            options.put("direction", direction);
-        } catch (JSONException e) {
-            startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
-        }
-        try {
-            options.put("aspectRatio", aspectRatio);
-        } catch (JSONException e) {
-            startCameraCallback.onCameraStarted(new Exception("Unable to set the aspectRatio option"));
-        }
+            JSONObject options = new JSONObject();
+            try {
+                options.put("lens", lens);
+            } catch (JSONException e) {
+                startCameraCallback.onCameraStarted(new Exception("Unable to set the lens option"));
+            }
+            try {
+                options.put("direction", direction);
+            } catch (JSONException e) {
+                startCameraCallback.onCameraStarted(new Exception("Unable to set the Direction option"));
+            }
+            try {
+                options.put("aspectRatio", aspectRatio);
+            } catch (JSONException e) {
+                startCameraCallback.onCameraStarted(new Exception("Unable to set the aspectRatio option"));
+            }
 
-        setUpCamera(options, cameraProvider);
-        preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+            setUpCamera(options, cameraProvider);
+            preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
-        if (startCameraCallback != null) {
-            startCameraCallback.onCameraStarted(null);
-        }
+            if (startCameraCallback != null) {
+                startCameraCallback.onCameraStarted(null);
+            }
+        }, ContextCompat.getMainExecutor(getActivity()));
     }
 
     @SuppressLint("RestrictedApi")
     public void deviceHasUltraWideCamera(HasUltraWideCameraCallback hasUltraWideCameraCallback) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
-        ProcessCameraProvider cameraProvider = null;
-        try {
-            cameraProvider = cameraProviderFuture.get();
-        } catch (ExecutionException | InterruptedException e) {
-            Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-            e.printStackTrace();
-            hasUltraWideCameraCallback.onResult(false);
-            return;
-        }
-
-        List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
-        boolean defaultCamera = false;
-        boolean ultraWideCamera = false;
-        List<Camera2CameraInfoImpl> backCameras = getCamera2CameraInfos(cameraInfos);
-
-        for (Camera2CameraInfoImpl backCamera : backCameras) {
-            if (backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] >= 2.4) {
-                defaultCamera = true;
-            } else if( backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] < 2.4) {
-                ultraWideCamera = true;
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
+                e.printStackTrace();
+                hasUltraWideCameraCallback.onResult(false);
+                return;
             }
-        }
 
-        hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
+            List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+            boolean defaultCamera = false;
+            boolean ultraWideCamera = false;
+            List<Camera2CameraInfoImpl> backCameras = getCamera2CameraInfos(cameraInfos);
+
+            for (Camera2CameraInfoImpl backCamera : backCameras) {
+                if (backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] >= 2.4) {
+                    defaultCamera = true;
+                } else if( backCamera.getCameraCharacteristicsCompat().get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0] < 2.4) {
+                    ultraWideCamera = true;
+                }
+            }
+
+            hasUltraWideCameraCallback.onResult(defaultCamera == true && ultraWideCamera == true);
+        }, ContextCompat.getMainExecutor(getActivity()));
+    }
+
+    public void deviceHasFrontCamera(HasFrontCameraCallback hasFrontCameraCallback) {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
+                e.printStackTrace();
+                hasFrontCameraCallback.onResult(false);
+                return;
+            }
+
+            List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+            for (CameraInfo cameraInfo : cameraInfos) {
+                if (cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_FRONT) {
+                    hasFrontCameraCallback.onResult(true);
+                    return;
+                }
+            }
+
+            hasFrontCameraCallback.onResult(false);
+        }, ContextCompat.getMainExecutor(getActivity()));
     }
 
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
@@ -501,23 +534,22 @@ public class CameraPreviewFragment extends Fragment {
     }
 
     public void switchCameraTo(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(() -> {
-            ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        cameraProviderFuture.addListener(() -> {
             ProcessCameraProvider cameraProvider = null;
             try {
                 cameraProvider = cameraProviderFuture.get();
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error occurred while trying to obtain the camera provider: " + e.getMessage());
-                cameraSwitchedCallback.onSwitch(false);
                 e.printStackTrace();
+                cameraSwitchedCallback.onSwitch(false);
                 return;
             }
-
             setUpCamera(options, cameraProvider);
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
             cameraSwitchedCallback.onSwitch(true);
-        });
+           
+        }, ContextCompat.getMainExecutor(getActivity()));
     }
 
     @NonNull
@@ -587,7 +619,7 @@ public class CameraPreviewFragment extends Fragment {
         if (directionOption != direction) {
             direction = directionOption;
         }
-        if (!lens.equals(lensOption)) {
+        if (!lensOption.equals(lens)) {
             lens = lensOption;
         }
         if (aspectRatioOption != aspectRatio) {

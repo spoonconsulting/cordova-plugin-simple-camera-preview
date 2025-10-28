@@ -55,6 +55,7 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
+                self.isCameraDirectionFront = (self.defaultCamera == AVCaptureDevicePositionFront);
                 self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
                 if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
                     if (@available(iOS 13.0, *)) {
@@ -140,10 +141,14 @@
                     orientation=[self getCurrentOrientation];
                 });
                 [self updateOrientation:orientation];
-                completion(success);
+                if (completion){
+                    completion(success);
+                }
             });
         }else{
-            completion(false);
+            if (completion){
+                completion(false);
+            }
         }
     }];
 }
@@ -218,6 +223,7 @@
             [captureConnection setVideoOrientation:orientation];
         }
     }
+
     if (self.dataOutput != nil) {
         captureConnection = [self.dataOutput connectionWithMediaType:AVMediaTypeVideo];
         if ([captureConnection isVideoOrientationSupported]) {
@@ -225,22 +231,40 @@
         }
     }
 }
-- (NSInteger)getFlashMode:(AVCapturePhotoSettings *)photoSettings {
 
-    if ([self.device hasFlash]) {
-        return photoSettings.flashMode;
-    }
-
-    return -1;
-}
-
-- (void) torchSwitch:(NSInteger)torchState{
-    NSError *error = nil;
-    if ([self.device hasTorch] && [self.device isTorchAvailable]) {
-        if ([self.device lockForConfiguration:&error]) {
-            self.device.torchMode = torchState;
-            [self.device unlockForConfiguration];
-        }
+- (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion {
+    BOOL hasTorch = [self.device hasTorch];
+    BOOL isTorchAvailable = [self.device isTorchAvailable];
+    
+    if (hasTorch && isTorchAvailable) {
+        dispatch_async(self.sessionQueue, ^{
+            NSError *error = nil;
+            if ([self.device lockForConfiguration:&error]) {
+                self.device.torchMode = torchState;
+                [self.device unlockForConfiguration];
+                if (completion){
+                    completion(YES, nil);
+                }
+            }
+            else if (error) {
+                if (completion) {
+                    completion(NO, error);
+                }
+            }
+        });
+    } else {
+        if (completion) {
+            NSString *errorDescription = [NSString stringWithFormat : @"Torch is not available on this device (hasTorch=%@, isTorchAvailable=%@)",
+                                                  hasTorch ? @"YES" : @"NO",
+                                          isTorchAvailable ? @"YES" : @"NO"];
+            
+            NSError *error = [NSError errorWithDomain:@"TorchErrorDomain"
+                                    code:-1
+                                    userInfo:@{
+                                    NSLocalizedDescriptionKey: errorDescription
+                                   }];
+           completion(NO, error);
+       }
     }
 }
 
@@ -307,30 +331,31 @@
 }
 
 - (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDurationMs {
-    if (!self.movieFileOutput.isRecording) {
-        AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
-        if ([connection isVideoOrientationSupported]) {
-            connection.videoOrientation = [self getCurrentOrientation];
+    dispatch_async(self.sessionQueue, ^{
+        if (!self.movieFileOutput.isRecording) {
+            AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+            if ([connection isVideoOrientationSupported]) {
+                connection.videoOrientation = [self getCurrentOrientation];
+            }
+            
+            [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
+            
+            int64_t delayInNs = (int64_t)((videoDurationMs / 1000.0) * NSEC_PER_SEC);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delayInNs), self.sessionQueue, ^{
+               if (self.movieFileOutput.isRecording) {
+                   [self.movieFileOutput stopRecording];
+               }
+            });
         }
-        [self.movieFileOutput startRecordingToOutputFileURL:fileURL recordingDelegate:recordingDelegate];
-        
-        NSInteger videoDurationInSec = videoDurationMs / 1000;
-        _videoTimer = [NSTimer scheduledTimerWithTimeInterval:videoDurationInSec
-                                        target:self
-                                        selector:@selector(stopRecording)
-                                        userInfo:nil
-                                        repeats:NO];
-    }
+    });
 }
 
 - (void)stopRecording {
-    if (self.movieFileOutput.isRecording) {
-        [self.movieFileOutput stopRecording];
-    }
-    if (_videoTimer != nil) {
-        [_videoTimer invalidate];
-        _videoTimer = nil;
-    }
+    dispatch_async(self.sessionQueue, ^{
+        if (self.movieFileOutput.isRecording) {
+            [self.movieFileOutput stopRecording];
+        }
+    });
 }
 
 - (BOOL)deviceHasUltraWideCamera {
@@ -342,24 +367,44 @@
     }
 }
 
-- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings {
-    NSError *error = nil;
-    // Let's save the setting even if we can't set it up on this camera.
-    self.defaultFlashMode = flashMode;
-    
-    if ([self.device hasFlash]) {
-        
-        if ([self.device lockForConfiguration:&error]) {
-            photoSettings.flashMode = self.defaultFlashMode;
-            [self.device unlockForConfiguration];
-            
-        } else {
-            NSLog(@"%@", error);
-        }
-    } else {
-        NSLog(@"Camera has no flash or flash mode not supported");
-    }
+- (BOOL)deviceHasFrontCamera {
+    AVCaptureDeviceDiscoverySession *discoverySession =
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
+    return discoverySession.devices.count > 0;
 }
+
+- (BOOL)deviceHasFlash {
+    BOOL hasFlash = NO;
+    if (self.device != nil){
+        hasFlash = [self.device hasFlash] && [self.device hasTorch];
+    }
+    return hasFlash;
+}
+
+- (void)setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void (^) (BOOL success)) completion {
+    dispatch_async(self.sessionQueue, ^{
+        NSError *error = nil;
+        self.defaultFlashMode = flashMode;
+        if ([self.device hasFlash] && [self.device lockForConfiguration:&error]) {
+            photoSettings.flashMode = flashMode;
+            [self.device unlockForConfiguration];
+            if(completion){
+                completion(YES);
+            }
+        } else if (error) {
+            NSLog(@"Error locking device for flash config: %@", error);
+            if (completion){
+                completion(NO);
+            }
+        } else {
+            NSLog(@"Device doesn't have flash, skipping flash configuration");
+            if (completion){
+                completion(YES);
+            }
+        }
+    });
+}
+
 // Find a camera with the specified AVCaptureDevicePosition, returning nil if one is not found
 - (AVCaptureDevice *) cameraWithPosition:(AVCaptureDevicePosition) position captureDeviceType:(AVCaptureDeviceType) captureDeviceType {
     AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ captureDeviceType] mediaType:AVMediaTypeVideo position:self.defaultCamera];
@@ -381,18 +426,18 @@
 }
 
 - (void)deallocSession {
-  if (self.session.running) {
-    [self.session stopRunning];
-  }
-  self.session = nil;
-  self.videoDeviceInput = nil;
-  self.imageOutput = nil;
-  self.dataOutput = nil;
-  self.filterLock = nil;
-  if (self.sessionQueue) {
+  dispatch_async(self.sessionQueue, ^{
+    if (self.session.running) {
+      [self.session stopRunning];
+    }
+    self.session = nil;
+    self.videoDeviceInput = nil;
+    self.imageOutput = nil;
+    self.dataOutput = nil;
+    self.filterLock = nil;
+    self.device = nil;
     self.sessionQueue = nil;
-  }
-  self.device = nil;
+  });
 }
 
 @end

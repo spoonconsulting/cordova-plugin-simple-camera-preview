@@ -1,3 +1,29 @@
+## [2.0.51](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.50...2.0.51) (2025-10-23)
+* **Android:** Improve front camera handling
+* **iOS:** Improve front camera handling
+
+## [2.0.50](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.49...2.0.50) (2025-10-02)
+* **Android:** Improve camera handling
+
+## [2.0.49](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.48...2.0.49) (2025-09-25)
+* **Android:** Update camera-x plugin to version to 1.5, to support Android new 16Kb pages
+
+## [2.0.48](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.47...2.0.48) (2025-09-17)
+* **Android:** Add method to check if device has front camera
+* **iOS:** Add method to check if device has front camera
+
+## [2.0.47](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.46...2.0.47) (2025-08-24)
+* **IOS:** Fix capture bug for ipad
+
+## [2.0.46](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.45...2.0.46) (2025-08-22)
+* **IOS:** Improve torch error reporting 
+
+## [2.0.45](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.44...2.0.45) (2025-08-19)
+* **IOS:** Fix torch and flash issues
+
+## [2.0.44](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.43...2.0.44) (2025-07-15)
+* **Android:** Fix lens error
+
 ## [2.0.43](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.42...2.0.43) (2025-07-04)
 * **iOS:** Replace OpenGL ES rendering with MetalKit for camera preview
 
