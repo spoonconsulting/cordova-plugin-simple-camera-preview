@@ -168,7 +168,7 @@ BOOL torchActivated = false;
 -(void)_setSize:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     float x = ((NSNumber*)config[@"x"]).floatValue;
-    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+    float y = ((NSNumber*)config[@"y"]).floatValue;
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
