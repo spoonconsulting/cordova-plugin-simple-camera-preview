@@ -83,7 +83,6 @@ BOOL torchActivated = false;
     self.cameraRenderController.view.userInteractionEnabled = NO;
 
     [self.cameraRenderController didMoveToParentViewController:self.viewController];
-    // self.viewController.view.backgroundColor = [UIColor blackColor];
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
