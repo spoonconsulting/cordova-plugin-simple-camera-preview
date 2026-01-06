@@ -46,6 +46,7 @@ SimpleCameraPreview.initVideoCallback = function (onSuccess, onError, callback) 
 }
 
 SimpleCameraPreview.enable = function (options, onSuccess, onError) {
+  console.log("Aurelie camera Enable");
   exec(onSuccess, onError, PLUGIN_NAME, "enable", [options]);
 };
 
