@@ -188,4 +188,4 @@ SimpleCameraPreview.switchCameraTo(
     console.log("cannot switch camera: ", e);
   }
 );
-
+```
