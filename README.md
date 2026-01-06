@@ -140,7 +140,7 @@ SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
 ```
 
 ### deviceHasFrontCamera(successCallback, errorCallback)
-Check if device has Front Camera 
+Check if device has front camera
 <br>
 
 ```javascript
