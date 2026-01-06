@@ -178,4 +178,15 @@ SimpleCameraPreview.switchCameraTo(
     console.log("cannot switch camera: ", e);
   }
 );
+
+```
+### deviceHasFrontCamera(successCallback, errorCallback)
+Check if device has Front Camera 
+<br>
+
+```javascript
+SimpleCameraPreview.deviceHasFrontCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFrontCamera", []);
+}
+
 ```
