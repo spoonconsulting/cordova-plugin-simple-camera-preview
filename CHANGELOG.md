@@ -1,3 +1,7 @@
+## [2.0.52](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.51...2.0.52) (2025-01-12)
+* **Android:** Update ReadMe
+* **iOS:** Update ReadMe
+
 ## [2.0.51](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.50...2.0.51) (2025-10-23)
 * **Android:** Improve front camera handling
 * **iOS:** Improve front camera handling
