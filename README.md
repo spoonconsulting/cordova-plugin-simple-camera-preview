@@ -144,9 +144,12 @@ Check if device has front camera
 <br>
 
 ```javascript
-SimpleCameraPreview.deviceHasFrontCamera = function (onSuccess, onError) {
-  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFrontCamera", []);
-}
+SimpleCameraPreview.deviceHasFrontCamera((value) => {
+    console.log("Device has front camera?: ", value);
+},
+(error) => {
+    console.error("Error: ", error);
+});
 ```
 
 ### switchCameraTo(options, successCallback, errorCallback)
