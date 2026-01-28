@@ -79,6 +79,10 @@ BOOL torchActivated = false;
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
+            NSString *language = config[@"language"];
+            if (language && [language isKindOfClass:[NSString class]] && [language length] > 0) {
+                self.language = language;
+            }
             if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
@@ -108,7 +112,9 @@ BOOL torchActivated = false;
             
             if (!self.sessionManager.audioConfigured) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
+                    NSString *message = [self localizedStringForKey:@"microphone_in_use_toast"];
+                    if (!message) message = @"Microphone is in use by another application. Videos will not include audios!";
+                    [self showToastWithMessage:message];
                 });
             }
         }
@@ -520,6 +526,28 @@ BOOL torchActivated = false;
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.videoCallbackContext.callbackId];
     }
+}
+
+- (NSString *)localizedStringForKey:(NSString *)key {
+    NSString *language = self.language;
+    if (!language || [language length] == 0) {
+        language = [[NSLocale preferredLanguages] firstObject];
+    }
+    language = [language stringByReplacingOccurrencesOfString:@"_" withString:@"-"];
+    NSBundle *mainBundle = [NSBundle mainBundle];
+    NSString *path = [mainBundle pathForResource:language ofType:@"lproj"];
+    if (!path) {
+        path = [mainBundle pathForResource:@"en-US" ofType:@"lproj"];
+    }
+    if (!path) {
+        path = [mainBundle pathForResource:@"en" ofType:@"lproj"];
+    }
+    NSBundle *bundle = path ? [NSBundle bundleWithPath:path] : mainBundle;
+    NSString *value = [bundle localizedStringForKey:key value:nil table:@"Localizable"];
+    if (value && ![value isEqualToString:key]) {
+        return value;
+    }
+    return nil;
 }
 
 - (void)showToastWithMessage:(NSString *)message {

@@ -25,5 +25,7 @@
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) AVCapturePhotoSettings *photoSettings;
 @property (nonatomic) NSString *onCameraEnabledHandlerId;
+/** Language/locale for plugin UI (e.g. @"en-US", @"fr-FR"). Passed from enable options. */
+@property (nonatomic) NSString *language;
 
 @end

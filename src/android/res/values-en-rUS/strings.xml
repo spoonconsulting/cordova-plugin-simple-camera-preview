@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_error">This device does not support Camera2 API</string>
+    <string name="permissions_required_title">Permissions required</string>
+    <string name="permissions_required_message">Please grant the Camera permission for this app from your Settings.</string>
+    <string name="permissions_required_positive">App info</string>
+    <string name="permissions_required_negative">Cancel</string>
+</resources>

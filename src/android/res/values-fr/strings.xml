@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_error">Cet appareil ne prend pas en charge l\'API Camera2</string>
+    <string name="permissions_required_title">Autorisations requises</string>
+    <string name="permissions_required_message">Veuillez accorder l\'autorisation d\'accéder à la caméra dans les paramètres de l\'application.</string>
+    <string name="permissions_required_positive">Infos application</string>
+    <string name="permissions_required_negative">Annuler</string>
+</resources>

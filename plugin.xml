@@ -40,7 +40,14 @@
 
     <config-file target="res/values/strings.xml" parent="/*">
         <string name="camera_error">This device does not support Camera2 API</string>
+        <string name="permissions_required_title">Permissions required</string>
+        <string name="permissions_required_message">Please grant the Camera permission for this app from your Settings.</string>
+        <string name="permissions_required_positive">App info</string>
+        <string name="permissions_required_negative">Cancel</string>
     </config-file>
+
+    <resource-file src="src/android/res/values-en-rUS/strings.xml" target="res/values-en-rUS/strings.xml" />
+    <resource-file src="src/android/res/values-fr/strings.xml" target="res/values-fr/strings.xml" />
 
   </platform>
 
@@ -59,6 +66,8 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
+    <resource-file src="src/ios/Resources/en-US.lproj/Localizable.strings" target="en-US.lproj/Localizable.strings" />
+    <resource-file src="src/ios/Resources/fr-FR.lproj/Localizable.strings" target="fr-FR.lproj/Localizable.strings" />
     <header-file src="src/ios/SimpleCameraPreview.h" />
     <source-file src="src/ios/SimpleCameraPreview.m" />
     <header-file src="src/ios/CameraSessionManager.h" />

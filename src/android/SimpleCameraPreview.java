@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -27,6 +28,7 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.Locale;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.regex.Matcher;
@@ -36,6 +38,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private CameraPreviewFragment fragment;
     private JSONObject options;
+    private String language;
     private CallbackContext enableCallbackContext;
     private LocationManager locationManager;
     private LocationListener mLocationCallback;
@@ -220,9 +223,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
         if (!PermissionHelper.hasPermission(this, REQUIRED_PERMISSION)) {
             this.enableCallbackContext = callbackContext;
             this.options = options;
+            this.language = getLanguageFromOptions(options);
             this.requestPermissions();
             return true;
         }
+        this.language = getLanguageFromOptions(options);
 
         if (fragment != null) {
             callbackContext.error("Camera already started");
@@ -279,6 +284,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
             cameraPreviewOptions.put("aspectRatio", aspectRatio);
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+        if (this.language != null) {
+            try {
+                cameraPreviewOptions.put("language", this.language);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
         fragment = new CameraPreviewFragment(cameraPreviewOptions, (err) -> {
@@ -569,12 +581,60 @@ public class SimpleCameraPreview extends CordovaPlugin {
         return true;
     }
 
+    private String getLanguageFromOptions(JSONObject options) {
+        try {
+            if (options != null && options.has("language")) {
+                String lang = options.getString("language");
+                if (lang != null && !lang.isEmpty()) {
+                    return lang;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Context getLocalizedContext(String languageTag) {
+        Context base = cordova.getContext();
+        if (languageTag == null || languageTag.isEmpty()) {
+            return base;
+        }
+        try {
+            Locale locale = Locale.forLanguageTag(languageTag.replace("_", "-"));
+            Configuration config = new Configuration(base.getResources().getConfiguration());
+            config.setLocale(locale);
+            return base.createConfigurationContext(config);
+        } catch (Exception e) {
+            return base;
+        }
+    }
+
+    private String getLocalizedString(String languageTag, String resName) {
+        Context ctx = getLocalizedContext(languageTag);
+        int id = ctx.getResources().getIdentifier(resName, "string", cordova.getActivity().getPackageName());
+        if (id != 0) {
+            return ctx.getString(id);
+        }
+        return null;
+    }
+
     public void showAlertPermissionAlwaysDenied() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(cordova.getContext());
-        builder.setTitle("Permissions required")
-                .setMessage("Please grant the Camera permission for this app from your Settings.")
+        Context ctx = getLocalizedContext(this.language);
+        String title = getLocalizedString(this.language, "permissions_required_title");
+        String message = getLocalizedString(this.language, "permissions_required_message");
+        String positive = getLocalizedString(this.language, "permissions_required_positive");
+        String negative = getLocalizedString(this.language, "permissions_required_negative");
+        if (title == null) title = "Permissions required";
+        if (message == null) message = "Please grant the Camera permission for this app from your Settings.";
+        if (positive == null) positive = "App info";
+        if (negative == null) negative = "Cancel";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(title)
+                .setMessage(message)
                 .setCancelable(false)
-                .setPositiveButton("App info", ((dialogInterface, i) -> {
+                .setPositiveButton(positive, ((dialogInterface, i) -> {
                     Intent intent = new Intent(
                             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.fromParts("package", cordova.getActivity().getPackageName(), null)
@@ -583,7 +643,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     cordova.getActivity().startActivity(intent);
                     cordova.getActivity().finish();
                 }))
-                .setNegativeButton("Cancel", ((dialogInterface, i) -> {
+                .setNegativeButton(negative, ((dialogInterface, i) -> {
                     cordova.getActivity().finish();
                 }))
                 .create()

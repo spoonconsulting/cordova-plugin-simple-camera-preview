@@ -77,6 +77,7 @@ const params = {
   lens: 'auto', // Camera lens (auto or wide). Default is auto.
   direction: 'back', // Camera direction (front or back). Default is back.
   aspectRatio: '3:4', // Camera aspect ratoio (3:4 or 9:16). Default is 3:4.
+  language: 'en-US', // Optional. Locale for plugin UI (e.g. 'en-US', 'fr-FR'). Pass from your app's locale.
   ...cameraSize,
 }
 
