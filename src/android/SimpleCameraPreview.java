@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -41,6 +43,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
     private CallbackContext videoCallbackContext;
+    private int themeColor = -1;
     private static final int containerViewId = 20;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
@@ -445,6 +448,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
             fragment = null;
 
             callbackContext.success();
+
+            cordova.getActivity().runOnUiThread(() -> {
+                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(themeColor);
+            });
+
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -530,6 +538,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
             new Runnable() {
                 @Override
                 public void run() {
+                    if (themeColor == -1) {
+                        Drawable themeBackground = cordova.getActivity().getWindow().getDecorView().getBackground();
+                        if (themeBackground instanceof ColorDrawable) {
+                            themeColor = ((ColorDrawable) themeBackground).getColor();
+                        }
+                    }
+
                     DisplayMetrics metrics = new DisplayMetrics();
                     cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
