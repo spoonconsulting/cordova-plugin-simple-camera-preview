@@ -31,6 +31,10 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import android.view.Window;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 public class SimpleCameraPreview extends CordovaPlugin {
 
@@ -292,6 +296,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         try {
             updateContainerView(options);
+            setStatusBarVisible(false);
             fetchLocation();
             return true;
         } catch (Exception e) {
@@ -443,7 +448,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
             }
             cordova.getActivity().getSupportFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
             fragment = null;
-
+            setStatusBarVisible(true);
             callbackContext.success();
             return true;
         } catch (Exception e) {
@@ -545,6 +550,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
                         cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        ViewGroup parent = (ViewGroup) webView.getView().getParent();
+                        parent.bringToFront();
                     } else {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
@@ -645,9 +652,26 @@ public class SimpleCameraPreview extends CordovaPlugin {
         }
     }
 
+    private void setStatusBarVisible(boolean visible) {
+        cordova.getActivity().runOnUiThread(() -> {
+            WindowInsetsControllerCompat controller =
+                    WindowCompat.getInsetsController(cordova.getActivity().getWindow(), cordova.getActivity().getWindow().getDecorView());
+            if (controller != null) {
+                if (visible) {
+                    controller.show(WindowInsetsCompat.Type.statusBars());
+                } else {
+                    controller.hide(WindowInsetsCompat.Type.statusBars());
+                    controller.setSystemBarsBehavior(
+                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                }
+            }
+        });
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
+        setStatusBarVisible(true);
         if (locationManager != null) {
             locationManager.removeUpdates(mLocationCallback);
         }
