@@ -12,12 +12,14 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowInsetsController;
 import android.widget.FrameLayout;
 import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
@@ -451,6 +453,18 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             cordova.getActivity().runOnUiThread(() -> {
                 cordova.getActivity().getWindow().getDecorView().setBackgroundColor(themeColor);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    WindowInsetsController controller = cordova.getActivity().getWindow().getInsetsController();
+                    int nightMode = cordova.getActivity().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+                    if (controller != null) {
+                        if (nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                            controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                        } else {
+                            controller.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                        }
+                    }
+                }
             });
 
             return true;
@@ -569,6 +583,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     }
 
                     cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+
+                    cordova.getActivity().runOnUiThread(() -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            WindowInsetsController controller = cordova.getActivity().getWindow().getInsetsController();
+                            if (controller != null) {
+                                controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                            }
+                        }
+                    });
+
                     webView.getView().bringToFront();
                     cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                 }
