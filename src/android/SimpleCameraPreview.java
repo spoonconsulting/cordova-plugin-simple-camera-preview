@@ -426,7 +426,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
     private boolean disable(CallbackContext callbackContext) {
         if (fragment == null) {
-            callbackContext.success();
+            callbackContext.error("Camera already closed");
             return true;
         }
 
