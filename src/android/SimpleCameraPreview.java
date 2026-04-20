@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsetsController;
 import android.widget.FrameLayout;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -469,6 +470,11 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
             return true;
         } catch (Exception e) {
+            if (e instanceof CameraControl.OperationCanceledException) {
+                callbackContext.success();
+                return true;
+            }
+
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
