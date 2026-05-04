@@ -139,6 +139,19 @@ SimpleCameraPreview.deviceHasUltraWideCamera(size, (value: boolean) => {
 });
 ```
 
+### deviceHasFrontCamera(successCallback, errorCallback)
+Check if device has front camera
+<br>
+
+```javascript
+SimpleCameraPreview.deviceHasFrontCamera((value) => {
+    console.log("Device has front camera?: ", value);
+},
+(error) => {
+    console.error("Error: ", error);
+});
+```
+
 ### switchCameraTo(options, successCallback, errorCallback)
 
 Switch camera between wide or auto and set the camera direction (front or back) dynamically. Change camera aspect ratio.
