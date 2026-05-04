@@ -52,6 +52,13 @@ BOOL torchActivated = false;
     // start as transparent
     self.webView.opaque = NO;
     self.webView.backgroundColor = [UIColor clearColor];
+
+    if ([self.webView respondsToSelector:@selector(scrollView)]) {
+        UIScrollView *scrollView = [self.webView valueForKey:@"scrollView"];
+        scrollView.backgroundColor = UIColor.clearColor;
+        scrollView.opaque = NO;
+        scrollView.layer.backgroundColor = UIColor.clearColor.CGColor;
+    }
     
     //required to get gps exif
     locationManager = [[CLLocationManager alloc] init];
@@ -69,8 +76,13 @@ BOOL torchActivated = false;
     [self _setSize:command];
     [self.viewController addChildViewController:self.cameraRenderController];
     [self.webView.superview insertSubview:self.cameraRenderController.view atIndex:0];
+
+    ((GLKView *)self.cameraRenderController.view).clearsContextBeforeDrawing = NO;
+    self.cameraRenderController.view.layer.zPosition = -1;
+    self.webView.layer.zPosition = 0;
+    self.cameraRenderController.view.userInteractionEnabled = NO;
+
     [self.cameraRenderController didMoveToParentViewController:self.viewController];
-    self.viewController.view.backgroundColor = [UIColor blackColor];
     
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
@@ -168,7 +180,7 @@ BOOL torchActivated = false;
 -(void)_setSize:(CDVInvokedUrlCommand*)command {
     NSDictionary* config = command.arguments[0];
     float x = ((NSNumber*)config[@"x"]).floatValue;
-    float y = ((NSNumber*)config[@"y"]).floatValue + self.webView.frame.origin.y;
+    float y = ((NSNumber*)config[@"y"]).floatValue;
     float width = ((NSNumber*)config[@"width"]).floatValue;
     float height = ((NSNumber*)config[@"height"]).floatValue;
     self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);

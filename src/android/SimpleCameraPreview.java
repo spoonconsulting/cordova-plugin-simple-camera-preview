@@ -6,17 +6,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowInsetsController;
 import android.widget.FrameLayout;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -41,6 +46,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
     private LocationListener mLocationCallback;
     private ViewParent webViewParent;
     private CallbackContext videoCallbackContext;
+    private int themeColor = -1;
     private static final int containerViewId = 20;
     private static final int REQUEST_CODE_PERMISSIONS = 4582679;
     private static final int VIDEO_REQUEST_CODE_PERMISSIONS = 200;
@@ -445,8 +451,30 @@ public class SimpleCameraPreview extends CordovaPlugin {
             fragment = null;
 
             callbackContext.success();
+
+            cordova.getActivity().runOnUiThread(() -> {
+                cordova.getActivity().getWindow().getDecorView().setBackgroundColor(themeColor);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    WindowInsetsController controller = cordova.getActivity().getWindow().getInsetsController();
+                    int nightMode = cordova.getActivity().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+                    if (controller != null) {
+                        if (nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+                            controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                        } else {
+                            controller.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                        }
+                    }
+                }
+            });
+
             return true;
         } catch (Exception e) {
+            if (e instanceof CameraControl.OperationCanceledException) {
+                callbackContext.success();
+                return true;
+            }
+
             e.printStackTrace();
             callbackContext.error(e.getMessage());
             return false;
@@ -530,6 +558,13 @@ public class SimpleCameraPreview extends CordovaPlugin {
             new Runnable() {
                 @Override
                 public void run() {
+                    if (themeColor == -1) {
+                        Drawable themeBackground = cordova.getActivity().getWindow().getDecorView().getBackground();
+                        if (themeBackground instanceof ColorDrawable) {
+                            themeColor = ((ColorDrawable) themeBackground).getColor();
+                        }
+                    }
+
                     DisplayMetrics metrics = new DisplayMetrics();
                     cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
@@ -545,6 +580,8 @@ public class SimpleCameraPreview extends CordovaPlugin {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
                         cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                        ViewGroup parent = (ViewGroup) webView.getView().getParent();
+                        parent.bringToFront();
                     } else {
                         FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(width, height);
                         containerLayoutParams.setMargins(x, y, 0, 0);
@@ -552,6 +589,16 @@ public class SimpleCameraPreview extends CordovaPlugin {
                     }
 
                     cordova.getActivity().getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+
+                    cordova.getActivity().runOnUiThread(() -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            WindowInsetsController controller = cordova.getActivity().getWindow().getInsetsController();
+                            if (controller != null) {
+                                controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                            }
+                        }
+                    });
+
                     webView.getView().bringToFront();
                     cordova.getActivity().getSupportFragmentManager().beginTransaction().replace(containerViewId, fragment).commitAllowingStateLoss();
                 }

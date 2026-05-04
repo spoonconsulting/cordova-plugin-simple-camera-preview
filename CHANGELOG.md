@@ -1,3 +1,7 @@
+## [2.0.53](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.52...2.0.53) (2026-05-04)
+* **Android:** Handle capacitor compatibility
+* **iOS:** Handle capacitor compatibility
+
 ## [2.0.52](https://github.com/spoonconsulting/cordova-plugin-simple-camera-preview/compare/2.0.51...2.0.52) (2025-01-12)
 * **Android:** Update ReadMe
 * **iOS:** Update ReadMe
