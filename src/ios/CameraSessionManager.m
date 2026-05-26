@@ -40,6 +40,31 @@
     return orientation;
 }
 
+- (AVCaptureDevice *)externalCamera {
+    if (@available(iOS 17.0, *)) {
+        AVCaptureDeviceDiscoverySession *externalSession =
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
+            AVCaptureDeviceTypeExternal
+        ]
+                                                               mediaType:AVMediaTypeVideo
+                                                                position:AVCaptureDevicePositionUnspecified];
+
+        NSLog(@"[SimpleCameraPreview] External cameras found (count=%lu): %@",
+              (unsigned long)externalSession.devices.count,
+              externalSession.devices);
+
+        AVCaptureDevice *first = externalSession.devices.firstObject;
+        if (first) {
+            NSLog(@"[SimpleCameraPreview] External camera picked: name=%@ uniqueID=%@",
+                  first.localizedName, first.uniqueID);
+        }
+        return first;
+    }
+
+    NSLog(@"[SimpleCameraPreview] External camera lookup skipped: requires iOS 17+");
+    return nil;
+}
+
 - (void)setupSession:(NSDictionary *)options completion:(void(^)(BOOL started))completion photoSettings:(AVCapturePhotoSettings *)photoSettings {
     // If this fails, video input will just stream blank frames and the user will be notified. User only has to accept once.
     [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
@@ -55,11 +80,42 @@
                     self.defaultCamera = AVCaptureDevicePositionBack;
                 }
                 
+//                self.isCameraDirectionFront = (self.defaultCamera == AVCaptureDevicePositionFront);
+//                self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+//                if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
+//                    if (@available(iOS 13.0, *)) {
+//                        self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+//                    }
+//                }
                 self.isCameraDirectionFront = (self.defaultCamera == AVCaptureDevicePositionFront);
-                self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
-                if ([options[@"lens"] isEqual:@"wide"] && ![options[@"direction"] isEqual:@"front"] && [self deviceHasUltraWideCamera]) {
-                    if (@available(iOS 13.0, *)) {
-                        self.device = [self cameraWithPosition:self.defaultCamera captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+
+                NSString *lens = options[@"lens"];
+                BOOL isExternal = NO;
+
+                if ([lens isEqualToString:@"external"]) {
+                    AVCaptureDevice *externalDevice = [self externalCamera];
+
+                    if (externalDevice) {
+                        self.device = externalDevice;
+                        isExternal = YES;
+                        NSLog(@"[SimpleCameraPreview] Using external camera for preview: %@", self.device.localizedName);
+                    } else {
+                        NSLog(@"[SimpleCameraPreview] No external camera found. Falling back to built-in wide-angle camera.");
+
+                        self.device = [self cameraWithPosition:self.defaultCamera
+                                             captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+                    }
+                } else {
+                    self.device = [self cameraWithPosition:self.defaultCamera
+                                         captureDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+
+                    if ([lens isEqualToString:@"wide"] &&
+                        ![options[@"direction"] isEqualToString:@"front"] &&
+                        [self deviceHasUltraWideCamera]) {
+                        if (@available(iOS 13.0, *)) {
+                            self.device = [self cameraWithPosition:self.defaultCamera
+                                                 captureDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+                        }
                     }
                 }
 
@@ -69,7 +125,9 @@
                        self.aspectRatio = aspectRatio;
                    }
 
-                if ([self.device hasFlash]) {
+                // External cameras typically don't expose a flash; only configure it for
+                // built-in devices that actually have one.
+                if (!isExternal && [self.device hasFlash]) {
                     if ([self.device lockForConfiguration:&error]) {
                         photoSettings.flashMode = AVCaptureFlashModeAuto;
                         [self.device unlockForConfiguration];
@@ -87,19 +145,69 @@
                 if (options) {
                     NSInteger targetSize = ((NSNumber*)options[@"targetSize"]).intValue;
                     self.targetSize = targetSize;
-                    AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
-                    if ([self.session canSetSessionPreset:calculatedPreset]) {
-                        [self.session setSessionPreset:calculatedPreset];
+
+                    if (isExternal) {
+                        // External cameras (e.g. UVC) usually don't support
+                        // AVCaptureSessionPresetPhoto. Prefer 1280x720, then High.
+                        AVCaptureSessionPreset externalPreset = nil;
+                        if ([self.device supportsAVCaptureSessionPreset:AVCaptureSessionPreset1280x720] &&
+                            [self.session canSetSessionPreset:AVCaptureSessionPreset1280x720]) {
+                            externalPreset = AVCaptureSessionPreset1280x720;
+                        } else if ([self.device supportsAVCaptureSessionPreset:AVCaptureSessionPresetHigh] &&
+                                   [self.session canSetSessionPreset:AVCaptureSessionPresetHigh]) {
+                            externalPreset = AVCaptureSessionPresetHigh;
+                        }
+
+                        if (externalPreset) {
+                            [self.session setSessionPreset:externalPreset];
+                            NSLog(@"[SimpleCameraPreview] External camera session preset set to: %@", externalPreset);
+                        } else {
+                            NSLog(@"[SimpleCameraPreview] External camera: no preferred preset available; leaving current preset: %@", self.session.sessionPreset);
+                        }
+                    } else {
+                        AVCaptureSessionPreset calculatedPreset = [self calculateResolution:self.targetSize aspectRatio:self.aspectRatio];
+                        if ([self.session canSetSessionPreset:calculatedPreset]) {
+                            [self.session setSessionPreset:calculatedPreset];
+                            NSLog(@"[SimpleCameraPreview] Built-in camera session preset set to: %@", calculatedPreset);
+                        }
                     }
                 }
 
                 [self.session beginConfiguration];
 
-                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:&error];
+//                AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:&error];
+//                
+//                if ([self.session canAddInput:videoDeviceInput]) {
+//                    [self.session addInput:videoDeviceInput];
+//                    self.videoDeviceInput = videoDeviceInput;
+//                }
                 
-                if ([self.session canAddInput:videoDeviceInput]) {
-                    [self.session addInput:videoDeviceInput];
-                    self.videoDeviceInput = videoDeviceInput;
+                AVCaptureDeviceInput *videoDeviceInput = nil;
+
+                if (!self.device) {
+                    NSLog(@"[SimpleCameraPreview] No video capture device selected.");
+                    success = FALSE;
+                } else {
+                    NSLog(@"[SimpleCameraPreview] Creating video input for device: %@ (uniqueID=%@)",
+                          self.device.localizedName, self.device.uniqueID);
+
+                    videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:&error];
+
+                    if (error || !videoDeviceInput) {
+                        NSLog(@"[SimpleCameraPreview] Error creating video input for %@: %@",
+                              self.device.localizedName,
+                              error.localizedDescription);
+                        success = FALSE;
+                    } else if ([self.session canAddInput:videoDeviceInput]) {
+                        [self.session addInput:videoDeviceInput];
+                        self.videoDeviceInput = videoDeviceInput;
+                        NSLog(@"[SimpleCameraPreview] Video input added to session: %@ (current preset=%@)",
+                              self.device.localizedName, self.session.sessionPreset);
+                    } else {
+                        NSLog(@"[SimpleCameraPreview] Cannot add video input for device: %@ (current preset=%@)",
+                              self.device.localizedName, self.session.sessionPreset);
+                        success = FALSE;
+                    }
                 }
 
                 AVCapturePhotoOutput *imageOutput = [AVCapturePhotoOutput new];
@@ -157,6 +265,12 @@
     dispatch_async(self.sessionQueue, ^{
         if (![self.session isRunning]) {
             [self.session startRunning];
+            NSLog(@"[SimpleCameraPreview] Camera session startRunning called. running=%d, preset=%@, device=%@",
+                  [self.session isRunning],
+                  self.session.sessionPreset,
+                  self.device.localizedName);
+        } else {
+            NSLog(@"[SimpleCameraPreview] startSession called but session already running.");
         }
     });
 }

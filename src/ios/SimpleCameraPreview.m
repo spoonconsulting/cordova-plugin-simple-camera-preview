@@ -11,19 +11,38 @@
 BOOL torchActivated = false;
 
 
-- (BOOL) isCameraInstanceRunning {
-    AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
+- (BOOL)isCameraInstanceRunning {
+    AVCaptureDeviceDiscoverySession *discoverySession =
+    [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
         AVCaptureDeviceTypeBuiltInWideAngleCamera,
         AVCaptureDeviceTypeBuiltInUltraWideCamera
-    ] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-    NSArray *devices = discoverySession.devices;
- 
+    ] mediaType:AVMediaTypeVideo
+      position:AVCaptureDevicePositionUnspecified];
+
+    NSArray<AVCaptureDevice *> *devices = discoverySession.devices;
+
     for (AVCaptureDevice *device in devices) {
         if (device.isSuspended) {
             return YES;
         }
     }
- 
+
+    if (@available(iOS 17.0, *)) {
+        AVCaptureDeviceDiscoverySession *externalSession =
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[
+            AVCaptureDeviceTypeExternal
+        ] mediaType:AVMediaTypeVideo
+          position:AVCaptureDevicePositionUnspecified];
+
+        NSLog(@"External cameras found: %@", externalSession.devices);
+
+        for (AVCaptureDevice *device in externalSession.devices) {
+            if (device.isSuspended) {
+                return YES;
+            }
+        }
+    }
+
     return NO;
 }
  
@@ -88,6 +107,49 @@ BOOL torchActivated = false;
     self.sessionManager.delegate = self.cameraRenderController;
     
     NSMutableDictionary *setupSessionOptions = [NSMutableDictionary dictionary];
+//    if (command.arguments.count > 0) {
+//        NSDictionary* config = command.arguments[0];
+//        @try {
+//            if (config[@"targetSize"] != [NSNull null] && ![config[@"targetSize"] isEqual: @"null"]) {
+//                NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
+//                [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
+//            }
+////            NSString *captureDevice = config[@"lens"];
+////            if (captureDevice && [captureDevice length] > 0) {
+////                [setupSessionOptions setValue:captureDevice forKey:@"lens"];
+////            }
+//            [setupSessionOptions setValue:@"external" forKey:@"lens"];
+//            NSString *direction = config[@"direction"];
+//            if (direction && [direction length] > 0) {
+//                [setupSessionOptions setValue:direction forKey:@"direction"];
+//            }
+//            NSString *aspectRatio = config[@"aspectRatio"];
+//            if (aspectRatio && [aspectRatio length] > 0) {
+//                [setupSessionOptions setValue:aspectRatio forKey:@"aspectRatio"];
+//            }
+//        } @catch(NSException *exception) {
+//            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
+//        }
+//    }
+//    
+//    self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+//    [self.sessionManager setupSession:setupSessionOptions
+//                           completion:^(BOOL completed) {
+//        if (completed) {
+//            [self.sessionManager startSession];
+//            
+//            if (!self.sessionManager.audioConfigured) {
+//                dispatch_async(dispatch_get_main_queue(), ^{
+//                    [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
+//                });
+//            }
+//        }
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+//            [pluginResult setKeepCallbackAsBool:YES];
+//            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+//        });
+//    } photoSettings:self.photoSettings];
     if (command.arguments.count > 0) {
         NSDictionary* config = command.arguments[0];
         @try {
@@ -95,14 +157,17 @@ BOOL torchActivated = false;
                 NSInteger targetSize = ((NSNumber*)config[@"targetSize"]).intValue;
                 [setupSessionOptions setValue:[NSNumber numberWithInteger:targetSize] forKey:@"targetSize"];
             }
+
             NSString *captureDevice = config[@"lens"];
             if (captureDevice && [captureDevice length] > 0) {
                 [setupSessionOptions setValue:captureDevice forKey:@"lens"];
             }
+
             NSString *direction = config[@"direction"];
             if (direction && [direction length] > 0) {
                 [setupSessionOptions setValue:direction forKey:@"direction"];
             }
+
             NSString *aspectRatio = config[@"aspectRatio"];
             if (aspectRatio && [aspectRatio length] > 0) {
                 [setupSessionOptions setValue:aspectRatio forKey:@"aspectRatio"];
@@ -111,19 +176,34 @@ BOOL torchActivated = false;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"targetSize not well defined"] callbackId:command.callbackId];
         }
     }
-    
+
+    // TEST ONLY: force the external camera as the default preview source.
+    // CameraSessionManager will gracefully fall back to the built-in wide-angle
+    // camera if no external camera is connected.
+    [setupSessionOptions setValue:@"external" forKey:@"lens"];
+    NSLog(@"[SimpleCameraPreview] _enable: forcing lens=external for testing. options=%@", setupSessionOptions);
+
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
+
     [self.sessionManager setupSession:setupSessionOptions
                            completion:^(BOOL completed) {
+        NSLog(@"[SimpleCameraPreview] setupSession completion. completed=%d device=%@ preset=%@",
+              completed,
+              self.sessionManager.device.localizedName,
+              self.sessionManager.session.sessionPreset);
+
         if (completed) {
             [self.sessionManager startSession];
-            
+
             if (!self.sessionManager.audioConfigured) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
                 });
             }
+        } else {
+            NSLog(@"[SimpleCameraPreview] setupSession reported failure; preview will not start.");
         }
+
         dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [pluginResult setKeepCallbackAsBool:YES];
