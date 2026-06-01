@@ -1,8 +1,9 @@
 #import <CoreImage/CoreImage.h>
 #import <AVFoundation/AVFoundation.h>
+#import "UVCExternalCaptureManager.h"
 
 
-@interface CameraSessionManager : NSObject
+@interface CameraSessionManager : NSObject <UVCExternalCaptureDelegate>
 
 - (CameraSessionManager *)init;
 - (void) setupSession:(NSDictionary *)options completion:(void(^)(BOOL started))completion photoSettings:(AVCapturePhotoSettings *)photoSettings;
@@ -39,4 +40,7 @@
 @property (nonatomic) NSInteger targetSize;
 @property (nonatomic) NSString *aspectRatio;
 @property (atomic, assign) BOOL isCameraDirectionFront;
+@property (nonatomic, assign) BOOL usesExternalCamera;
+@property (nonatomic, assign) BOOL usesExternalUVCCapture;
+@property (nonatomic) UVCExternalCaptureManager *uvcCaptureManager;
 @end

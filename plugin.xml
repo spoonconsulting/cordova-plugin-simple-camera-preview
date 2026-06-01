@@ -59,6 +59,10 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
+    <header-file src="src/ios/UVCExternalCaptureManager.h" />
+    <source-file src="src/ios/UVCExternalCaptureManager.m" />
+    <header-file src="src/ios/third_party/libusb/libusb.h" />
+    <framework src="src/ios/third_party/lib/libusb-1.0.a" custom="true" />
     <header-file src="src/ios/SimpleCameraPreview.h" />
     <source-file src="src/ios/SimpleCameraPreview.m" />
     <header-file src="src/ios/CameraSessionManager.h" />
@@ -78,6 +82,8 @@
     <framework src="GLKit.framework" />
     <framework src="CoreVideo.framework" />
     <framework src="QuartzCore.framework"/>
+    <framework src="IOKit.framework" />
+    <framework src="Security.framework" />
   </platform>
 
 </plugin>

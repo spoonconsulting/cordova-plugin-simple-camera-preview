@@ -280,7 +280,17 @@ BOOL torchActivated = false;
     if (torchActivated)
         useFlash = false;
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
-    if (self.sessionManager != nil)
+    if (self.sessionManager != nil) {
+        if (self.sessionManager.usesExternalUVCCapture) {
+            NSData *jpegData = self.sessionManager.uvcCaptureManager.latestJPEGFrame;
+            if (jpegData) {
+                [self saveJPEGDataToFile:jpegData callbackId:command.callbackId];
+            } else {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No frame available from external capture device"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+            return;
+        }
     [self.sessionManager setFlashMode:useFlash? AVCaptureFlashModeOn: AVCaptureFlashModeOff photoSettings:self.photoSettings completion:^(BOOL success) {
         CDVPluginResult *pluginResult;
         if (self.cameraRenderController != NULL) {
@@ -290,6 +300,37 @@ BOOL torchActivated = false;
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
+    }];
+    }
+}
+
+- (void)saveJPEGDataToFile:(NSData *)imageData callbackId:(NSString *)callbackId {
+    self.onPictureTakenHandlerId = callbackId;
+    [self runBlockWithTryCatch:^{
+        CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
+        CFDictionaryRef metaDict = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL);
+        CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutableCopy(NULL, 0, metaDict);
+        NSDictionary * gpsData = [self getGPSDictionaryForLocation];
+        if (gpsData)
+            CFDictionarySetValue(mutableDict, kCGImagePropertyGPSDictionary, (__bridge CFDictionaryRef)gpsData);
+        CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) imageData, NULL);
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+        NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
+        NSString *dataPath = [@"file://" stringByAppendingString: [libraryDirectory stringByAppendingPathComponent:uniqueFileName]];
+        CFStringRef UTI = CGImageSourceGetType(source);
+        CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)  [NSURL URLWithString:dataPath], UTI, 1, NULL);
+        CGImageDestinationAddImageFromSource(destination, source, 0, mutableDict);
+        CGImageDestinationFinalize(destination);
+        CFRelease(source);
+        CFRelease(destination);
+        CFRelease(metaDict);
+        CFRelease(imageSource);
+        CFRelease(UTI);
+        CFRelease(mutableDict);
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+        [pluginResult setKeepCallbackAsBool:true];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
     }];
 }
 
