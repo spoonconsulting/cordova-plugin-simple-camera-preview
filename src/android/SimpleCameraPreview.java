@@ -458,7 +458,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         fragment.enableExternalCamera(options, (boolean result) -> {
             if (result) {
-                callbackContext.success(true);
+                callbackContext.success();
             } else {
                 callbackContext.error("Failed to enable external camera");
             }
@@ -510,7 +510,7 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
         fragment.disableExternalCamera(options, (boolean result) -> {
             if (result) {
-                callbackContext.success(true);
+                callbackContext.success();
             } else {
                 callbackContext.error("Failed to disable external camera");
             }
