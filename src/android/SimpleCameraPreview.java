@@ -94,6 +94,15 @@ public class SimpleCameraPreview extends CordovaPlugin {
 
                 case "switchCameraTo":
                     return switchCameraTo((JSONObject) args.get(0), callbackContext);
+
+                case "enableExternalCamera":
+                    return enableExternalCamera((JSONObject) args.get(0), callbackContext);
+
+                case "disableExternalCamera":
+                    return disableExternalCamera((JSONObject) args.get(0), callbackContext);
+
+                case "deviceHasExternalCamera":
+                    return deviceHasExternalCamera(callbackContext);
                 default:
                     break;
             }
@@ -404,6 +413,107 @@ public class SimpleCameraPreview extends CordovaPlugin {
         fragment.deviceHasFrontCamera((boolean result) -> {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
             callbackContext.sendPluginResult(pluginResult);
+        });
+        return true;
+    }
+
+    private boolean deviceHasExternalCamera(CallbackContext callbackContext) {
+        PluginResult pluginResult = new PluginResult(
+                PluginResult.Status.OK,
+                CameraPreviewFragment.deviceHasExternalCamera(cordova.getContext())
+        );
+        callbackContext.sendPluginResult(pluginResult);
+        return true;
+    }
+
+    private JSONObject buildExternalCameraOptions(JSONObject options) throws JSONException {
+        JSONObject cameraOptions = options != null ? options : new JSONObject();
+        if (!cameraOptions.has("direction")) {
+            cameraOptions.put("direction", getCameraDirection(cameraOptions));
+        }
+        if (!cameraOptions.has("aspectRatio")) {
+            cameraOptions.put("aspectRatio", DEFAULT_ASPECT_RATIO);
+        } else {
+            String aspectRatioOption = cameraOptions.getString("aspectRatio");
+            cameraOptions.put("aspectRatio", getAspectRatio(aspectRatioOption));
+        }
+        if (!cameraOptions.has("lens")) {
+            cameraOptions.put("lens", "auto");
+        }
+        return cameraOptions;
+    }
+
+    private boolean enableExternalCamera(JSONObject options, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot enable external camera");
+            return true;
+        }
+
+        try {
+            options = buildExternalCameraOptions(options);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to prepare external camera options");
+            return true;
+        }
+
+        fragment.enableExternalCamera(options, (boolean result) -> {
+            if (result) {
+                callbackContext.success();
+            } else {
+                callbackContext.error("Failed to enable external camera");
+            }
+        });
+        return true;
+    }
+
+    private boolean disableExternalCamera(JSONObject options, CallbackContext callbackContext) {
+        if (fragment == null) {
+            callbackContext.error("Camera is closed, cannot disable external camera");
+            return true;
+        }
+
+        int cameraDirection = getCameraDirection(options);
+        try {
+            options.put("direction", cameraDirection);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to set direction in options");
+            return true;
+        }
+
+        double aspectRatio = DEFAULT_ASPECT_RATIO;
+        String aspectRatioOption = null;
+        try {
+            aspectRatioOption = options.getString("aspectRatio");
+        } catch (JSONException e) {
+            Log.e("Error", "disableExternalCamera: " + e.getMessage());
+        }
+        if (aspectRatioOption != null && !aspectRatioOption.equals("null")) {
+            aspectRatio = getAspectRatio(aspectRatioOption);
+        }
+
+        try {
+            options.put("aspectRatio", aspectRatio);
+        } catch (JSONException e) {
+            callbackContext.error("Unable to set aspectRatio in options");
+            return true;
+        }
+
+        if (aspectRatio != fragment.getAspectRatio()) {
+            try {
+                updateContainerView(options);
+            } catch (Exception e) {
+                Log.e("Error", "disableExternalCamera: " + e.getMessage());
+                callbackContext.error("Failed to update camera preview size: " + e.getMessage());
+                return false;
+            }
+        }
+
+        fragment.disableExternalCamera(options, (boolean result) -> {
+            if (result) {
+                callbackContext.success();
+            } else {
+                callbackContext.error("Failed to disable external camera");
+            }
         });
         return true;
     }

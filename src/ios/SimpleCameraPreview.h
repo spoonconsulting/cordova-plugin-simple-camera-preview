@@ -16,6 +16,9 @@
 - (void) setSize:(CDVInvokedUrlCommand*)command;
 - (void) torchSwitch: (CDVInvokedUrlCommand*)command;
 - (void) switchCameraTo: (CDVInvokedUrlCommand*) command;
+- (void) enableExternalCamera: (CDVInvokedUrlCommand*) command;
+- (void) disableExternalCamera: (CDVInvokedUrlCommand*) command;
+- (void) deviceHasExternalCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasUltraWideCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasFrontCamera: (CDVInvokedUrlCommand*) command;
 - (void) deviceHasFlash: (CDVInvokedUrlCommand*)command;

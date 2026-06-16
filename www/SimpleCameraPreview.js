@@ -74,6 +74,18 @@ SimpleCameraPreview.switchCameraTo = function (options, onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "switchCameraTo", [options]);
 };
 
+SimpleCameraPreview.enableExternalCamera = function (options, onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "enableExternalCamera", [options || {}]);
+};
+
+SimpleCameraPreview.disableExternalCamera = function (options, onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "disableExternalCamera", [options || {}]);
+};
+
+SimpleCameraPreview.deviceHasExternalCamera = function (onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "deviceHasExternalCamera", []);
+};
+
 SimpleCameraPreview.deviceHasFlash = function (onSuccess, onError) {
   exec(onSuccess, onError, PLUGIN_NAME, "deviceHasFlash", []);
 };

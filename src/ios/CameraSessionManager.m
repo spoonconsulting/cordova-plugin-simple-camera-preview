@@ -6,6 +6,7 @@
         // Create the AVCaptureSession
         self.session = [AVCaptureSession new];
         self.audioConfigured = false;
+        self.isUsingExternalCamera = NO;
         self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
         if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
             [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
@@ -328,6 +329,81 @@
         self.isCameraDirectionFront = self.defaultCamera == AVCaptureDevicePositionFront;
         completion ? completion(cameraSwitched): NULL;
     });
+}
+
++ (BOOL)deviceHasExternalCamera {
+    if (@available(iOS 17.0, *)) {
+        AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession
+            discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeExternal]
+            mediaType:AVMediaTypeVideo
+            position:AVCaptureDevicePositionUnspecified];
+        return discoverySession.devices.count > 0;
+    }
+    return NO;
+}
+
+- (AVCaptureDevice *)externalCameraDevice {
+    if (@available(iOS 17.0, *)) {
+        AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession
+            discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeExternal]
+            mediaType:AVMediaTypeVideo
+            position:AVCaptureDevicePositionUnspecified];
+        return discoverySession.devices.firstObject;
+    }
+    return nil;
+}
+
+- (void)enableExternalCamera:(NSDictionary *)options completion:(void (^)(BOOL success))completion {
+    if (@available(iOS 17.0, *)) {
+        AVCaptureDevice *externalDevice = [self externalCameraDevice];
+        if (!externalDevice || self.session == nil) {
+            if (completion) {
+                completion(NO);
+            }
+            return;
+        }
+
+        dispatch_async(self.sessionQueue, ^{
+            [self.session beginConfiguration];
+            if (self.videoDeviceInput) {
+                [self.session removeInput:self.videoDeviceInput];
+            }
+
+            NSError *error = nil;
+            AVCaptureDeviceInput *externalInput = [AVCaptureDeviceInput deviceInputWithDevice:externalDevice error:&error];
+            BOOL success = NO;
+            if (!error && [self.session canAddInput:externalInput]) {
+                [self.session addInput:externalInput];
+                self.videoDeviceInput = externalInput;
+                self.device = externalDevice;
+                self.isUsingExternalCamera = YES;
+                __block AVCaptureVideoOrientation orientation;
+                dispatch_sync(dispatch_get_main_queue(), ^{
+                    orientation = [self getCurrentOrientation];
+                });
+                [self updateOrientation:orientation];
+                success = YES;
+            }
+            [self.session commitConfiguration];
+            if (completion) {
+                completion(success);
+            }
+        });
+    } else if (completion) {
+        completion(NO);
+    }
+}
+
+- (void)disableExternalCamera:(NSDictionary *)options completion:(void (^)(BOOL success))completion {
+    if (!self.isUsingExternalCamera) {
+        if (completion) {
+            completion(YES);
+        }
+        return;
+    }
+
+    self.isUsingExternalCamera = NO;
+    [self switchCameraTo:options completion:completion];
 }
 
 - (void)startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDurationMs {

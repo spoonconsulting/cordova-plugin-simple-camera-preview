@@ -97,6 +97,10 @@ interface HasFrontCameraCallback {
     void onResult(boolean result);
 }
 
+interface HasExternalCameraCallback {
+    void onResult(boolean result);
+}
+
 public class CameraPreviewFragment extends Fragment {
 
     private PreviewView viewFinder;
@@ -117,6 +121,7 @@ public class CameraPreviewFragment extends Fragment {
     private static final double ASPECT_RATIO_9_BY_16 = 9.0 / 16.0;
     private Size targetResolution = null;
     private CameraSelector cameraSelector = null;
+    private boolean isUsingExternalCamera = false;
 
     public CameraPreviewFragment() {
 
@@ -260,6 +265,55 @@ public class CameraPreviewFragment extends Fragment {
 
             hasFrontCameraCallback.onResult(false);
         }, ContextCompat.getMainExecutor(getActivity()));
+    }
+
+    public static boolean deviceHasExternalCamera(Context context) {
+        try {
+            CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null && facing == CameraCharacteristics.LENS_FACING_EXTERNAL) {
+                    return true;
+                }
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "deviceHasExternalCamera: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public void deviceHasExternalCamera(HasExternalCameraCallback hasExternalCameraCallback) {
+        hasExternalCameraCallback.onResult(deviceHasExternalCamera(getContext()));
+    }
+
+    public void enableExternalCamera(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
+        if (!deviceHasExternalCamera(getContext())) {
+            cameraSwitchedCallback.onSwitch(false);
+            return;
+        }
+
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getActivity());
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "enableExternalCamera: " + e.getMessage());
+                cameraSwitchedCallback.onSwitch(false);
+                return;
+            }
+
+            isUsingExternalCamera = true;
+            setUpCamera(options, cameraProvider);
+            preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+            cameraSwitchedCallback.onSwitch(true);
+        }, ContextCompat.getMainExecutor(getActivity()));
+    }
+
+    public void disableExternalCamera(JSONObject options, CameraSwitchedCallback cameraSwitchedCallback) {
+        isUsingExternalCamera = false;
+        switchCameraTo(options, cameraSwitchedCallback);
     }
 
     public static Size calculateResolution(Context context, int desiredWidthPx, double aspectRatio) {
@@ -569,6 +623,21 @@ public class CameraPreviewFragment extends Fragment {
 
     @SuppressLint("RestrictedApi")
     private void setCameraSelector() {
+        if (isUsingExternalCamera) {
+            cameraSelector = new CameraSelector.Builder()
+                    .addCameraFilter(cameraInfos -> {
+                        List<CameraInfo> externalCameras = new ArrayList<>();
+                        for (CameraInfo cameraInfo : cameraInfos) {
+                            if (cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_EXTERNAL) {
+                                externalCameras.add(cameraInfo);
+                            }
+                        }
+                        return externalCameras.isEmpty() ? Collections.emptyList() : externalCameras;
+                    })
+                    .build();
+            return;
+        }
+
         if (lens.equals("wide") && direction != CameraSelector.LENS_FACING_FRONT) {
             cameraSelector = new CameraSelector.Builder()
                     .addCameraFilter(cameraInfos -> {

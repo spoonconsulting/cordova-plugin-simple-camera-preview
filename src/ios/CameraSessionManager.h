@@ -9,6 +9,9 @@
 - (void) setFlashMode:(NSInteger)flashMode photoSettings:(AVCapturePhotoSettings *)photoSettings completion:(void(^) (BOOL success)) completion;
 - (void)torchSwitch:(NSInteger)torchState completion:(void (^)(BOOL success, NSError *error))completion;
 - (void) switchCameraTo:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
+- (void) enableExternalCamera:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
+- (void) disableExternalCamera:(NSDictionary *)options completion:(void (^)(BOOL success))completion;
++ (BOOL) deviceHasExternalCamera;
 - (BOOL) deviceHasUltraWideCamera;
 - (BOOL) deviceHasFrontCamera;
 - (BOOL) deviceHasFlash;
@@ -39,4 +42,5 @@
 @property (nonatomic) NSInteger targetSize;
 @property (nonatomic) NSString *aspectRatio;
 @property (atomic, assign) BOOL isCameraDirectionFront;
+@property (atomic, assign) BOOL isUsingExternalCamera;
 @end
