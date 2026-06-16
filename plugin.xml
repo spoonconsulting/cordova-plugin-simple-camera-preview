@@ -59,6 +59,10 @@
       <string>This App requires access to your location to add GPS exif to captured images.</string>
     </config-file>
 
+    <config-file target="*-Info.plist" parent="NSMicrophoneUsageDescription">
+      <string>This App requires microphone access to record videos with audio.</string>
+    </config-file>
+
     <header-file src="src/ios/SimpleCameraPreview.h" />
     <source-file src="src/ios/SimpleCameraPreview.m" />
     <header-file src="src/ios/CameraSessionManager.h" />

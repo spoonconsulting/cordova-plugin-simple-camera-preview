@@ -33,7 +33,7 @@
 @property (nonatomic) AVCaptureDeviceInput *videoDeviceInput;
 @property (nonatomic) AVCapturePhotoOutput *imageOutput;
 @property (nonatomic) AVCaptureVideoDataOutput *dataOutput;
-@property (nonatomic, weak) id delegate;
+@property (nonatomic, strong) id delegate;
 @property (nonatomic) AVCaptureMovieFileOutput *movieFileOutput;
 @property (nonatomic) NSTimer *videoTimer;
 @property (nonatomic) NSInteger targetSize;
