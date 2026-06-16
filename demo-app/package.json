@@ -22,7 +22,7 @@
     "@angular/platform-browser-dynamic": "^19.0.0",
     "@angular/router": "^19.0.0",
     "@ionic/angular": "^8.0.0",
-    "@ionic/cordova-builders": "^12.1.2",
+    "@ionic/cordova-builders": "^12.3.0",
     "@spoonconsulting/cordova-plugin-simple-camera-preview": "^2.0.32",
     "ionicons": "^7.0.0",
     "rxjs": "~7.8.0",
@@ -30,7 +30,7 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.0.0",
+    "@angular-devkit/build-angular": "^21.1.3",
     "@angular-eslint/builder": "^19.0.0",
     "@angular-eslint/eslint-plugin": "^19.0.0",
     "@angular-eslint/eslint-plugin-template": "^19.0.0",
