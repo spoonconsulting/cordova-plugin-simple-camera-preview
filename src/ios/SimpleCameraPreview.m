@@ -115,20 +115,27 @@ BOOL torchActivated = false;
     self.photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecTypeJPEG}];
     [self.sessionManager setupSession:setupSessionOptions
                            completion:^(BOOL completed) {
-        if (completed) {
-            [self.sessionManager startSession];
-            
-            if (!self.sessionManager.audioConfigured) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
-                });
-            }
+        if (!completed) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to setup camera session"];
+                [pluginResult setKeepCallbackAsBool:YES];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            });
+            return;
         }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.sessionManager startSessionWithCompletion:^(BOOL started) {
+            if (!self.sessionManager.audioConfigured) {
+                [self showToastWithMessage:@"Microphone is in use by another application. Videos will not include audios!"];
+            }
+            CDVPluginResult *pluginResult;
+            if (started) {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to start camera session"];
+            }
             [pluginResult setKeepCallbackAsBool:YES];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        });
+        }];
     } photoSettings:self.photoSettings];
 }
 
