@@ -153,10 +153,17 @@
     }];
 }
 
-- (void) startSession {
+- (void) startSessionWithCompletion:(void(^)(BOOL started))completion {
     dispatch_async(self.sessionQueue, ^{
-        if (![self.session isRunning]) {
+        BOOL started = [self.session isRunning];
+        if (!started) {
             [self.session startRunning];
+            started = [self.session isRunning];
+        }
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(started);
+            });
         }
     });
 }

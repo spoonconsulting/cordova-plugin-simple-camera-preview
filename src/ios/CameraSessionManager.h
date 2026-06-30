@@ -16,7 +16,7 @@
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation;
 - (void) startRecording:(NSURL *)fileURL recordingDelegate:(id<AVCaptureFileOutputRecordingDelegate>)recordingDelegate videoDurationMs:(NSInteger)videoDuration;
 - (void) stopRecording;
-- (void) startSession;
+- (void) startSessionWithCompletion:(void(^)(BOOL started))completion;
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation;
 - (AVCaptureSessionPreset)calculateResolution:(NSInteger)targetSize aspectRatio:(NSString *)aspectRatio;
 - (UIInterfaceOrientation) getOrientation;
