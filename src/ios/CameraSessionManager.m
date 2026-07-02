@@ -193,18 +193,20 @@
     NSInteger bestDiff = NSIntegerMax;
     for (NSDictionary *info in candidates) {
         NSInteger width = [info[@"width"] integerValue];
-        NSInteger diff = llabs((long)(width - targetSize));
-        if (diff < bestDiff) {
-            bestDiff = diff;
-            bestMatch = info;
-        }
+        if(targetSize>=width){
+            NSInteger diff = llabs((long)(width - targetSize));
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestMatch = info;
+            }
+       }
     }
 
     // Return the preset of the closest match.
     if (bestMatch) {
         return [self validateCameraPreset: bestMatch[@"preset"]];
     } else {
-        return [self validateCameraPreset: candidates.firstObject[@"preset"]];
+        return [self validateCameraPreset: AVCaptureSessionPresetPhoto];
     }
 }
 
